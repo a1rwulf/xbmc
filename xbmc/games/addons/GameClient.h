@@ -206,6 +206,7 @@ private:
   unsigned int          m_baseWidth;
 
   // Save/rewind functionality
+  bool                  m_bSerializationInited;
   unsigned int          m_serializeSize;
   bool                  m_bRewindEnabled;
   CSerialState          m_serialState;
