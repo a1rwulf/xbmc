@@ -44,6 +44,8 @@ class CSetting;
 namespace DXVA { class CRenderPicture; }
 namespace VAAPI { class CVaapiRenderPicture; }
 namespace VDPAU { class CVdpauRenderPicture; }
+namespace LIBRETROGL { class CRetroGlRenderPicture; }
+
 class COpenMax;
 class COpenMaxVideo;
 struct OpenMaxVideoBufferHolder;
@@ -73,6 +75,9 @@ struct DVDVideoPicture
     };
     struct {
       VAAPI::CVaapiRenderPicture* vaapi;
+    };
+    struct {
+      LIBRETROGL::CRetroGlRenderPicture libretrogl;
     };
 
     struct {
