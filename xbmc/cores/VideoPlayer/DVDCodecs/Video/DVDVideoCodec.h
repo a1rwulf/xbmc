@@ -77,7 +77,7 @@ struct DVDVideoPicture
       VAAPI::CVaapiRenderPicture* vaapi;
     };
     struct {
-      LIBRETROGL::CRetroGlRenderPicture libretrogl;
+      LIBRETROGL::CRetroGlRenderPicture* libretrogl;
     };
 
     struct {
