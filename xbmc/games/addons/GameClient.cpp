@@ -326,6 +326,8 @@ bool CGameClient::LoadGameInfo(const std::string& logPath)
   CLog::Log(LOGINFO, "GAME: Base Height:  %u", av_info.geometry.base_height);
   CLog::Log(LOGINFO, "GAME: Max Width:    %u", av_info.geometry.max_width);
   CLog::Log(LOGINFO, "GAME: Max Height:   %u", av_info.geometry.max_height);
+  CLog::Log(LOGINFO, "GAME: Base Width:    %u", av_info.geometry.base_width);
+  CLog::Log(LOGINFO, "GAME: Base Height:   %u", av_info.geometry.base_height);
   CLog::Log(LOGINFO, "GAME: Aspect Ratio: %f", av_info.geometry.aspect_ratio);
   CLog::Log(LOGINFO, "GAME: FPS:          %f", av_info.timing.fps);
   CLog::Log(LOGINFO, "GAME: Sample Rate:  %f", av_info.timing.sample_rate);
@@ -960,4 +962,31 @@ void CGameClient::LogException(const char* strFunctionName) const
   CLog::Log(LOGERROR, "GAME: exception caught while trying to call '%s' on add-on %s",
       strFunctionName, ID().c_str());
   CLog::Log(LOGERROR, "Please contact the developer of this add-on: %s", Author().c_str());
+}
+
+void CGameClient::HwSetInfo(const game_hw_info *hw_info)
+{
+  CLog::Log(LOGINFO, "GAME - entered HwSetInfo");
+  return;
+}
+
+uintptr_t CGameClient::HwGetCurrentFramebuffer()
+{
+  return m_video->GetCurrentFramebuffer();
+}
+
+game_proc_address_t CGameClient::HwGetProcAddress(const char *sym)
+{
+  return m_video->GetProcAddress(sym);
+}
+
+void CGameClient::HwContextReset()
+{
+  try { LogError(m_pStruct->HwContextReset(), "HwContextReset()"); }
+  catch (...) { LogException("HwContextReset()"); }
+}
+
+void CGameClient::CreateHwRenderContext()
+{
+  m_video->CreateHwRenderContext();
 }

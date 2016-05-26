@@ -141,19 +141,29 @@ void CAddonCallbacksGame::CloseStream(void* addonData, GAME_STREAM_TYPE stream)
 
 void CAddonCallbacksGame::HwSetInfo(void* addonData, const game_hw_info *hw_info)
 {
-  // TODO
+  CGameClient* gameClient = GetGameClient(addonData, __FUNCTION__);
+  if (!gameClient)
+    return;
+
+  gameClient->HwSetInfo(hw_info);
 }
 
 uintptr_t CAddonCallbacksGame::HwGetCurrentFramebuffer(void* addonData)
 {
-  // TODO
-  return 0;
+  CGameClient* gameClient = GetGameClient(addonData, __FUNCTION__);
+  if (!gameClient)
+    return 0;
+
+  return gameClient->HwGetCurrentFramebuffer();
 }
 
 game_proc_address_t CAddonCallbacksGame::HwGetProcAddress(void* addonData, const char *sym)
 {
-  // TODO
-  return nullptr;
+  CGameClient* gameClient = GetGameClient(addonData, __FUNCTION__);
+  if (!gameClient)
+    return nullptr;
+
+  return gameClient->HwGetProcAddress(sym);
 }
 
 bool CAddonCallbacksGame::OpenPort(void* addonData, unsigned int port)

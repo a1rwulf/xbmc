@@ -68,14 +68,18 @@ CRenderInfo CRendererLibretroGl::GetRenderInfo()
 {
     CRenderInfo info;
     info.formats = m_formats;
-    info.max_buffer_size = NUM_BUFFERS;
+    //info.max_buffer_size = NUM_BUFFERS;
+    info.max_buffer_size = 1;
     info.optimal_buffer_size = 1;
     return info;
 }
 
 bool CRendererLibretroGl::Supports(ERENDERFEATURE feature)
 {
-    return false;
+  if(feature == RENDERFEATURE_ROTATION)
+    return true;
+
+  return false;
 }
 
 bool CRendererLibretroGl::Supports(EINTERLACEMETHOD method)
@@ -86,6 +90,32 @@ bool CRendererLibretroGl::Supports(EINTERLACEMETHOD method)
 bool CRendererLibretroGl::Supports(ESCALINGMETHOD method)
 {
     return false;
+}
+
+bool CRendererLibretroGl::LoadShadersHook()
+{
+    if (m_format == RENDER_FMT_LIBRETROGL)
+    {
+        CLog::Log(LOGNOTICE, "GL: Using LIBRETROGL render method");
+        m_renderMethod = RENDER_LIBRETROGL;
+        m_fullRange = false;
+        return true;
+    }
+    return false;
+}
+
+bool CRendererLibretroGl::RenderHook(int idx)
+{
+    UpdateVideoFilter();
+    RenderRGB(idx, m_currentField);
+
+    YUVBUFFER &buf = m_buffers[idx];
+    if (buf.hwDec)
+    {
+        //TODO check if this is needed
+        //((LIBRETROGL::CLibretroGlRenderPicture*)buf.hwDec)->Sync();
+    }
+    return true;
 }
 
 bool CRendererLibretroGl::CreateTexture(int index)
@@ -115,8 +145,6 @@ bool CRendererLibretroGl::CreateTexture(int index)
 bool CRendererLibretroGl::UploadTexture(int index)
 {
     LIBRETROGL::CRetroGlRenderPicture *retro = (LIBRETROGL::CRetroGlRenderPicture*)m_buffers[index].hwDec;
-
-    YV12Image &im     = m_buffers[index].image;
     YUVFIELDS &fields = m_buffers[index].fields;
     YUVPLANE &plane = fields[FIELD_FULL][0];
 
@@ -126,25 +154,16 @@ bool CRendererLibretroGl::UploadTexture(int index)
     }
 
     plane.id = retro->texture[0];
-
-    // in stereoscopic mode sourceRect may only
-    // be a part of the source video surface
     plane.rect = m_sourceRect;
-
-    // clip rect
-    /*
-    if (retro->crop.x1 > plane.rect.x1)
-      plane.rect.x1 = retro->crop.x1;
-    if (retro->crop.x2 < plane.rect.x2)
-      plane.rect.x2 = retro->crop.x2;
-    if (retro->crop.y1 > plane.rect.y1)
-      plane.rect.y1 = retro->crop.y1;
-    if (retro->crop.y2 < plane.rect.y2)
-      plane.rect.y2 = retro->crop.y2;
-    */
 
     plane.texheight = retro->texHeight;
     plane.texwidth  = retro->texWidth;
+
+    //Textures are upside down and mirrored by default
+    //We configure the RenderManager with orientation 180 in RetroPlayer and swap x-coords here
+    auto tmpx1 = plane.rect.x1;
+    plane.rect.x1 = plane.rect.x2;
+    plane.rect.x2 = tmpx1;
 
     if (m_textureTarget == GL_TEXTURE_2D)
     {

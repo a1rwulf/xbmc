@@ -164,3 +164,13 @@ void CGameClientReversiblePlayback::UpdatePlaybackStats()
   m_totalTimeMs = MathUtils::round_int(1000.0 * total / m_gameLoop.FPS());
   m_cacheTimeMs = MathUtils::round_int(1000.0 * cached / m_gameLoop.FPS());
 }
+
+void CGameClientReversiblePlayback::HwContextReset()
+{
+  m_gameClient->HwContextReset();
+}
+
+void CGameClientReversiblePlayback::CreateHwRenderContext()
+{
+  m_gameClient->CreateHwRenderContext();
+}

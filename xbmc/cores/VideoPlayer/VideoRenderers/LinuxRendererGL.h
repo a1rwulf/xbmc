@@ -86,6 +86,7 @@ enum RenderMethod
   RENDER_POT=0x10,
   RENDER_VAAPI=0x20,
   RENDER_CVREF = 0x40,
+  RENDER_LIBRETROGL = 0x80
 };
 
 enum RenderQuality

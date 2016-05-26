@@ -20,6 +20,7 @@
 #pragma once
 
 #include "cores/AudioEngine/Utils/AEChannelData.h"
+#include "addons/kodi-addon-dev-kit/include/kodi/kodi_game_types.h"
 
 #include "libavcodec/avcodec.h"
 #include "libavutil/pixfmt.h"
@@ -51,5 +52,8 @@ namespace GAME
     virtual bool OpenEncodedStream(AVCodecID codec) = 0;
     virtual void AddData(const uint8_t* data, unsigned int size) = 0;
     virtual void CloseStream() = 0;
+    virtual uintptr_t GetCurrentFramebuffer() = 0;
+    virtual game_proc_address_t GetProcAddress(const char *sym) = 0;
+    virtual void CreateHwRenderContext() = 0;
   };
 }

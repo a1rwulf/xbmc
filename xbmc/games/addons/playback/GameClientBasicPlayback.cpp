@@ -52,3 +52,13 @@ void CGameClientBasicPlayback::FrameEvent()
 {
   m_gameClient->RunFrame();
 }
+
+void CGameClientBasicPlayback::HwContextReset()
+{
+  m_gameClient->HwContextReset();
+}
+
+void CGameClientBasicPlayback::CreateHwRenderContext()
+{
+  m_gameClient->CreateHwRenderContext();
+}

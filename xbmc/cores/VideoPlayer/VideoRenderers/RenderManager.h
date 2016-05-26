@@ -42,6 +42,7 @@ class CRenderCapture;
 namespace DXVA { class CProcessor; }
 namespace VAAPI { class CSurfaceHolder; }
 namespace VDPAU { class CVdpauRenderPicture; }
+namespace LIBRETROGL { class CLibretroGlRenderPicture; }
 struct DVDVideoPicture;
 
 class CWinRenderer;

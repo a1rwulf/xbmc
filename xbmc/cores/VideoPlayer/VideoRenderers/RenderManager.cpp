@@ -37,6 +37,7 @@
 #include "LinuxRendererGL.h"
 #include "HwDecRender/RendererVAAPI.h"
 #include "HwDecRender/RendererVDPAU.h"
+#include "HwDecRender/RendererLibretroGl.h"
 #if defined(TARGET_DARWIN_OSX)
 #include "HwDecRender/RendererVTBGL.h"
 #endif
@@ -110,6 +111,7 @@ static std::string GetRenderFormatName(ERenderFormat format)
     case RENDER_FMT_IMXMAP:    return "IMXMAP";
     case RENDER_FMT_MMAL:      return "MMAL";
     case RENDER_FMT_AML:       return "AMLCODEC";
+    case RENDER_FMT_LIBRETROGL:return "LIBRETROGL";
     case RENDER_FMT_NONE:      return "NONE";
   }
   return "UNKNOWN";
@@ -193,7 +195,7 @@ bool CRenderManager::Configure(DVDVideoPicture& picture, float fps, unsigned fla
                          (render_framerate != config_framerate);
 
     CSingleLock lock(m_statelock);
-    
+
     m_fps = fps;
     CheckEnableClockSync();
 
@@ -419,7 +421,7 @@ void CRenderManager::FrameMove()
       else
         ++it;
     }
-    
+
     m_bRenderGUI = true;
   }
 
@@ -581,6 +583,10 @@ void CRenderManager::CreateRenderer()
       m_pRenderer = new CRendererAML;
 #endif
     }
+    else if (m_format == RENDER_FMT_LIBRETROGL)
+    {
+      m_pRenderer = new CRendererLibretroGl();
+    }
     else if (m_format != RENDER_FMT_NONE)
     {
 #if defined(HAS_MMAL)
@@ -683,7 +689,7 @@ bool CRenderManager::RenderCaptureGetPixels(unsigned int captureId, unsigned int
   {
     if (!millis)
       millis = 1000;
-    
+
     CSingleExit exitlock(m_captCritSect);
     if (!it->second->GetEvent().WaitMSec(millis))
     {
@@ -1151,6 +1157,7 @@ int CRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   || pic.format == RENDER_FMT_AML
   || pic.format == RENDER_FMT_IMXMAP
   || pic.format == RENDER_FMT_MMAL
+  || pic.format == RENDER_FMT_LIBRETROGL
   || m_pRenderer->IsPictureHW(pic))
   {
     m_pRenderer->AddVideoPictureHW(pic, index);
@@ -1367,7 +1374,7 @@ void CRenderManager::PrepareNextRender()
       m_lateframes += lateframes;
     else
       m_lateframes = 0;
-    
+
     m_presentstep = PRESENT_FLIP;
     m_discard.push_back(m_presentsource);
     m_presentsource = idx;

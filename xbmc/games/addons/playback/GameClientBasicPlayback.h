@@ -42,6 +42,8 @@ namespace GAME
     // implementation of IGameLoopCallback
     virtual void FrameEvent() override;
     virtual void RewindEvent() override { }
+    virtual void HwContextReset() override;
+    virtual void CreateHwRenderContext() override;
 
   private:
     CGameClient* const m_gameClient;

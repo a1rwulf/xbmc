@@ -95,11 +95,11 @@ class CGameClient : public ADDON::CAddonDll<DllGameClient, GameClient, game_clie
 public:
   static std::unique_ptr<CGameClient> FromExtension(ADDON::AddonProps props, const cp_extension_t* ext);
 
-  CGameClient(ADDON::AddonProps props, 
+  CGameClient(ADDON::AddonProps props,
               const std::vector<std::string>& extensions,
-              bool bSupportsVFS, 
+              bool bSupportsVFS,
               bool bSupportsGameLoop,
-              bool bSupportsStandalone, 
+              bool bSupportsStandalone,
               bool bSupportsKeyboard);
 
   virtual ~CGameClient(void);
@@ -156,6 +156,13 @@ public:
   // implementation of IKeyboardHandler
   virtual bool OnKeyPress(const CKey& key) override;
   virtual void OnKeyRelease(const CKey& key) override;
+
+  // OpenGL HW Rendering
+  void HwSetInfo(const game_hw_info *hw_info);
+  uintptr_t HwGetCurrentFramebuffer();
+  game_proc_address_t HwGetProcAddress(const char *sym);
+  void HwContextReset();
+  void CreateHwRenderContext();
 
 private:
   // Private gameplay functions
