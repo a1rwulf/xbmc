@@ -3,6 +3,7 @@ SRCS=
 ifeq (@USE_OPENGL@,1)
 SRCS += RendererVAAPI.cpp
 SRCS += RendererVDPAU.cpp
+SRCS += RendererLibretroGl.cpp
 SRCS += RendererMediaCodec.cpp
 endif
 

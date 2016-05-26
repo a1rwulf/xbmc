@@ -43,6 +43,11 @@ if(IMX_FOUND)
   list(APPEND HEADERS RendererIMX.h)
 endif()
 
+if(OPENGL_FOUND)
+  list(APPEND SOURCES RendererLibretroGl.cpp)
+  list(APPEND HEADERS RendererLibretroGL.h)
+endif()
+
 if(CORE_SYSTEM_NAME STREQUAL android)
   list(APPEND SOURCES RendererMediaCodec.cpp
                       RendererMediaCodecSurface.cpp)
