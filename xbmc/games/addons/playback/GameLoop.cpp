@@ -35,8 +35,7 @@ CGameLoop::CGameLoop(IGameLoopCallback* callback, double fps) :
   m_callback(callback),
   m_fps(fps ? fps : DEFAULT_FPS),
   m_speedFactor(1.0),
-  m_lastFrameMs(0.0),
-  m_firstRun(true)
+  m_lastFrameMs(0.0)
 {
 }
 
@@ -66,7 +65,6 @@ void CGameLoop::Process(void)
   double nextFrameMs = NowMs();
 
   CSingleLock lock(m_mutex);
-  m_callback->CreateHwRenderContext();
 
   while (!m_bStop)
   {
@@ -74,12 +72,6 @@ void CGameLoop::Process(void)
 
     {
       CSingleExit exit(m_mutex);
-      if (m_firstRun)
-      {
-        m_callback->HwContextReset();
-        m_firstRun = false;
-      }
-
       if (speedFactor > 0.0)
         m_callback->FrameEvent();
       else if (speedFactor < 0.0)

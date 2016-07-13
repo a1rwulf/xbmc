@@ -32,8 +32,6 @@ namespace GAME
 
     virtual void FrameEvent() = 0;
     virtual void RewindEvent() = 0;
-    virtual void HwContextReset() = 0;
-    virtual void CreateHwRenderContext() = 0;
   };
 
   class CGameLoop : protected CThread
@@ -64,6 +62,5 @@ namespace GAME
     double                   m_lastFrameMs;
     CEvent                   m_sleepEvent;
     CCriticalSection         m_mutex;
-    bool                     m_firstRun;
   };
 }

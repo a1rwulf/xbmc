@@ -161,8 +161,6 @@ public:
   void EnableHardwareRendering(const game_hw_info *hw_info);
   uintptr_t HwGetCurrentFramebuffer();
   game_proc_address_t HwGetProcAddress(const char *sym);
-  void HwContextReset();
-  void CreateHwRenderContext();
   void RenderFrame();
 
 private:
@@ -181,6 +179,10 @@ private:
   void CloseKeyboard(void);
   ControllerVector GetControllers(void) const;
   bool AcceptsInput(void);
+
+  // OpenGL HW Rendering
+  void HwContextReset();
+  void CreateHwRenderContext();
 
   // Helper functions
   void LogAddonProperties(void) const;
@@ -203,6 +205,7 @@ private:
   std::atomic_bool      m_bIsPlaying;          // True between OpenFile() and CloseFile()
   IGameAudioCallback*   m_audio;               // The audio callback passed to OpenFile()
   IGameVideoCallback*   m_video;               // The video callback passed to OpenFile()
+  bool                  m_bHardwareRendering;  // True if hardware rendering has been enabled
   CGameClientTiming     m_timing;              // Class to scale playback to avoid resampling audio
   PERIPHERALS::EventRateHandle m_inputRateHandle; // Handle while keeping the input sampling rate at the frame rate
   std::unique_ptr<IGameClientPlayback> m_playback; // Interface to control playback

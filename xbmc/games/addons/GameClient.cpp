@@ -119,6 +119,7 @@ CGameClient::CGameClient(ADDON::AddonProps props,
   m_bSupportsKeyboard(bSupportsKeyboard),
   m_audio(nullptr),
   m_video(nullptr),
+  m_bHardwareRendering(false),
   m_region(GAME_REGION_UNKNOWN)
 {
   std::transform(extensions.begin(), extensions.end(),
@@ -367,6 +368,12 @@ void CGameClient::CreatePlayback()
 {
   if (m_bSupportsGameLoop)
   {
+    if (m_bHardwareRendering)
+    {
+      CreateHwRenderContext();
+      HwContextReset();
+    }
+
     const bool bRewindEnabled = CSettings::GetInstance().GetBool(CSettings::SETTING_GAMES_ENABLEREWIND);
     const size_t serializeSize = SerializeSize();
     if (bRewindEnabled && serializeSize > 0)
@@ -426,6 +433,7 @@ void CGameClient::CloseFile()
 
   m_audio = nullptr;
   m_video = nullptr;
+  m_bHardwareRendering = false;
 }
 
 void CGameClient::RunFrame()
@@ -965,7 +973,7 @@ void CGameClient::LogException(const char* strFunctionName) const
 void CGameClient::EnableHardwareRendering(const game_hw_info *hw_info)
 {
   CLog::Log(LOGINFO, "GAME - entered EnableHardwareRendering");
-  return;
+  m_bHardwareRendering = true;
 }
 
 uintptr_t CGameClient::HwGetCurrentFramebuffer()
