@@ -110,11 +110,11 @@ DLLEXPORT void GAME_close_stream(AddonCB* frontend, CB_GameLib* cb, GAME_STREAM_
   return cb->CloseStream(frontend->addonData, stream);
 }
 
-DLLEXPORT void GAME_hw_set_info(AddonCB* frontend, CB_GameLib* cb, game_hw_info* hw_info)
+DLLEXPORT void GAME_enable_hardware_rendering(AddonCB* frontend, CB_GameLib* cb, game_hw_info* hw_info)
 {
   if (frontend == NULL || cb == NULL)
     return;
-  return cb->HwSetInfo(frontend->addonData, hw_info);
+  return cb->EnableHardwareRendering(frontend->addonData, hw_info);
 }
 
 DLLEXPORT uintptr_t GAME_hw_get_current_framebuffer(AddonCB* frontend, CB_GameLib* cb)
@@ -129,6 +129,13 @@ DLLEXPORT game_proc_address_t GAME_hw_get_proc_address(AddonCB* frontend, CB_Gam
   if (frontend == NULL || cb == NULL)
     return NULL;
   return cb->HwGetProcAddress(frontend->addonData, sym);
+}
+
+DLLEXPORT void GAME_render_frame(AddonCB* frontend, CB_GameLib* cb)
+{
+  if (frontend == NULL || cb == NULL)
+    return;
+  cb->RenderFrame(frontend->addonData);
 }
 
 DLLEXPORT bool GAME_open_port(AddonCB* frontend, CB_GameLib* cb, unsigned int port)

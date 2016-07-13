@@ -962,9 +962,9 @@ void CGameClient::LogException(const char* strFunctionName) const
   CLog::Log(LOGERROR, "Please contact the developer of this add-on: %s", Author().c_str());
 }
 
-void CGameClient::HwSetInfo(const game_hw_info *hw_info)
+void CGameClient::EnableHardwareRendering(const game_hw_info *hw_info)
 {
-  CLog::Log(LOGINFO, "GAME - entered HwSetInfo");
+  CLog::Log(LOGINFO, "GAME - entered EnableHardwareRendering");
   return;
 }
 
@@ -987,4 +987,9 @@ void CGameClient::HwContextReset()
 void CGameClient::CreateHwRenderContext()
 {
   m_video->HardwareRendering()->Create();
+}
+
+void CGameClient::RenderFrame()
+{
+  m_video->HardwareRendering()->RenderFrame();
 }

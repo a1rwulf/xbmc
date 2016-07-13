@@ -50,9 +50,10 @@ CAddonCallbacksGame::CAddonCallbacksGame(CAddon* addon) :
   m_callbacks->OpenAudioStream                = OpenAudioStream;
   m_callbacks->AddStreamData                  = AddStreamData;
   m_callbacks->CloseStream                    = CloseStream;
-  m_callbacks->HwSetInfo                      = HwSetInfo;
+  m_callbacks->EnableHardwareRendering        = EnableHardwareRendering;
   m_callbacks->HwGetCurrentFramebuffer        = HwGetCurrentFramebuffer;
   m_callbacks->HwGetProcAddress               = HwGetProcAddress;
+  m_callbacks->RenderFrame                    = RenderFrame;
   m_callbacks->OpenPort                       = OpenPort;
   m_callbacks->ClosePort                      = ClosePort;
   m_callbacks->InputEvent                     = InputEvent;
@@ -139,13 +140,13 @@ void CAddonCallbacksGame::CloseStream(void* addonData, GAME_STREAM_TYPE stream)
   gameClient->CloseStream(stream);
 }
 
-void CAddonCallbacksGame::HwSetInfo(void* addonData, const game_hw_info *hw_info)
+void CAddonCallbacksGame::EnableHardwareRendering(void* addonData, const game_hw_info *hw_info)
 {
   CGameClient* gameClient = GetGameClient(addonData, __FUNCTION__);
   if (!gameClient)
     return;
 
-  gameClient->HwSetInfo(hw_info);
+  gameClient->EnableHardwareRendering(hw_info);
 }
 
 uintptr_t CAddonCallbacksGame::HwGetCurrentFramebuffer(void* addonData)
@@ -164,6 +165,15 @@ game_proc_address_t CAddonCallbacksGame::HwGetProcAddress(void* addonData, const
     return nullptr;
 
   return gameClient->HwGetProcAddress(sym);
+}
+
+void CAddonCallbacksGame::RenderFrame(void* addonData)
+{
+  CGameClient* gameClient = GetGameClient(addonData, __FUNCTION__);
+  if (!gameClient)
+    return;
+
+  gameClient->RenderFrame();
 }
 
 bool CAddonCallbacksGame::OpenPort(void* addonData, unsigned int port)

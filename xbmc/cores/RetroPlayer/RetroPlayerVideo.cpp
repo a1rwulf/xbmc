@@ -91,13 +91,6 @@ bool CRetroPlayerVideo::OpenEncodedStream(AVCodecID codec)
 
 void CRetroPlayerVideo::AddData(const uint8_t* data, unsigned int size)
 {
-  //! @todo Move this ugly check to game.libretro
-  if (data == reinterpret_cast<const uint8_t*>(-1))
-  {
-    HardwareRendering()->RenderFrame();
-    return;
-  }
-
   DVDVideoPicture picture = { };
 
   if (GetPicture(data, size, picture))

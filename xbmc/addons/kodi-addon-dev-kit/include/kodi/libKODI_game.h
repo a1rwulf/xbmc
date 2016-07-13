@@ -52,9 +52,10 @@ public:
     GAME_open_audio_stream(nullptr),
     GAME_add_stream_data(nullptr),
     GAME_close_stream(nullptr),
-    GAME_hw_set_info(nullptr),
+    GAME_enable_hardware_rendering(nullptr),
     GAME_hw_get_current_framebuffer(nullptr),
     GAME_hw_get_proc_address(nullptr),
+    GAME_render_frame(nullptr),
     GAME_open_port(nullptr),
     GAME_close_port(nullptr),
     GAME_input_event(nullptr),
@@ -119,9 +120,10 @@ public:
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_open_audio_stream)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_add_stream_data)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_close_stream)) throw false;
-      if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_hw_set_info)) throw false;
+      if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_enable_hardware_rendering)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_hw_get_current_framebuffer)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_hw_get_proc_address)) throw false;
+      if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_render_frame)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_open_port)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_close_port)) throw false;
       if (!GAME_REGISTER_SYMBOL(m_libKODI_game, GAME_input_event)) throw false;
@@ -171,9 +173,9 @@ public:
     GAME_close_stream(m_handle, m_callbacks, stream);
   }
 
-  void HwSetInfo(const struct game_hw_info* hw_info)
+  void EnableHardwareRendering(const struct game_hw_info* hw_info)
   {
-    return GAME_hw_set_info(m_handle, m_callbacks, hw_info);
+    return GAME_enable_hardware_rendering(m_handle, m_callbacks, hw_info);
   }
 
   uintptr_t HwGetCurrentFramebuffer(void)
@@ -184,6 +186,11 @@ public:
   game_proc_address_t HwGetProcAddress(const char* sym)
   {
     return GAME_hw_get_proc_address(m_handle, m_callbacks, sym);
+  }
+
+  void RenderFrame()
+  {
+    return GAME_render_frame(m_handle, m_callbacks);
   }
 
   bool OpenPort(unsigned int port)
@@ -211,9 +218,10 @@ protected:
   int (*GAME_open_audio_stream)(void* handle, CB_GameLib* cb, GAME_AUDIO_CODEC, const GAME_AUDIO_CHANNEL*);
   int (*GAME_add_stream_data)(void* handle, CB_GameLib* cb, GAME_STREAM_TYPE, const uint8_t*, unsigned int);
   int (*GAME_close_stream)(void* handle, CB_GameLib* cb, GAME_STREAM_TYPE);
-  void (*GAME_hw_set_info)(void* handle, CB_GameLib* cb, const struct game_hw_info*);
+  void (*GAME_enable_hardware_rendering)(void* handle, CB_GameLib* cb, const struct game_hw_info*);
   uintptr_t (*GAME_hw_get_current_framebuffer)(void* handle, CB_GameLib* cb);
   game_proc_address_t (*GAME_hw_get_proc_address)(void* handle, CB_GameLib* cb, const char*);
+  void (*GAME_render_frame)(void* handle, CB_GameLib* cb);
   bool (*GAME_open_port)(void* handle, CB_GameLib* cb, unsigned int);
   void (*GAME_close_port)(void* handle, CB_GameLib* cb, unsigned int);
   bool (*GAME_input_event)(void* handle, CB_GameLib* cb, const game_input_event* event);

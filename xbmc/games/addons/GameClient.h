@@ -158,11 +158,12 @@ public:
   virtual void OnKeyRelease(const CKey& key) override;
 
   // OpenGL HW Rendering
-  void HwSetInfo(const game_hw_info *hw_info);
+  void EnableHardwareRendering(const game_hw_info *hw_info);
   uintptr_t HwGetCurrentFramebuffer();
   game_proc_address_t HwGetProcAddress(const char *sym);
   void HwContextReset();
   void CreateHwRenderContext();
+  void RenderFrame();
 
 private:
   // Private gameplay functions

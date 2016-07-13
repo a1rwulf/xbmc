@@ -94,11 +94,11 @@ typedef struct CB_GameLib
   // -- Hardware rendering callbacks -------------------------------------------
 
   /*!
-   * \brief Set info for hardware rendering
+   * \brief Enable hardware rendering
    *
    * \param hw_info A struct of properties for the hardware rendering system
    */
-  void (*HwSetInfo)(void* addonData, const game_hw_info* hw_info);
+  void (*EnableHardwareRendering)(void* addonData, const game_hw_info* hw_info);
 
   /*!
    * \brief Get the framebuffer for rendering
@@ -115,6 +115,11 @@ typedef struct CB_GameLib
    * \return A function pointer for the specified symbol
    */
   game_proc_address_t (*HwGetProcAddress)(void* addonData, const char* symbol);
+
+  /*!
+   * \brief Called when a frame is being rendered
+   */
+  void (*RenderFrame)(void* addonData);
 
   // --- Input callbacks -------------------------------------------------------
 

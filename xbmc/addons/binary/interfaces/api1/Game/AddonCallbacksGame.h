@@ -52,9 +52,10 @@ public:
   static int OpenAudioStream(void* addonData, GAME_AUDIO_CODEC codec, const GAME_AUDIO_CHANNEL* channel_map);
   static void AddStreamData(void* addonData, GAME_STREAM_TYPE stream, const uint8_t* data, unsigned int size);
   static void CloseStream(void* addonData, GAME_STREAM_TYPE stream);
-  static void HwSetInfo(void* addonData, const game_hw_info* hw_info);
+  static void EnableHardwareRendering(void* addonData, const game_hw_info* hw_info);
   static uintptr_t HwGetCurrentFramebuffer(void* addonData);
   static game_proc_address_t HwGetProcAddress(void* addonData, const char* sym);
+  static void RenderFrame(void* addonData);
   static bool OpenPort(void* addonData, unsigned int port);
   static void ClosePort(void* addonData, unsigned int port);
   static bool InputEvent(void* addonData, const game_input_event* event);
