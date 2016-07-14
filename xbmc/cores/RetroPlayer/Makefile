@@ -1,6 +1,7 @@
 SRCS=PixelConverter.cpp \
      RetroPlayer.cpp \
      RetroPlayerAudio.cpp \
+     RetroPlayerGL.cpp \
      RetroPlayerVideo.cpp
 
 LIB=retroplayer.a

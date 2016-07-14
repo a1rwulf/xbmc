@@ -20,7 +20,7 @@
 #pragma once
 
 #include "cores/AudioEngine/Utils/AEChannelData.h"
-#include "addons/kodi-addon-dev-kit/include/kodi/kodi_game_types.h"
+#include "cores/RetroPlayer/RetroPlayerTypes.h"
 
 #include "libavcodec/avcodec.h"
 #include "libavutil/pixfmt.h"
@@ -43,6 +43,8 @@ namespace GAME
     virtual void CloseStream() = 0;
   };
 
+  class IGameRenderingCallback;
+
   class IGameVideoCallback
   {
   public:
@@ -52,8 +54,20 @@ namespace GAME
     virtual bool OpenEncodedStream(AVCodecID codec) = 0;
     virtual void AddData(const uint8_t* data, unsigned int size) = 0;
     virtual void CloseStream() = 0;
+
+    // Access hardware rendering interface
+    virtual IGameRenderingCallback* HardwareRendering() = 0;
+  };
+
+  class IGameRenderingCallback
+  {
+  public:
+    virtual ~IGameRenderingCallback() = default;
+
+    virtual bool Create() = 0;
+    virtual void Destroy() = 0;
     virtual uintptr_t GetCurrentFramebuffer() = 0;
-    virtual game_proc_address_t GetProcAddress(const char *sym) = 0;
-    virtual void CreateHwRenderContext() = 0;
+    virtual RetroGLProcAddress GetProcAddress(const char *sym) = 0;
+    virtual void RenderFrame() = 0;
   };
 }
