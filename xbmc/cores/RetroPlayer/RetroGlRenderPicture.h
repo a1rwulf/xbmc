@@ -22,12 +22,18 @@
 
 namespace LIBRETROGL
 {
-    class CRetroGlRenderPicture
+  class CRetroGlRenderPicture
+  {
+  public:
+    CRetroGlRenderPicture() :
+      texWidth(0),
+      texHeight(0)
     {
-    public:
-        CRetroGlRenderPicture(){}
-        int texWidth, texHeight;
-        GLuint texture[1];
-        GLuint depth[1];
-    };
+    }
+
+    unsigned int texWidth;
+    unsigned int texHeight;
+    GLuint texture[1];
+    GLuint depth[1];
+  };
 }
