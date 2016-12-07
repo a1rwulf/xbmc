@@ -66,6 +66,12 @@
 #define CONTROL_BTNSORTBY            3
 #define CONTROL_BTNSORTASC           4
 #define CONTROL_BTN_FILTER          19
+#define CONTROL_BTNSORTBYADDED      60
+#define CONTROL_BTNSORTBYYEAR       61
+#define CONTROL_BTNSORTBYRATING     62
+#define CONTROL_BTNSORTBYTITLE      63
+#define CONTROL_BTNSORTBYARTIST     64
+#define CONTROL_BTNSORTBYALBUM      65
 
 #define CONTROL_LABELFILES          12
 
@@ -322,6 +328,64 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
           return true;
         }
       }
+      else if (iControl == CONTROL_BTNSORTBYADDED)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByDateAdded);
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYYEAR)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByYear);
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYRATING)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByRating);
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYTITLE)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByTitle);
+          m_guiState->SetNextSortOrder();
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYARTIST)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByArtist);
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYALBUM)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByAlbum);
+          m_guiState->SetNextSortOrder();
+          UpdateFileList();
+        }
+        return true;
+      }
+      // Custom Sort by
+      
     }
     break;
 
