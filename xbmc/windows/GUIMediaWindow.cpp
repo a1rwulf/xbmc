@@ -1625,7 +1625,7 @@ void CGUIMediaWindow::UpdateFileList()
   UpdateButtons();
 
   m_viewControl.SetItems(*m_vecItems);
-  m_viewControl.SetSelectedItem(strSelected);
+  //m_viewControl.SetSelectedItem(strSelected);
 
   //  set the currently playing item as selected, if its in this directory
   if (m_guiState.get() && m_guiState->IsCurrentPlaylistDirectory(m_vecItems->GetPath()))
