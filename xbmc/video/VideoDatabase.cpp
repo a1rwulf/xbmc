@@ -98,11 +98,16 @@
 #include "VideoInfoScanner.h"
 #include "XBDateTime.h"
 
+#include "VideoDatabaseCache.h"
+
 using namespace dbiplus;
 using namespace XFILE;
 using namespace VIDEO;
 using namespace ADDON;
 using namespace KODI::MESSAGING;
+
+
+CVideoDatabaseCache gVideoDatabaseCache;
 
 //********************************************************************************************************************************
 CVideoDatabase::CVideoDatabase(void) : m_cdb(CCommonDatabase::GetInstance())
@@ -5658,86 +5663,92 @@ bool CVideoDatabase::GetResumePoint(CVideoInfoTag& tag)
 
 CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie>::iterator record, int getDetails /* = VideoDbDetailsNone */)
 {
-  CVideoInfoTag details;
+  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
   DWORD time = XbmcThreads::SystemClockMillis();
 
-  details.m_iDbId = record->movie->m_idMovie;
-  details.m_type = MediaTypeMovie;
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getItem(record->movie->m_idMovie);
+  if (det)
+	  return *det;
 
-  details.SetTitle(record->movie->m_title);
-  details.SetPlot(record->movie->m_plot);
-  details.SetPlotOutline(record->movie->m_plotoutline);
-  details.SetTagLine(record->movie->m_tagline);
+  details->m_iDbId = record->movie->m_idMovie;
+  details->m_type = MediaTypeMovie;
 
-  details.m_strPictureURL.m_spoof = record->movie->m_thumbUrl_spoof;
-  details.m_strPictureURL.m_xml = record->movie->m_thumbUrl;
+  details->SetTitle(record->movie->m_title);
+  details->SetPlot(record->movie->m_plot);
+  details->SetPlotOutline(record->movie->m_plotoutline);
+  details->SetTagLine(record->movie->m_tagline);
 
-  details.SetSortTitle(record->movie->m_sortTitle);
-  details.m_duration = record->movie->m_runtime;
-  details.SetMPAARating(record->movie->m_mpaa);
-  details.m_iTop250 = record->movie->m_top250;
-  details.SetOriginalTitle(record->movie->m_originalTitle);
-  details.SetTrailer(record->movie->m_trailer);
-  details.m_fanart.m_xml = record->movie->m_fanart;
+  details->m_strPictureURL.m_spoof = record->movie->m_thumbUrl_spoof;
+  details->m_strPictureURL.m_xml = record->movie->m_thumbUrl;
 
-  details.SetUserrating(record->movie->m_userrating);
+  details->SetSortTitle(record->movie->m_sortTitle);
+  details->m_duration = record->movie->m_runtime;
+  details->SetMPAARating(record->movie->m_mpaa);
+  details->m_iTop250 = record->movie->m_top250;
+  details->SetOriginalTitle(record->movie->m_originalTitle);
+  details->SetTrailer(record->movie->m_trailer);
+  details->m_fanart.m_xml = record->movie->m_fanart;
+
+  details->SetUserrating(record->movie->m_userrating);
   CDateTime premiered;
   premiered.SetFromULongLong(record->movie->m_premiered.m_ulong_date);
-  details.SetPremiered(premiered);
-  details.m_iUserRating = record->movie->m_userrating;
+  details->SetPremiered(premiered);
+  details->m_iUserRating = record->movie->m_userrating;
+
 
   m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
 
   if(record->movie->m_basePath.load())
-    details.SetBasePath(record->movie->m_basePath->m_path);
+    details->SetBasePath(record->movie->m_basePath->m_path);
   if(record->movie->m_parentPath.load())
-    details.m_parentPathID = record->movie->m_parentPath->m_idPath;
+    details->m_parentPathID = record->movie->m_parentPath->m_idPath;
 
   if (record->movie->m_set.load())
   {
-    details.m_iSetId = record->movie->m_set->m_idSet;
-    details.m_strSet = record->movie->m_set->m_name;
-    details.m_strSetOverview = record->movie->m_set->m_overview;
+    details->m_iSetId = record->movie->m_set->m_idSet;
+    details->m_strSet = record->movie->m_set->m_name;
+    details->m_strSetOverview = record->movie->m_set->m_overview;
   }
 
   if (record->movie->m_file.load())
   {
-    details.m_iFileId = record->movie->m_file->m_idFile;
+    details->m_iFileId = record->movie->m_file->m_idFile;
     if(record->movie->m_file->m_path.load())
     {
-      details.m_strPath = record->movie->m_file->m_path->m_path;
+      details->m_strPath = record->movie->m_file->m_path->m_path;
     }
-    std::string strFileName = record->movie->m_file->m_filename;
-    ConstructPath(details.m_strFileNameAndPath,details.m_strPath,strFileName);
 
-    details.SetPlayCount(record->movie->m_file->m_playCount);
+    std::string strFileName = record->movie->m_file->m_filename;
+    ConstructPath(details->m_strFileNameAndPath, details->m_strPath, strFileName);
+    details->SetPlayCount(record->movie->m_file->m_playCount);
+
     CDateTime lastplayed;
     lastplayed.SetFromULongLong(record->movie->m_file->m_lastPlayed.m_ulong_date);
-    details.m_lastPlayed = lastplayed;
+    details->m_lastPlayed = lastplayed;
     CDateTime dateadded;
     dateadded.SetFromULongLong(record->movie->m_file->m_dateAdded.m_ulong_date);
-    details.m_dateAdded = dateadded;
+    details->m_dateAdded = dateadded;
   }
 
   m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
   if(record->movie->m_defaultRating.load())
   {
-    details.SetRating(record->movie->m_defaultRating->m_rating,
+    details->SetRating(record->movie->m_defaultRating->m_rating,
                       record->movie->m_defaultRating->m_votes,
                       record->movie->m_defaultRating->m_ratingType, true);
   }
 
   if(record->movie->m_defaultID.load())
   {
-    details.SetUniqueID(record->movie->m_defaultID->m_value, record->movie->m_defaultID->m_type ,true);
+    details->SetUniqueID(record->movie->m_defaultID->m_value, record->movie->m_defaultID->m_type ,true);
   }
 
   for (auto genre: record->movie->m_genres)
   {
     if (genre.load())
     {
-      details.m_genre.emplace_back(genre->m_name);
+      details->m_genre.emplace_back(genre->m_name);
     }
   }
 
@@ -5745,7 +5756,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
   {
     if (country.load())
     {
-      details.m_country.emplace_back(country->m_name);
+      details->m_country.emplace_back(country->m_name);
     }
   }
 
@@ -5753,11 +5764,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
   //Load the bookmark
   CODBBookmark odbBookmark;
-  if (m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details.m_iFileId
+  if (m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details->m_iFileId
                                              && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME, odbBookmark))
   {
-
-    details.SetResumePoint((int)odbBookmark.m_timeInSeconds,
+    details->SetResumePoint((int)odbBookmark.m_timeInSeconds,
                            (int)odbBookmark.m_totalTimeInSeconds,
                            odbBookmark.m_playerState);
 
@@ -5789,7 +5799,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
           info.thumbUrl.ParseEpisodeGuide(info.thumb);
         }
 
-        details.m_cast.emplace_back(std::move(info));
+        details->m_cast.emplace_back(std::move(info));
         castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
       }
 
@@ -5801,7 +5811,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         if (!i->m_person.load())
           continue;
 
-        details.m_director.emplace_back(i->m_person->m_name);
+        details->m_director.emplace_back(i->m_person->m_name);
       }
 
       for (auto i: record->movie->m_writingCredits)
@@ -5811,7 +5821,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         if (!i->m_person.load())
           continue;
 
-        details.m_writingCredits.emplace_back(StringUtils::Trim(i->m_person->m_name));
+        details->m_writingCredits.emplace_back(StringUtils::Trim(i->m_person->m_name));
       }
     }
 
@@ -5821,8 +5831,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
       {
         if (!i.load())
           continue;
-
-        details.m_tags.emplace_back(i->m_name);
+        
+        details->m_tags.emplace_back(i->m_name);
       }
     }
 
@@ -5832,8 +5842,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
       {
         if (!i.load())
           continue;
-
-        details.m_ratings[i->m_ratingType] = CRating(i->m_rating, i->m_votes);
+        
+        details->m_ratings[i->m_ratingType] = CRating(i->m_rating, i->m_votes);
       }
     }
 
@@ -5844,11 +5854,11 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         if (!i.load())
           continue;
 
-        details.SetUniqueID(i->m_type, i->m_value);
+        details->SetUniqueID(i->m_type, i->m_value);
       }
     }
 
-    details.m_strPictureURL.Parse();
+    details->m_strPictureURL.Parse();
 
     //TODO:
     /*if (getDetails & VideoDbDetailsShowLink)
@@ -5868,11 +5878,13 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
     }*/
 
     if (getDetails & VideoDbDetailsStream)
-      GetStreamDetails(details);
+      GetStreamDetails(*details);
 
-    details.m_parsedDetails = getDetails;
+    details->m_parsedDetails = getDetails;
   }
-  return details;
+
+  gVideoDatabaseCache.addItem(details->m_iDbId, details);
+  return *details;
 }
 
 CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(const odb::result<ODBView_TVShow>::iterator record, int getDetails /* = VideoDbDetailsNone */, CFileItem* item /* = NULL */)
