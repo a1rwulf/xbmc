@@ -28,6 +28,10 @@
 #include "SortFileItem.h"
 #include "LabelFormatter.h"
 
+#include "../dbwrappers/CommonDatabase.h"
+#include <odb/odb_gen/ODBMovie.h>
+#include <odb/odb_gen/ODBMovie_odb.h>
+
 typedef enum {
   SortOrderNone = 0,
   SortOrderAscending,
@@ -211,6 +215,10 @@ public:
   static void Sort(const SortDescription &sortDescription, DatabaseResults& items);
   static void Sort(const SortDescription &sortDescription, SortItems& items);
   static bool SortFromDataset(const SortDescription &sortDescription, const MediaType &mediaType, const std::unique_ptr<dbiplus::Dataset> &dataset, DatabaseResults &results);
+  static odb::query<ODBView_Movie> SortODBMovieQuery(const SortDescription &sortDescription);
+  static odb::query<ODBView_TVShow> SortODBTVShowQuery(const SortDescription &sortDescription);
+  static odb::query<ODBView_Episode> SortODBEpisodeQuery(const SortDescription &sortDescription);
+  static odb::query<ODBView_Season> SortODBSeasonQuery(const SortDescription &sortDescription);
   
   static const Fields& GetFieldsForSorting(SortBy sortBy);
   static std::string RemoveArticles(const std::string &label);

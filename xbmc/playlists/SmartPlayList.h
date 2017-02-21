@@ -28,6 +28,10 @@
 #include "utils/SortUtils.h"
 #include "utils/XBMCTinyXML.h"
 
+#include "../dbwrappers/CommonDatabase.h"
+#include <odb/odb_gen/ODBMovie.h>
+#include <odb/odb_gen/ODBMovie_odb.h>
+
 class CURL;
 class CVariant;
 
@@ -66,17 +70,56 @@ protected:
                                               const std::string &oper,
                                               const CDatabase &db,
                                               const std::string &type) const;
+  std::string FormatODBString(const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                              const std::string& param) const;
+  template<typename T, typename U, typename V> T FormatODBParam(const U& val,
+                                                              const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                              const V& param) const;
+  virtual odb::query<ODBView_Movie> FormatMovieWhereClause(const bool &negate,
+                                                           const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                           const std::string &param,
+                                                           const std::string &strType) const;
+  virtual odb::query<ODBView_TVShow> FormatTVShowWhereClause(const bool &negate,
+                                                             const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                             const std::string &param,
+                                                             const std::string &strType) const;
+  virtual odb::query<ODBView_Episode> FormatEpisodeWhereClause(const bool &negate,
+                                                               const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                               const std::string &param,
+                                                               const std::string &strType) const;
+  virtual odb::query<ODBView_Movie> FormatMovieWhereBetweenClause(const bool &negate,
+                                                                              const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                                              const std::string &param1,
+                                                                              const std::string &param2,
+                                                                              const std::string &strType) const;
+  virtual odb::query<ODBView_TVShow> FormatTVShowWhereBetweenClause(const bool &negate,
+                                                                    const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                                    const std::string &param1,
+                                                                    const std::string &param2,
+                                                                    const std::string &strType) const;
+  virtual odb::query<ODBView_Episode> FormatEpisodeWhereBetweenClause(const bool &negate,
+                                                                      const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                                      const std::string &param1,
+                                                                      const std::string &param2,
+                                                                      const std::string &strType) const;
   virtual std::string         FormatWhereClause(const std::string &negate,
                                                 const std::string& oper,
                                                 const std::string &param,
                                                 const CDatabase &db,
                                                 const std::string &type) const;
   virtual SEARCH_OPERATOR     GetOperator(const std::string &type) const;
+  virtual odb::query<ODBView_Movie> GetMovieBooleanQuery(const bool &negate,
+                                                   const std::string &strType);
+  virtual odb::query<ODBView_TVShow> GetTVShowBooleanQuery(const bool &negate,
+                                                           const std::string &strType);
+  virtual odb::query<ODBView_Episode> GetEpisodeBooleanQuery(const bool &negate,
+                                                           const std::string &strType);
   virtual std::string         GetBooleanQuery(const std::string &negate,
                                               const std::string &strType) const;
 
 private:
   std::string GetVideoResolutionQuery(const std::string &parameter) const;
+  odb::query<ODBView_Movie> GetODBVideoResolutionQuery(const std::string &parameter) const;
   static std::string FormatLinkQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter);
 };
 
@@ -93,6 +136,13 @@ public:
                          std::vector<std::string> &virtualFolders) const;
 
   void AddRule(const CSmartPlaylistRule &rule);
+  
+  odb::query<ODBView_Movie> GetMovieWhereClause(const std::string& strType,
+                                                std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_TVShow> GetTVShowWhereClause(const std::string& strType,
+                                                  std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_Episode> GetEpisodeWhereClause(const std::string& strType,
+                                                    std::set<std::string> &referencedPlaylists);
 };
 
 class CSmartPlaylist : public IDatabaseQueryRuleFactory
@@ -150,6 +200,9 @@ public:
    \param needWhere whether we need to prepend the where clause with "WHERE "
    */
   std::string GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists) const;
+  odb::query<ODBView_Movie> GetMovieWhereClause(std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_TVShow> GetTVShowWhereClause(std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_Episode> GetEpisodeWhereClause(std::set<std::string> &referencedPlaylists);
   void GetVirtualFolders(std::vector<std::string> &virtualFolders) const;
 
   std::string GetSaveLocation() const;

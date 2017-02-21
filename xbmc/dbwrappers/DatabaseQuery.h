@@ -24,6 +24,10 @@
 #include <vector>
 #include <memory>
 
+#include "../dbwrappers/CommonDatabase.h"
+#include <odb/odb_gen/ODBMovie.h>
+#include <odb/odb_gen/ODBMovie_odb.h>
+
 #define DATABASEQUERY_RULE_VALUE_SEPARATOR  " / "
 
 class CDatabase;
@@ -78,6 +82,9 @@ public:
   void                        SetParameter(const std::vector<std::string> &values);
 
   virtual std::string         GetWhereClause(const CDatabase &db, const std::string& strType) const;
+  virtual odb::query<ODBView_Movie> GetMovieWhereClause(const std::string& strType);
+  virtual odb::query<ODBView_TVShow> GetTVShowWhereClause(const std::string& strType);
+  virtual odb::query<ODBView_Episode> GetEpisodeWhereClause(const std::string& strType);
 
   int                         m_field;
   SEARCH_OPERATOR             m_operator;
@@ -92,9 +99,40 @@ protected:
   virtual std::string         FormatParameter(const std::string &negate, const std::string &oper, const CDatabase &db, const std::string &type) const;
   virtual std::string         FormatWhereClause(const std::string &negate, const std::string &oper, const std::string &param,
                                                 const CDatabase &db, const std::string &type) const;
+  virtual odb::query<ODBView_Movie> FormatMovieWhereClause(const bool &negate,
+                                                           const SEARCH_OPERATOR &oper,
+                                                           const std::string &param,
+                                                           const std::string &strType) const;
+  virtual odb::query<ODBView_Movie> FormatMovieWhereBetweenClause(const bool &negate,
+                                                           const SEARCH_OPERATOR &oper,
+                                                           const std::string &param1,
+                                                           const std::string &param2,
+                                                           const std::string &strType) const;
+  virtual odb::query<ODBView_TVShow> FormatTVShowWhereClause(const bool &negate,
+                                                           const SEARCH_OPERATOR &oper,
+                                                           const std::string &param,
+                                                           const std::string &strType) const;
+  virtual odb::query<ODBView_TVShow> FormatTVShowWhereBetweenClause(const bool &negate,
+                                                                  const SEARCH_OPERATOR &oper,
+                                                                  const std::string &param1,
+                                                                  const std::string &param2,
+                                                                  const std::string &strType) const;
+  virtual odb::query<ODBView_Episode> FormatEpisodeWhereClause(const bool &negate,
+                                                               const SEARCH_OPERATOR &oper,
+                                                               const std::string &param,
+                                                               const std::string &strType) const;
+  virtual odb::query<ODBView_Episode> FormatEpisodeWhereBetweenClause(const bool &negate,
+                                                                      const SEARCH_OPERATOR &oper,
+                                                                      const std::string &param1,
+                                                                      const std::string &param2,
+                                                                      const std::string &strType) const;
+  
   virtual SEARCH_OPERATOR     GetOperator(const std::string &type) const { return m_operator; };
   virtual std::string         GetOperatorString(SEARCH_OPERATOR op) const;
   virtual std::string         GetBooleanQuery(const std::string &negate, const std::string &strType) const { return ""; }
+  virtual odb::query<ODBView_Movie> GetMovieBooleanQuery(const bool &negate, const std::string &strType) { return odb::query<ODBView_Movie>(); }
+  virtual odb::query<ODBView_TVShow> GetTVShowBooleanQuery(const bool &negate, const std::string &strType) { return odb::query<ODBView_TVShow>(); }
+  virtual odb::query<ODBView_Episode> GetEpisodeBooleanQuery(const bool &negate, const std::string &strType) { return odb::query<ODBView_TVShow>(); }
 
   static SEARCH_OPERATOR      TranslateOperator(const char *oper);
   static std::string          TranslateOperator(SEARCH_OPERATOR oper);
