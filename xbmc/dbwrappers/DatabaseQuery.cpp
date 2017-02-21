@@ -384,6 +384,195 @@ std::string CDatabaseQueryRule::GetWhereClause(const CDatabase &db, const std::s
   return wholeQuery;
 }
 
+odb::query<ODBView_Movie> CDatabaseQueryRule::GetMovieWhereClause(const std::string& strType)
+{
+  SEARCH_OPERATOR op = GetOperator(strType);
+  
+  typedef odb::query<ODBView_Movie> query;
+  
+  bool negate = false;
+  if (op == OPERATOR_DOES_NOT_CONTAIN || op == OPERATOR_FALSE ||
+      (op == OPERATOR_DOES_NOT_EQUAL && GetFieldType(m_field) != REAL_FIELD && GetFieldType(m_field) != NUMERIC_FIELD &&
+       GetFieldType(m_field) != SECONDS_FIELD))
+    negate = true;
+  
+  // boolean operators don't have any values in m_parameter, they work on the operator
+  if (m_operator == OPERATOR_FALSE || m_operator == OPERATOR_TRUE)
+  {
+    return GetMovieBooleanQuery(negate, strType);
+  }
+  
+  // The BETWEEN operator is handled special
+  if (op == OPERATOR_BETWEEN)
+  {
+    if (m_parameter.size() != 2)
+      return query();
+    
+    return FormatMovieWhereBetweenClause(negate, op, m_parameter[0], m_parameter[1], strType);
+  }
+  
+  // now the query parameter
+  query wholeQuery;
+  for (std::vector<std::string>::const_iterator it = m_parameter.begin(); it != m_parameter.end(); ++it)
+  {
+    query query = FormatMovieWhereClause(negate, op, *it, strType);
+    if(!query.empty())
+    {
+      if (negate)
+        wholeQuery = wholeQuery && query;
+      else
+        wholeQuery = wholeQuery || query; //TODO: Verify if || is correct here
+    }
+  }
+  
+  return wholeQuery;
+}
+
+odb::query<ODBView_Movie> CDatabaseQueryRule::FormatMovieWhereBetweenClause(const bool &negate,
+                                                                     const SEARCH_OPERATOR &oper,
+                                                                     const std::string &param1,
+                                                                     const std::string &param2,
+                                                                     const std::string &strType) const
+{
+  odb::query<ODBView_Movie> query;
+  return query;
+}
+
+odb::query<ODBView_Movie> CDatabaseQueryRule::FormatMovieWhereClause(const bool &negate,
+                                                                     const SEARCH_OPERATOR &oper,
+                                                                     const std::string &param,
+                                                                     const std::string &strType) const
+{
+  odb::query<ODBView_Movie> query;
+  return query;
+}
+
+odb::query<ODBView_TVShow> CDatabaseQueryRule::GetTVShowWhereClause(const std::string& strType)
+{
+  SEARCH_OPERATOR op = GetOperator(strType);
+  
+  typedef odb::query<ODBView_TVShow> query;
+  
+  bool negate = false;
+  if (op == OPERATOR_DOES_NOT_CONTAIN || op == OPERATOR_FALSE ||
+      (op == OPERATOR_DOES_NOT_EQUAL && GetFieldType(m_field) != REAL_FIELD && GetFieldType(m_field) != NUMERIC_FIELD &&
+       GetFieldType(m_field) != SECONDS_FIELD))
+    negate = true;
+  
+  // boolean operators don't have any values in m_parameter, they work on the operator
+  if (m_operator == OPERATOR_FALSE || m_operator == OPERATOR_TRUE)
+  {
+    return GetTVShowBooleanQuery(negate, strType);
+  }
+  
+  // The BETWEEN operator is handled special
+  if (op == OPERATOR_BETWEEN)
+  {
+    if (m_parameter.size() != 2)
+      return query();
+    
+    return FormatTVShowWhereBetweenClause(negate, op, m_parameter[0], m_parameter[1], strType);
+  }
+  
+  // now the query parameter
+  query wholeQuery;
+  for (std::vector<std::string>::const_iterator it = m_parameter.begin(); it != m_parameter.end(); ++it)
+  {
+    query query = FormatTVShowWhereClause(negate, op, *it, strType);
+    if(!query.empty())
+    {
+      if (negate)
+        wholeQuery = wholeQuery && query;
+      else
+        wholeQuery = wholeQuery || query; //TODO: Verify if || is correct here
+    }
+  }
+  
+  return wholeQuery;
+}
+
+odb::query<ODBView_TVShow> CDatabaseQueryRule::FormatTVShowWhereBetweenClause(const bool &negate,
+                                                                            const SEARCH_OPERATOR &oper,
+                                                                            const std::string &param1,
+                                                                            const std::string &param2,
+                                                                            const std::string &strType) const
+{
+  odb::query<ODBView_TVShow> query;
+  return query;
+}
+
+odb::query<ODBView_TVShow> CDatabaseQueryRule::FormatTVShowWhereClause(const bool &negate,
+                                                                     const SEARCH_OPERATOR &oper,
+                                                                     const std::string &param,
+                                                                     const std::string &strType) const
+{
+  odb::query<ODBView_TVShow> query;
+  return query;
+}
+
+odb::query<ODBView_Episode> CDatabaseQueryRule::GetEpisodeWhereClause(const std::string& strType)
+{
+  SEARCH_OPERATOR op = GetOperator(strType);
+  
+  typedef odb::query<ODBView_Episode> query;
+  
+  bool negate = false;
+  if (op == OPERATOR_DOES_NOT_CONTAIN || op == OPERATOR_FALSE ||
+      (op == OPERATOR_DOES_NOT_EQUAL && GetFieldType(m_field) != REAL_FIELD && GetFieldType(m_field) != NUMERIC_FIELD &&
+       GetFieldType(m_field) != SECONDS_FIELD))
+    negate = true;
+  
+  // boolean operators don't have any values in m_parameter, they work on the operator
+  if (m_operator == OPERATOR_FALSE || m_operator == OPERATOR_TRUE)
+  {
+    return GetEpisodeBooleanQuery(negate, strType);
+  }
+  
+  // The BETWEEN operator is handled special
+  if (op == OPERATOR_BETWEEN)
+  {
+    if (m_parameter.size() != 2)
+      return query();
+    
+    return FormatEpisodeWhereBetweenClause(negate, op, m_parameter[0], m_parameter[1], strType);
+  }
+  
+  // now the query parameter
+  query wholeQuery;
+  for (std::vector<std::string>::const_iterator it = m_parameter.begin(); it != m_parameter.end(); ++it)
+  {
+    query query = FormatEpisodeWhereClause(negate, op, *it, strType);
+    if(!query.empty())
+    {
+      if (negate)
+        wholeQuery = wholeQuery && query;
+      else
+        wholeQuery = wholeQuery || query; //TODO: Verify if || is correct here
+    }
+  }
+  
+  return wholeQuery;
+}
+
+odb::query<ODBView_Episode> CDatabaseQueryRule::FormatEpisodeWhereBetweenClause(const bool &negate,
+                                                                              const SEARCH_OPERATOR &oper,
+                                                                              const std::string &param1,
+                                                                              const std::string &param2,
+                                                                              const std::string &strType) const
+{
+  odb::query<ODBView_TVShow> query;
+  return query;
+}
+
+odb::query<ODBView_Episode> CDatabaseQueryRule::FormatEpisodeWhereClause(const bool &negate,
+                                                                       const SEARCH_OPERATOR &oper,
+                                                                       const std::string &param,
+                                                                       const std::string &strType) const
+{
+  odb::query<ODBView_TVShow> query;
+  return query;
+}
+
 std::string CDatabaseQueryRule::FormatWhereClause(const std::string &negate, const std::string &oper, const std::string &param,
                                                  const CDatabase &db, const std::string &strType) const
 {
