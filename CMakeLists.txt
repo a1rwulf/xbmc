@@ -262,6 +262,8 @@ if(WIN32)
   set(RESOURCES $<TARGET_OBJECTS:resources>)
 endif()
 
+list(APPEND DEP_DEFINES -DLIBODB_MYSQL_INCLUDE_LONG)
+
 include_directories(${INCLUDES} ${SYSTEM_INCLUDES})
 add_compile_options(${ARCH_DEFINES} "${SYSTEM_DEFINES}" ${DEP_DEFINES} ${PATH_DEFINES})
 
