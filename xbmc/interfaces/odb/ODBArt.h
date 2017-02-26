@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2016 Team Kodi
+ *      Copyright (C) 2017 Team Kodi
  *      https://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -30,8 +30,8 @@
 #pragma db model version(1, 1, open)
 #endif
 
-#pragma db object pointer(std::shared_ptr) \
-                  table("art")
+PRAGMA_DB (object pointer(std::shared_ptr) \
+                  table("art"))
 class CODBArt
 {
 public:
@@ -44,26 +44,26 @@ public:
     m_synced = false;
   };
 
-#pragma db id auto
+PRAGMA_DB (id auto)
   unsigned long m_idArt;
   std::string m_media_type;
-#pragma db type("VARCHAR(255)")
+PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_type;
   std::string m_url;
   
   //Members not stored in the db, used for sync ...
-#pragma db transient
+PRAGMA_DB(transient)
   bool m_synced;
   
 private:
   friend class odb::access;
   
-#pragma db index member(m_type)
+PRAGMA_DB(index member(m_type))
 
 };
 
-#pragma db view object(CODBArt) \
-  query(distinct)
+PRAGMA_DB (view object(CODBArt) \
+  query(distinct))
 struct ODBView_Art_Type
 {
   std::string m_media_type;

@@ -1,10 +1,22 @@
-//
-//  ODBEpisode.h
-//  kodi
-//
-//  Created by Lukas Obermann on 04.01.17.
-//
-//
+/*
+*      Copyright (C) 2017 Team Kodi
+*      https://kodi.tv
+*
+*  This Program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2, or (at your option)
+*  any later version.
+*
+*  This Program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with XBMC; see the file COPYING.  If not, see
+*  <http://www.gnu.org/licenses/>.
+*
+*/
 
 #ifndef ODBEPISODE_H
 #define ODBEPISODE_H
@@ -27,11 +39,11 @@
 #include "ODBStreamDetails.h"
 
 #ifdef ODB_COMPILER
-#pragma db model version(1, 1, open)
+PRAGMA_DB (model version(1, 1, open))
 #endif
 
-#pragma db object pointer(std::shared_ptr) \
-                  table("episode")
+PRAGMA_DB (object pointer(std::shared_ptr) \
+                  table("episode"))
 
 class CODBEpisode
 {
@@ -53,9 +65,9 @@ public:
     m_idShow = 0;
   }
   
-#pragma db id auto
+PRAGMA_DB (id auto)
   unsigned long m_idEpisode;
-#pragma db type("VARCHAR(255)")
+PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_title;
   std::string m_plot;
   CODBDate m_aired;
@@ -74,53 +86,53 @@ public:
   //See if this can be refactored away when odb is fully integrated
   unsigned long m_idShow;
   
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBFile> m_file;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBRating> m_defaultRating;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBRating> > m_ratings;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_credits;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_directors;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_writingCredits;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_actors;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBPath> m_basepath;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBUniqueID> > m_ids;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBUniqueID> m_defaultID;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBBookmark> > m_bookmarks;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBBookmark> m_resumeBookmark;
   
-#pragma db load(lazy) update(change)
+PRAGMA_DB (load(lazy) update(change))
   odb::section section_foreign;
   
   //Members not stored in the db, used for sync ...
-#pragma db transient
+PRAGMA_DB (transient)
   bool m_synced;
   
 private:
   friend class odb::access;
   
-#pragma db index member(m_title)
-#pragma db index member(m_sortSeason)
-#pragma db index member(m_sortEpisode)
-#pragma db index member(m_identId)
-#pragma db index member(m_userrating)
+PRAGMA_DB (index member(m_title))
+PRAGMA_DB (index member(m_sortSeason))
+PRAGMA_DB (index member(m_sortEpisode))
+PRAGMA_DB (index member(m_identId))
+PRAGMA_DB (index member(m_userrating))
 };
 
-#pragma db view object(CODBEpisode) \
+PRAGMA_DB (view object(CODBEpisode) \
                 object(CODBArt: CODBEpisode::m_artwork) \
-                query(distinct)
+                query(distinct))
 struct ODBView_Episode_Art
 {
   std::shared_ptr<CODBArt> art;

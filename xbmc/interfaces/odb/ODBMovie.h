@@ -1,10 +1,22 @@
-//
-//  ODBMovie.h
-//  kodi
-//
-//  Created by Lukas Obermann on 03.10.16.
-//
-//
+/*
+*      Copyright (C) 2017 Team Kodi
+*      https://kodi.tv
+*
+*  This Program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2, or (at your option)
+*  any later version.
+*
+*  This Program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with XBMC; see the file COPYING.  If not, see
+*  <http://www.gnu.org/licenses/>.
+*
+*/
 
 #ifndef ODBMOVIE_H
 #define ODBMOVIE_H
@@ -35,11 +47,11 @@
 
 
 #ifdef ODB_COMPILER
-#pragma db model version(1, 1, open)
+PRAGMA_DB (model version(1, 1, open))
 #endif
 
-#pragma db object pointer(std::shared_ptr) \
-                  table("movie")
+PRAGMA_DB (object pointer(std::shared_ptr) \
+                  table("movie"))
 class CODBMovie
 {
 public:
@@ -63,16 +75,16 @@ public:
     m_synced = false;
   };
   
-#pragma db id auto
+PRAGMA_DB (id auto)
   unsigned long m_idMovie;
-#pragma db type("VARCHAR(255)")
+PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_title;
   std::string m_plot;
   std::string m_plotoutline;
   std::string m_tagline;
   std::string m_credits;
   std::string m_thumbUrl;
-#pragma db type("VARCHAR(255)")
+PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_sortTitle;
   int m_runtime;
   std::string m_mpaa;
@@ -81,75 +93,75 @@ public:
   std::string m_trailer;
   std::string m_fanart;
   CODBDate m_premiered;
-#pragma db type("VARCHAR(255)")
+PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_originalTitle;
   std::string m_thumbUrl_spoof;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBFile> m_file;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBPath> m_basePath;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBPath> m_parentPath;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBRating> m_defaultRating;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBRating> > m_ratings;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBGenre> > m_genres;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_directors;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_actors;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBPersonLink> > m_writingCredits;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBStudio> > m_studios;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBTag> > m_tags;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBCountry> > m_countries;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBSet> m_set;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBBookmark> > m_bookmarks;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBBookmark> m_resumeBookmark;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBUniqueID> > m_ids;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBUniqueID> m_defaultID;
-#pragma db section(section_foreign)
+PRAGMA_DB (section(section_foreign))
   std::vector<odb::lazy_shared_ptr<CODBTVShow>> m_linkedTVShows;
-#pragma db section(section_artwork)
+PRAGMA_DB (section(section_artwork))
   std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
   
-#pragma db load(lazy) update(change)
+PRAGMA_DB (load(lazy) update(change))
   odb::section section_foreign;
   
-#pragma db load(lazy) update(change)
+PRAGMA_DB (load(lazy) update(change))
   odb::section section_artwork;
   
   //Members not stored in the db, used for sync ...
-#pragma db transient
+PRAGMA_DB (transient)
   bool m_synced;
   
 private:
   friend class odb::access;
   
-#pragma db index member(m_file)
-#pragma db index member(m_title)
-#pragma db index member(m_defaultRating)
-#pragma db index member(m_sortTitle)
-#pragma db index member(m_originalTitle)
-#pragma db index member(m_basePath)
-#pragma db index member(m_parentPath)
-#pragma db index member(m_set)
-#pragma db index member(m_userrating)
-#pragma db index member(m_premiered)
-#pragma db index member(m_defaultID)
+PRAGMA_DB (index member(m_file))
+PRAGMA_DB (index member(m_title))
+PRAGMA_DB (index member(m_defaultRating))
+PRAGMA_DB (index member(m_sortTitle))
+PRAGMA_DB (index member(m_originalTitle))
+PRAGMA_DB (index member(m_basePath))
+PRAGMA_DB (index member(m_parentPath))
+PRAGMA_DB (index member(m_set))
+PRAGMA_DB (index member(m_userrating))
+PRAGMA_DB (index member(m_premiered))
+PRAGMA_DB (index member(m_defaultID))
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBGenre = genre: CODBMovie::m_genres) \
   object(CODBPersonLink = director_link: CODBMovie::m_directors) \
@@ -167,126 +179,126 @@ private:
   object(CODBPath = pathView: fileView::m_path) \
   object(CODBStreamDetails: CODBMovie::m_file == CODBStreamDetails::m_file) \
   object(CODBRating = defaultRating: CODBMovie::m_defaultRating) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie
 {
   std::shared_ptr<CODBMovie> movie;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBGenre = genre inner: CODBMovie::m_genres) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Genre
 {
-  #pragma db column(genre::m_idGenre)
+  PRAGMA_DB (column(genre::m_idGenre))
   unsigned long m_idGenre;
-  #pragma db column(genre::m_name)
+  PRAGMA_DB (column(genre::m_name))
   std::string m_name;
-  #pragma db column(file::m_playCount)
+  PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-  #pragma db column(path::m_path)
+  PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBCountry = country inner: CODBMovie::m_countries) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Country
 {
-#pragma db column(country::m_idCountry)
+PRAGMA_DB (column(country::m_idCountry))
   unsigned long m_idCountry;
-#pragma db column(country::m_name)
+PRAGMA_DB (column(country::m_name))
   std::string m_name;
-#pragma db column(file::m_playCount)
+PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-#pragma db column(path::m_path)
+PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBTag = tag inner: CODBMovie::m_tags) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Tag
 {
-#pragma db column(tag::m_idTag)
+PRAGMA_DB (column(tag::m_idTag))
   unsigned long m_idTag;
-#pragma db column(tag::m_name)
+PRAGMA_DB (column(tag::m_name))
   std::string m_name;
-#pragma db column(file::m_playCount)
+PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-#pragma db column(path::m_path)
+PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_directors) \
   object(CODBPerson = person inner: person_link::m_person) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Director
 {
   std::shared_ptr<CODBPerson> person;
-#pragma db column(file::m_playCount)
+PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-#pragma db column(path::m_path)
+PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_actors) \
   object(CODBPerson = person inner: person_link::m_person) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Actor
 {
   std::shared_ptr<CODBPerson> person;
-#pragma db column(file::m_playCount)
+PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-#pragma db column(path::m_path)
+PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view \
+PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBStudio = studio inner: CODBMovie::m_studios) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Studio
 {
-#pragma db column(studio::m_idStudio)
+PRAGMA_DB (column(studio::m_idStudio))
   unsigned long m_idStudio;
-#pragma db column(studio::m_name)
+PRAGMA_DB (column(studio::m_name))
   std::string m_name;
-#pragma db column(file::m_playCount)
+PRAGMA_DB (column(file::m_playCount))
   unsigned int m_playCount;
-#pragma db column(path::m_path)
+PRAGMA_DB (column(path::m_path))
   std::string m_path;
 };
 
-#pragma db view object(CODBMovie)
+PRAGMA_DB (view object(CODBMovie))
 struct ODBView_Movie_Count
 {
-#pragma db column("count(1)")
+PRAGMA_DB (column("count(1)"))
   std::size_t count;
 };
 
-#pragma db view object(CODBMovie) \
+PRAGMA_DB (view object(CODBMovie) \
   object(CODBFile: CODBMovie::m_file) \
-  object(CODBPath: CODBFile::m_path)
+  object(CODBPath: CODBFile::m_path))
 struct ODBView_Movie_File_Path
 {
   std::shared_ptr<CODBMovie> movie;
@@ -294,9 +306,9 @@ struct ODBView_Movie_File_Path
   std::shared_ptr<CODBPath> path;
 };
 
-#pragma db view object(CODBMovie) \
+PRAGMA_DB (view object(CODBMovie) \
   object(CODBFile: CODBMovie::m_file) \
-  object(CODBUniqueID: CODBMovie::m_file)
+  object(CODBUniqueID: CODBMovie::m_file))
 struct ODBView_Movie_File_UID
 {
   std::shared_ptr<CODBMovie> movie;
@@ -304,9 +316,9 @@ struct ODBView_Movie_File_UID
   std::shared_ptr<CODBUniqueID> uid;
 };
 
-#pragma db view object(CODBMovie) \
+PRAGMA_DB (view object(CODBMovie) \
   object(CODBArt: CODBMovie::m_artwork) \
-  query(distinct)
+  query(distinct))
 struct ODBView_Movie_Art
 {
   std::shared_ptr<CODBArt> art;
