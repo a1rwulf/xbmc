@@ -1,10 +1,22 @@
-//
-//  ODBDate.h
-//  kodi
-//
-//  Created by Lukas Obermann on 08.11.16.
-//
-//
+/*
+*      Copyright (C) 2017 Team Kodi
+*      https://kodi.tv
+*
+*  This Program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2, or (at your option)
+*  any later version.
+*
+*  This Program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with XBMC; see the file COPYING.  If not, see
+*  <http://www.gnu.org/licenses/>.
+*
+*/
 
 #ifndef ODBDATE_H
 #define ODBDATE_H
@@ -19,7 +31,7 @@
 #pragma db model version(1, 1, open)
 #endif
 
-#pragma db value
+PRAGMA_DB (value)
 class CODBDate
 {
 public:
@@ -55,7 +67,7 @@ public:
   
   uint64_t m_ulong_date;
   int m_year;
-#pragma db type("VARCHAR(20)")
+PRAGMA_DB (type("VARCHAR(20)"))
   std::string m_date;
   
 private:
