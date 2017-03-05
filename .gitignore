@@ -16,6 +16,7 @@ testMain
 # CLion
 /.idea
 .vscode/
+cmake-build-debug/
 
 # generated files etc
 config.cache
