@@ -245,9 +245,6 @@ PRAGMA_DB (view object(CODBTVShow) \
                 query(distinct))
 struct ODBView_TVShow_Counts
 {
-PRAGMA_DB (column(CODBTVShow::m_idTVShow))
-  unsigned long m_idTVShow;
-  
 PRAGMA_DB (column("MAX(" + CODBFile::m_lastPlayed.m_ulong_date + ")"))
   unsigned long lastPlayedULong;
   
