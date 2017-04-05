@@ -113,6 +113,9 @@ foreach(depspec ${PLATFORM_REQUIRED_DEPS})
   set(ENABLE_${depup} "ON" CACHE BOOL "Force enabling required ${depup} support" FORCE)
 endforeach()
 
+find_package(ODB REQUIRED COMPONENTS sqlite mysql)
+list(APPEND DEPLIBS ${ODB_LIBRARIES})
+
 # Required dependencies. Keep in alphabetical order please
 set(required_deps ASS
                   Cdio
@@ -250,6 +253,9 @@ endif()
 # Generate messages
 core_add_subdirs_from_filelist(${CMAKE_SOURCE_DIR}/cmake/messages/flatbuffers/*.txt)
 
+# ODB defines
+list(APPEND DEP_DEFINES -DLIBODB_MYSQL_INCLUDE_LONG)
+
 include_directories(${INCLUDES} ${SYSTEM_INCLUDES})
 add_compile_options(${ARCH_DEFINES} "${SYSTEM_DEFINES}" ${DEP_DEFINES} ${PATH_DEFINES})
 
@@ -299,6 +305,9 @@ set(GLOBAL_TARGET_DEPS libcpluff ffmpeg dvdnav crossguid fmt fstrcmp flatbuffers
 add_library(lib${APP_NAME_LC} STATIC $<TARGET_OBJECTS:compileinfo>)
 add_dependencies(lib${APP_NAME_LC} ${GLOBAL_TARGET_DEPS})
 set_target_properties(lib${APP_NAME_LC} PROPERTIES PREFIX "")
+
+# Codegen
+add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/odb build/odb)
 
 # Other files (IDE)
 set(OTHER_FILES cmake/README.md)

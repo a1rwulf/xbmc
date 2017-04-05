@@ -15,7 +15,8 @@ DEPENDS = \
 	taglib libusb libnfs \
 	pythonmodule-pil pythonmodule-pycryptodome pythonmodule-setuptools \
 	libxslt ffmpeg platform crossguid \
-	libdvdread libdvdnav libdvdcss p8-platform flatbuffers
+        libdvdread libdvdnav libdvdcss p8-platform flatbuffers \
+	odb libodb libodb-mysql libodb-sqlite
 
 
 FFMPEG_DEPENDS = gnutls
@@ -119,6 +120,8 @@ waylandpp: wayland $(WAYLANDPP_DEPS)
 dbus: expat
 libinput: mtdev libevdev
 libevdev: libudev
+libodb-mysql: libodb mariadb openssl $(ZLIB)
+libodb-sqlite: libodb
 
 .installed-$(PLATFORM): $(DEPENDS)
 	touch $@

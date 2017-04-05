@@ -7,6 +7,8 @@ ARCHIVE=$(LIBNAME)-connector-c-$(VERSION)-src.tar.gz
 
 LIBDYLIB=$(PLATFORM)/build/lib$(LIBNAME)/lib$(LIBNAME)client.a
 
+LN_S=ln -sf
+
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
@@ -26,6 +28,9 @@ $(LIBDYLIB): $(PLATFORM)
 	$(MAKE) -C $(PLATFORM)/build install
 	rm -f $(PREFIX)/lib/mariadb/*.so $(PREFIX)/lib/mariadb/*.dylib
 	touch $@
+
+	# libodb-mysql needs the _r.a lib
+	$(LN_S) libmariadbclient.a $(PREFIX)/lib/mariadb/libmysqlclient_r.a
 
 clean:
 	$(MAKE) -C $(PLATFORM) clean

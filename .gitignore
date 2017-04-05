@@ -22,6 +22,8 @@ testMain
 # Created in vs2017 when using open folder with cmake tools
 CMakeSettings.json
 
+cmake-build-debug/
+
 # generated files etc
 .last_success_revision
 *.d
@@ -241,6 +243,35 @@ cmake_install.cmake
 /project/BuildDependencies/win10-x64
 /project/BuildDependencies/win10-win32
 /project/BuildDependencies/win32
+/project/BuildDependencies/win32-uwp
+/project/BuildDependencies/bin/odb
+
+# /system
+/system/cpluff.dll
+/system/EasyHook32.dll
+/system/EasyHook64.dll
+/system/libcurl.dll
+/system/libeay32.dll
+/system/ssh.dll
+/system/sqlite3.dll
+/system/libnfs.dll
+/system/dnssd.dll
+/system/cec.dll
+/system/libxslt.dll
+/system/ssleay32.dll
+/system/libxml2.dll
+/system/libass.dll
+/system/libbluray*
+/system/libcdio.dll
+/system/libplist.dll
+/system/shairplay.dll
+/system/libmysql.dll
+/system/python27.dll
+/system/zlib.dll
+/system/lcms2.dll
+/system/libodb.dll
+/system/libodb-mysql.dll
+/system/libodb-sqlite.dll
 
 # /system/players/VideoPlayer
 /system/players/VideoPlayer/*
@@ -294,6 +325,10 @@ cmake_install.cmake
 /tools/depends/target/Toolchain_binaddons.cmake
 /tools/depends/target/config-binaddons.site
 /tools/depends/target/binary-addons/native
+/tools/depends/target/libodb-mysql/native/
+/tools/depends/target/libodb-sqlite/native/
+/tools/depends/target/libodb/native/
+/tools/depends/target/odb/native/
 
 # /tools/EventClients/
 /tools/EventClients/*.pyc
@@ -353,3 +388,6 @@ exclude_dll.txt
 # VS git tools doesn't work for true out of tree builds and it's
 # useful to be able to work on multiple configs
 /build*/
+
+#temp odb schema files
+/xbmc/interfaces/odb/*.xml
