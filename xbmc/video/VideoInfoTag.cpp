@@ -795,7 +795,7 @@ const std::string CVideoInfoTag::GetCast(bool bIncludeRole /*= false*/) const
     if (it->strRole.empty() || !bIncludeRole)
       character = StringUtils::Format("%s\n", it->strName.c_str());
     else
-      character = StringUtils::Format("%s %s %s\n", it->strName.c_str(), g_localizeStrings.Get(20347).c_str(), it->strRole.c_str());
+      character = StringUtils::Format("%s [COLOR FF959696]%s %s[/COLOR]\n", it->strName.c_str(), g_localizeStrings.Get(20347).c_str(), it->strRole.c_str());
     strLabel += character;
   }
   return StringUtils::TrimRight(strLabel, "\n");

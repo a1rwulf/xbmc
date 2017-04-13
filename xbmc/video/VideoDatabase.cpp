@@ -10792,6 +10792,13 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
 
         pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, episode.GetPlayCount() > 0);
         pItem->m_dateTime = episode.m_firstAired;
+        
+        std::string cast = pItem->GetVideoInfoTag()->GetCast();
+        std::string castrole = pItem->GetVideoInfoTag()->GetCast(true);
+        
+        pItem->SetProperty("cast", pItem->GetVideoInfoTag()->GetCast());
+        pItem->SetProperty("castandrole", pItem->GetVideoInfoTag()->GetCast(true));
+        
         items.Add(pItem);
         gVideoDatabaseCache.addEpisode(i->episode->m_idEpisode, pItem, i->episode->m_updatedAt);
 
