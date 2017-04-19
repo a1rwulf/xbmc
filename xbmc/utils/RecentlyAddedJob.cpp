@@ -366,6 +366,7 @@ bool CRecentlyAddedJob::UpdateTotal()
 
 bool CRecentlyAddedJob::DoWork()
 {
+  return true;
   bool ret = true;
   if (m_flag & Audio)
     ret &= UpdateMusic();
