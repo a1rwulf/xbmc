@@ -496,6 +496,9 @@ bool CSystemGUIInfo::GetBool(bool& value, const CGUIListItem *gitem, int context
       value = g_mediaManager.GetDriveStatus() == DRIVE_OPEN;
       return true;
 #endif
+    case SYSTEM_MEDIA_USB:
+      value = g_mediaManager.IsUSBConnected();
+      return true;
     case SYSTEM_CAN_POWERDOWN:
       value = CServiceBroker::GetPowerManager().CanPowerdown();
       return true;

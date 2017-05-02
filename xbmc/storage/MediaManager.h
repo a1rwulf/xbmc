@@ -59,6 +59,7 @@ public:
   void AddAutoSource(const CMediaSource &share, bool bAutorun=false);
   void RemoveAutoSource(const CMediaSource &share);
   bool IsDiscInDrive(const std::string& devicePath="");
+  bool IsUSBConnected(const std::string& deviceLabel="");
   bool IsAudio(const std::string& devicePath="");
   bool HasOpticalDrive();
   std::string TranslateDevicePath(const std::string& devicePath, bool bReturnAsDevice=false);

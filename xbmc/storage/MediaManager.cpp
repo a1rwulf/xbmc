@@ -39,6 +39,7 @@
 #include "utils/JobManager.h"
 #include "utils/StringUtils.h"
 #include "AutorunMediaJob.h"
+#include "messaging/ApplicationMessenger.h"
 
 #include "filesystem/File.h"
 #include "cores/VideoPlayer/DVDInputStreams/DVDInputStreamNavigator.h"
@@ -55,12 +56,14 @@
 #endif
 
 using namespace XFILE;
+using namespace KODI::MESSAGING;
 
 #ifdef HAS_DVD_DRIVE
 using namespace MEDIA_DETECT;
 #endif
 
 const char MEDIA_SOURCES_XML[] = { "special://profile/mediasources.xml" };
+bool m_usbConnected = false;
 
 class CMediaManager g_mediaManager;
 
@@ -361,6 +364,11 @@ bool CMediaManager::IsDiscInDrive(const std::string& devicePath)
 #else
   return false;
 #endif
+}
+
+bool CMediaManager::IsUSBConnected(const std::string& deviceLabel)
+{
+  return m_usbConnected;
 }
 
 bool CMediaManager::IsAudio(const std::string& devicePath)
@@ -702,6 +710,7 @@ void ShowGUINotification(CGUIDialogKaiToast::eMessageType eType, const std::stri
 
 void CMediaManager::OnStorageAdded(const std::string &label, const std::string &path)
 {
+  m_usbConnected = true;
 #ifdef HAS_DVD_DRIVE
   const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
   if (settings->GetInt(CSettings::SETTING_AUDIOCDS_AUTOACTION) != AUTOCD_NONE || settings->GetBool(CSettings::SETTING_DVDS_AUTORUN))
@@ -716,12 +725,18 @@ void CMediaManager::OnStorageAdded(const std::string &label, const std::string &
 
 void CMediaManager::OnStorageSafelyRemoved(const std::string &label)
 {
-  ShowGUINotification(CGUIDialogKaiToast::Info, g_localizeStrings.Get(13023), label);
+  m_usbConnected = false;
+  CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
+  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME);
+  //ShowGUINotification(CGUIDialogKaiToast::Info, g_localizeStrings.Get(13023), label);
 }
 
 void CMediaManager::OnStorageUnsafelyRemoved(const std::string &label)
 {
-  ShowGUINotification(CGUIDialogKaiToast::Warning, g_localizeStrings.Get(13022), label);
+  m_usbConnected = false;
+  CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
+  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME);
+  //ShowGUINotification(CGUIDialogKaiToast::Warning, g_localizeStrings.Get(13022), label);
 }
 
 CMediaManager::DiscInfo CMediaManager::GetDiscInfo(const std::string& mediaPath)
