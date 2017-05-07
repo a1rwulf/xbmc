@@ -309,7 +309,7 @@ endif()
 # main library (used for main binary and tests)
 add_library(lib${APP_NAME_LC} STATIC $<TARGET_OBJECTS:compileinfo>)
 set_target_properties(lib${APP_NAME_LC} PROPERTIES PREFIX "")
-add_dependencies(lib${APP_NAME_LC} libcpluff ffmpeg dvdnav crossguid)
+add_dependencies(lib${APP_NAME_LC} odb_binding libcpluff ffmpeg dvdnav crossguid)
 
 # Codegen
 add_subdirectory(${CORE_SOURCE_DIR}/xbmc/interfaces/odb build/odb)
