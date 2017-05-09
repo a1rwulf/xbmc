@@ -81,6 +81,8 @@ public:
   void addEpisode(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt);
   std::shared_ptr<CFileItem> getEpisode(long id, uint64_t updatedAt);
 private:
+  void setCurrentLanguage();
+  
   tVideoInfoTagCacheMap m_MovieCacheMap;
   tStreamDetailsCacheMap m_StreamDetailsCacheMap;
   tArtTypeCacheMap m_ArtCacheMap;

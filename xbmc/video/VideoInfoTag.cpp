@@ -35,6 +35,7 @@ void CVideoInfoTag::Reset()
   m_strPictureURL.Clear();
   m_strTitle.clear();
   m_strShowTitle.clear();
+  m_iShowId = 0;
   m_strOriginalTitle.clear();
   m_strSortTitle.clear();
   m_cast.clear();

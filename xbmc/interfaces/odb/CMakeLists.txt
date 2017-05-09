@@ -28,7 +28,8 @@ set(OdbCMake_ODB_HEADERS
         ODBArtistDiscography.h
         ODBRole.h
         ODBVersionTagScan.h
-        ODBInfoSetting.h)
+        ODBInfoSetting.h
+        ODBTranslation.h)
 
 odb_compile(OdbCMake_SOURCES FILES ${OdbCMake_ODB_HEADERS}
     MULTI_DATABASE dynamic

@@ -36,6 +36,11 @@ CVideoDatabaseCache::~CVideoDatabaseCache()
 
 }
 
+void CVideoDatabaseCache::setCurrentLanguage()
+{
+  m_language = CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE);
+}
+
 void CVideoDatabaseCache::languageChange()
 {
   if (m_language == CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE))
@@ -54,16 +59,31 @@ void CVideoDatabaseCache::languageChange()
   for (tFileItemCacheMap::iterator iter = m_TVShowCacheMap.begin(); iter != m_TVShowCacheMap.end(); ++iter)
   {
     videodb.GetTVShowTranslation(iter->second.m_item->GetVideoInfoTag(), true);
+    
+    //Set the item label again after translation
+    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
+    
+    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
   
   for (tFileItemCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end(); ++iter)
   {
     videodb.GetSeasonTranslation(iter->second.m_item->GetVideoInfoTag(), true);
+    
+    //Set the item label again after translation
+    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
+    
+    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
   
   for (tFileItemCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end(); ++iter)
   {
     videodb.GetEpisodeTranslation(iter->second.m_item->GetVideoInfoTag(), true);
+    
+    //Set the item label again after translation
+    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
+    
+    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
 }
 
@@ -125,6 +145,7 @@ void CVideoDatabaseCache::addMovie(long id, std::shared_ptr<CVideoInfoTag>& item
   
   CSingleLock lock(m_mutex);
   m_MovieCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getMovie(long id, int getDetails, uint64_t updatedAt)
@@ -155,6 +176,7 @@ void CVideoDatabaseCache::addStreamDetails(long id, std::shared_ptr<CStreamDetai
   
   CSingleLock lock(m_mutex);
   m_StreamDetailsCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CStreamDetails> CVideoDatabaseCache::getStreamDetails(long id)
@@ -185,6 +207,7 @@ void CVideoDatabaseCache::addArtMap(long id, std::shared_ptr<tArtTypeCacheType>&
   
   CSingleLock lock(m_mutex);
   m_ArtCacheMap[type].insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<tArtTypeCacheType> CVideoDatabaseCache::getArtMap(long id, std::string type)
@@ -213,6 +236,7 @@ void CVideoDatabaseCache::addPerson(long id, std::shared_ptr<CFileItem>& item)
   
   CSingleLock lock(m_mutex);
   m_PersonCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CFileItem> CVideoDatabaseCache::getPerson(long id)
@@ -237,6 +261,7 @@ void CVideoDatabaseCache::addTVShow(long id, std::shared_ptr<CFileItem>& item, i
   
   CSingleLock lock(m_mutex);
   m_TVShowCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CFileItem> CVideoDatabaseCache::getTVShow(long id, int getDetails, uint64_t updatedAt)
@@ -268,6 +293,7 @@ void CVideoDatabaseCache::addSeason(long id, std::shared_ptr<CFileItem>& item, u
   
   CSingleLock lock(m_mutex);
   m_SeasonCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CFileItem> CVideoDatabaseCache::getSeason(long id, uint64_t updatedAt)
@@ -298,6 +324,7 @@ void CVideoDatabaseCache::addEpisode(long id, std::shared_ptr<CFileItem>& item, 
   
   CSingleLock lock(m_mutex);
   m_EpisodeCacheMap.insert(std::make_pair(id, cacheItem));
+  setCurrentLanguage();
 }
 
 std::shared_ptr<CFileItem> CVideoDatabaseCache::getEpisode(long id, uint64_t updatedAt)

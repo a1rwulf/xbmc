@@ -1017,7 +1017,7 @@ private:
   static void AnnounceRemove(std::string content, int id, bool scanning = false);
   static void AnnounceUpdate(std::string content, int id);
   
-  void GetTranslatedString(unsigned long id, std::string& var, std::string context);
+  void GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2);
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
   bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);

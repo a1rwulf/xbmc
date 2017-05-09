@@ -248,6 +248,7 @@ public:
   std::string m_strProductionCode;
   CDateTime m_firstAired;
   std::string m_strShowTitle;
+  int m_iShowId;
   std::vector<std::string> m_studio;
   std::string m_strAlbum;
   CDateTime m_lastPlayed;
