@@ -333,6 +333,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByDateAdded);
+          m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
         return true;
@@ -342,6 +343,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByYear);
+          m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
         return true;
@@ -351,6 +353,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByRating);
+          m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
         return true;
@@ -370,6 +373,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByArtist);
+          m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
         return true;
