@@ -158,6 +158,7 @@ protected:
   }m_pkt;
 
   bool m_streaminfo;
+  bool m_forceSkipProbeStreaminfo;
   bool m_checkvideo;
   int m_displayTime = 0;
   double m_dtsAtDisplayTime;

@@ -176,6 +176,7 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   m_pkt.result = -1;
   memset(&m_pkt.pkt, 0, sizeof(AVPacket));
   m_streaminfo = true; /* set to true if we want to look for streams before playback */
+  m_forceSkipProbeStreaminfo = false;
   m_checkvideo = false;
   m_dtsAtDisplayTime = DVD_NOPTS_VALUE;
 }
@@ -245,6 +246,9 @@ bool CDVDDemuxFFmpeg::Open(std::shared_ptr<CDVDInputStream> pInput, bool streami
     AVDictionary *options = GetFFMpegOptionsFromInput();
 
     CURL url = m_pInput->GetURL();
+    std::string skipStreamProbe = url.GetOption("ssp");
+    m_forceSkipProbeStreaminfo = skipStreamProbe == "true" ? true : false;
+    CLog::Log(LOGDEBUG, "Force skip probing streaminfo: %s", m_forceSkipProbeStreaminfo ? "true" : "false");
 
     int result=-1;
     if (url.IsProtocol("mms"))
@@ -458,6 +462,9 @@ bool CDVDDemuxFFmpeg::Open(std::shared_ptr<CDVDInputStream> pInput, bool streami
   m_bMatroska = strncmp(m_pFormatContext->iformat->name, "matroska", 8) == 0;	// for "matroska.webm"
   m_bAVI = strcmp(m_pFormatContext->iformat->name, "avi") == 0;
   m_bSup = strcmp(m_pFormatContext->iformat->name, "sup") == 0;
+
+  if (m_forceSkipProbeStreaminfo)
+    m_streaminfo = false;
 
   if (m_streaminfo)
   {
