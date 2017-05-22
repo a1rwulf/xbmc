@@ -1121,7 +1121,7 @@ bool CGUIWindowVideoNav::OnClick(int iItem, const std::string &player)
   if (!item->m_bIsFolder && item->IsVideoDb() && !item->Exists())
   {
     CLog::Log(LOGDEBUG, "%s called on '%s' but file doesn't exist", __FUNCTION__, item->GetPath().c_str());
-
+    return true;
     const std::shared_ptr<CProfileManager> profileManager = CServiceBroker::GetSettingsComponent()->GetProfileManager();
 
     if (profileManager->GetCurrentProfile().canWriteDatabases() || g_passwordManager.bMasterUser)
