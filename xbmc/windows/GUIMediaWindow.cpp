@@ -62,16 +62,18 @@
 #include "view/GUIViewState.h"
 #include <inttypes.h>
 
-#define CONTROL_BTNVIEWASICONS       2
-#define CONTROL_BTNSORTBY            3
-#define CONTROL_BTNSORTASC           4
-#define CONTROL_BTN_FILTER          19
-#define CONTROL_BTNSORTBYADDED      60
-#define CONTROL_BTNSORTBYYEAR       61
-#define CONTROL_BTNSORTBYRATING     62
-#define CONTROL_BTNSORTBYTITLE      63
-#define CONTROL_BTNSORTBYARTIST     64
-#define CONTROL_BTNSORTBYALBUM      65
+#define CONTROL_BTNVIEWASICONS          2
+#define CONTROL_BTNSORTBY               3
+#define CONTROL_BTNSORTASC              4
+#define CONTROL_BTN_FILTER             19
+#define CONTROL_BTNSORTBYADDED         60
+#define CONTROL_BTNSORTBYYEAR          61
+#define CONTROL_BTNSORTBYRATING        62
+#define CONTROL_BTNSORTBYTITLE         63
+#define CONTROL_BTNSORTBYARTIST        64
+#define CONTROL_BTNSORTBYALBUM         65
+#define CONTROL_BTNSORTBYCHANNELNUMBER 66
+#define CONTROL_BTNSORTBYCHANNELNAME   67
 
 #define CONTROL_LABELFILES          12
 
@@ -383,6 +385,26 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByAlbum);
+          m_guiState->SetNextSortOrder();
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYCHANNELNUMBER)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByChannelNumber);
+          m_guiState->SetNextSortOrder();
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYCHANNELNAME)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortByLabel);
           m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
