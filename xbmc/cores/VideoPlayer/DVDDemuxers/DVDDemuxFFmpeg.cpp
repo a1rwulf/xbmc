@@ -237,7 +237,7 @@ bool CDVDDemuxFFmpeg::Open(std::shared_ptr<CDVDInputStream> pInput, bool streami
   m_pFormatContext->interrupt_callback = int_cb;
 
   // try to abort after 30 seconds
-  m_timeout.Set(30000);
+  m_timeout.Set(6000);
 
   if (m_pInput->IsStreamType(DVDSTREAM_TYPE_FFMPEG))
   {
