@@ -851,7 +851,7 @@ bool CVideoPlayer::OpenDemuxStream()
 
   CLog::Log(LOGNOTICE, "Creating Demuxer");
 
-  int attempts = 10;
+  int attempts = 2;
   while (!m_bStop && attempts-- > 0)
   {
     m_pDemuxer = CDVDFactoryDemuxer::CreateDemuxer(m_pInputStream);
