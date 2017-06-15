@@ -828,9 +828,10 @@ bool CGUIMediaWindow::GetDirectory(const std::string &strDirectory, CFileItemLis
     // assign fetched directory items
     items.Assign(dirItems);
 
-    // took over a second, and not normally cached, so cache it
-    if ((XbmcThreads::SystemClockMillis() - time) > 200  && items.CacheToDiscIfSlow())
-      items.Save(GetID());
+    //YC - caching hurts us because the library is managed by the serverside
+    //and may change at any time
+    //if ((XbmcThreads::SystemClockMillis() - time) > 200  && items.CacheToDiscIfSlow())
+    //  items.Save(GetID());
 
     // if these items should replace the current listing, then pop it off the top
     if (items.GetReplaceListing())
