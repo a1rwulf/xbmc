@@ -1025,4 +1025,5 @@ public:
   bool GetEpisodeTranslation(CVideoInfoTag* details, bool force = false);
   CVideoDatabaseCache& getCache();
   
+  std::string GetMACAddress();
 };

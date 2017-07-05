@@ -41,6 +41,7 @@ public:
     m_totalTimeInSeconds = 0;
     m_thumbNailImage = "";
     m_player = "";
+    m_macAddress = "";
     m_type = 0;
     m_synced = false;
   };
@@ -53,6 +54,8 @@ PRAGMA_DB (id auto)
   std::string m_thumbNailImage;
   std::string m_player;
   std::string m_playerState;
+PRAGMA_DB (default("") type("VARCHAR(17)"))
+  std::string m_macAddress;
   int m_type;
   
   //Members not stored in the db, used for sync ...

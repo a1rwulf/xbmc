@@ -92,6 +92,8 @@
 #include "VideoInfoScanner.h"
 #include "XBDateTime.h"
 
+#include "network/Network.h"
+
 using namespace dbiplus;
 using namespace XFILE;
 using namespace VIDEO;
@@ -4759,7 +4761,7 @@ void CVideoDatabase::GetBookMarksForFile(const std::string& strFilenameAndPath, 
 
       typedef odb::query<CODBBookmark> query;
 
-      odb::result<CODBBookmark> res(m_cdb.getDB()->query<CODBBookmark>(query::file->idFile == idFile && query::type == (int)type));
+      odb::result<CODBBookmark> res(m_cdb.getDB()->query<CODBBookmark>(query::file->idFile == idFile && query::type == (int)type && query::macAddress == GetMACAddress()));
       for (auto i: res)
       {
         CBookmark bookmark;
@@ -4857,7 +4859,7 @@ void CVideoDatabase::DeleteResumeBookMark(const CFileItem& item)
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     typedef odb::query<CODBBookmark> query;
 
-    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == fileID && query::type == (int)CBookmark::RESUME);
+    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == fileID && query::type == (int)CBookmark::RESUME && query::macAddress == GetMACAddress());
 
     if(odb_transaction)
       odb_transaction->commit();
@@ -4922,14 +4924,14 @@ void CVideoDatabase::AddBookMarkToFile(const std::string& strFilenameAndPath, co
     query bookmark_query;
     if (type == CBookmark::RESUME) // get the same resume mark bookmark each time type
     {
-      bookmark_query = query::file->idFile == idFile;
+      bookmark_query = query::file->idFile == idFile && query::macAddress == GetMACAddress();
     }
     else if (type == CBookmark::STANDARD) // get the same bookmark again, and update. not sure here as a dvd can have same time in multiple places, state will differ thou
     {
       /* get a bookmark within the same time as previous */
       double mintime = bookmark.timeInSeconds - 0.5f;
       double maxtime = bookmark.timeInSeconds + 0.5f;
-      bookmark_query = query::file->idFile == idFile && (query::timeInSeconds >= mintime && query::timeInSeconds <= maxtime) && query::playerState.like(bookmark.playerState);
+      bookmark_query = query::file->idFile == idFile && query::macAddress == GetMACAddress() && (query::timeInSeconds >= mintime && query::timeInSeconds <= maxtime) && query::playerState.like(bookmark.playerState);
     }
 
     CODBBookmark odb_Bookmark;
@@ -4940,6 +4942,7 @@ void CVideoDatabase::AddBookMarkToFile(const std::string& strFilenameAndPath, co
       odb_Bookmark.m_thumbNailImage = bookmark.thumbNailImage;
       odb_Bookmark.m_player = bookmark.player;
       odb_Bookmark.m_playerState = bookmark.playerState;
+      odb_Bookmark.m_macAddress = GetMACAddress();
       m_cdb.getDB()->update(odb_Bookmark);
     }
     else
@@ -4951,6 +4954,7 @@ void CVideoDatabase::AddBookMarkToFile(const std::string& strFilenameAndPath, co
       odb_Bookmark.m_player = bookmark.player;
       odb_Bookmark.m_playerState = bookmark.playerState;
       odb_Bookmark.m_type = (int)type;
+      odb_Bookmark.m_macAddress = GetMACAddress();
 
       m_cdb.getDB()->persist(odb_Bookmark);
     }
@@ -4992,6 +4996,7 @@ void CVideoDatabase::ClearBookMarkOfFile(const std::string& strFilenameAndPath, 
                                               && query::playerState.like(bookmark.playerState)
                                               && query::player.like(bookmark.player)
                                               && (query::timeInSeconds >= mintime && query::timeInSeconds <= maxtime)
+                                              && query::macAddress == GetMACAddress()
                                               , odb_Bookmark))
     {
       m_cdb.getDB()->erase(odb_Bookmark);
@@ -5038,7 +5043,7 @@ void CVideoDatabase::ClearBookMarksOfFile(int idFile, CBookmark::EType type /*= 
 
     typedef odb::query<CODBBookmark> query;
 
-    m_cdb.getDB()->erase_query<CODBBookmark>(query::file == idFile && query::type == (int)type);
+    m_cdb.getDB()->erase_query<CODBBookmark>(query::file == idFile && query::type == (int)type && query::macAddress == GetMACAddress());
 
     //TODO: I do not think this logic is needed any longer with the odb integration
     /*if (type == CBookmark::EPISODE)
@@ -5083,7 +5088,9 @@ bool CVideoDatabase::GetBookMarkForEpisode(const CVideoInfoTag& tag, CBookmark& 
         m_cdb.getDB()->load(objEpisode, objEpisode.section_foreign);
         
         CODBBookmark objBookmark;
-        if (objEpisode.m_file.load() && m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == objEpisode.m_file->m_idFile, objBookmark))
+        if (objEpisode.m_file.load() && m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == objEpisode.m_file->m_idFile
+                                                                               && odb::query<CODBBookmark>::macAddress == GetMACAddress()
+                                                                               , objBookmark))
         {
           bookmark.timeInSeconds = (int)objBookmark.m_timeInSeconds;
           bookmark.totalTimeInSeconds = (int)objBookmark.m_totalTimeInSeconds;
@@ -5123,7 +5130,7 @@ void CVideoDatabase::AddBookMarkForEpisode(const CVideoInfoTag& tag, const CBook
 
     typedef odb::query<CODBBookmark> query;
 
-    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == idFile);
+    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == idFile && query::macAddress == GetMACAddress());
 
     AddBookMarkToFile(tag.m_strFileNameAndPath, bookmark, CBookmark::EPISODE);
 
@@ -5152,7 +5159,7 @@ void CVideoDatabase::DeleteBookMarkForEpisode(const CVideoInfoTag& tag)
 
     int idFile = GetFileId(tag.m_strFileNameAndPath);
     typedef odb::query<CODBBookmark> query;
-    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == idFile);
+    m_cdb.getDB()->erase_query<CODBBookmark>(query::file->idFile == idFile && query::macAddress == GetMACAddress());
 
     if(odb_transaction)
       odb_transaction->commit();
@@ -5926,7 +5933,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
   //Load the bookmark
   CODBBookmark odbBookmark;
   if (m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details->m_iFileId
-                                             && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME, odbBookmark))
+                                             && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME
+                                             && odb::query<CODBBookmark>::macAddress == GetMACAddress(), odbBookmark))
   {
     details->SetResumePoint((int)odbBookmark.m_timeInSeconds,
                            (int)odbBookmark.m_totalTimeInSeconds,
@@ -6348,7 +6356,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Epi
       if (details.m_iFileId > 0)
       {
         odb::result<CODBBookmark> res3 = m_cdb.getDB()->query<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details.m_iFileId
-                                                                           && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME);
+                                                                           && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME
+                                                                           && odb::query<CODBBookmark>::macAddress == GetMACAddress() );
         if (res3.begin() != res3.end())
         {
           CODBBookmark odbBookmark;
@@ -14389,4 +14398,14 @@ void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std
 CVideoDatabaseCache& CVideoDatabase::getCache()
 {
   return gVideoDatabaseCache;
+}
+
+std::string CVideoDatabase::GetMACAddress()
+{
+#if defined(HAS_LINUX_NETWORK) || defined(HAS_WIN32_NETWORK)
+  CNetworkInterface* iface = g_application.getNetwork().GetFirstConnectedInterface();
+  if (iface)
+    return iface->GetMacAddress();
+#endif
+  return "";
 }
