@@ -10076,8 +10076,16 @@ bool CVideoDatabase::GetSeasonsByWhere(const std::string& strBaseDir, const Filt
           totalEpisodes = objEpisodeCount.episodesTotal;
         }
         
+        ODBView_Episode_Total objTotalShowEpisodes;
+        int totalShowEpisodes = 0;
+        if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(odb::query<ODBView_Episode_Total>::CODBTVShow::idTVShow == objTVShow->m_idTVShow, objTotalShowEpisodes))
+        {
+          totalShowEpisodes = objTotalShowEpisodes.total;
+        }
+        
         pItem->GetVideoInfoTag()->m_iEpisode = totalEpisodes;
         pItem->SetProperty("totalseasons", totalSeasons);
+        pItem->SetProperty("totalshowepisodes", totalShowEpisodes);
         pItem->SetProperty("totalepisodes", totalEpisodes);
         pItem->SetProperty("numepisodes", totalEpisodes); // will be changed later to reflect watchmode setting
         pItem->SetProperty("watchedepisodes", watchedEpisodes);
