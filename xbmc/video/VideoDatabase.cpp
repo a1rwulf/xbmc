@@ -6947,6 +6947,10 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           }
         }
       }
+      
+      //Fallback
+      if (art.empty())
+        art.insert(std::make_pair("thumb", "DefaultSeason.png"));
     }
     else if (mediaType == MediaTypeEpisode)
     {
@@ -6963,6 +6967,10 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           }
         }
       }
+      
+      //Fallback
+      if (art.empty())
+        art.insert(std::make_pair("thumb", "DefaultSeason.png"));
     }
     else if (mediaType == MediaTypeVideoCollection)
     {
