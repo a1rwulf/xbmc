@@ -1,37 +1,11 @@
-Platinum UPnP SDK
------------------
-This software is provided under the following license:
+---------------------------------------------------------------------------
 
-Plutinosoft, LLC provides its Platinum UPnP SDK under a dual 
-license model designed to meet the development and distribution 
-needs of both commercial distributors (such as OEMs, ISVs and VARs) 
-and open source projects.
+NOTE! The GPL below is copyrighted by the Free Software Foundation, but
+the instance of code that it refers to (omniyon) is copyrighted by the
+authors who actually wrote it.
 
-For OEMs, ISVs, VARs and Other Distributors of Commercial Applications:
-OEMs, ISVs, VARs and other distributors that combine and distribute 
-commercially licensed software with Platinum software and do not wish 
-to distribute the source code for the commercially licensed software 
-under version 2, or (at your option) any later version, of the GNU 
-General Public License (the "GPL") must enter into a commercial 
-license agreement with Plutinosoft, LLC.
+---------------------------------------------------------------------------
 
-For developers of Free Open Source Software ("FOSS") applications 
-under the GPL that want to combine and distribute those FOSS 
-applications with Platinum software, Plutinosoft's Platinum 
-open source software licensed under the GPL version 2, or (at your option) 
-any later version, is the best option.
-
-Note that Platinum SDK links with Neptune C++ Runtime 
-(http://sourceforge.net/projects/neptune), which is licensed under the 
-terms of the BSD license. This license is compatible with the GNU GPL.
-
-Platinum is copyrighted by Plutinosoft, LLC.
-http://www.plutinosoft.com 
-
-For all commercial license inquiries, please contact us at 
-licensing@plutinosoft.com
-
--------------------------------------------------------------------------
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991
 
