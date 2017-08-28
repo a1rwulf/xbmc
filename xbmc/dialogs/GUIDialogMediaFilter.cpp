@@ -358,6 +358,9 @@ void CGUIDialogMediaFilter::SetupView()
     localizedMediaId = 132;
   else if (m_mediaType == "songs")
     localizedMediaId = 134;
+  
+  //Do not use
+  localizedMediaId = -1;
 
   // set the heading
   SET_CONTROL_LABEL(CONTROL_HEADING, StringUtils::Format(g_localizeStrings.Get(1275).c_str(), g_localizeStrings.Get(localizedMediaId).c_str()));
