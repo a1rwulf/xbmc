@@ -14,6 +14,8 @@
 #include "utils/URIUtils.h"
 #include "utils/log.h"
 
+#include "ServiceBroker.h"
+#include "settings/Settings.h"
 #include "pvr/PVRManager.h"
 
 using namespace PVR;
