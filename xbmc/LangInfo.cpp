@@ -32,6 +32,7 @@
 #include "utils/XBMCTinyXML.h"
 #include "utils/XMLUtils.h"
 #include "weather/WeatherManager.h"
+#include "video/VideoCacheUpdater.h"
 
 using namespace PVR;
 using namespace KODI::MESSAGING;
@@ -627,6 +628,9 @@ std::string CLangInfo::GetEnglishLanguageName(const std::string& locale /* = "" 
 
 bool CLangInfo::SetLanguage(std::string language /* = "" */, bool reloadServices /* = true */)
 {
+  CVideoCacheUpdater* updateJob = new CVideoCacheUpdater();
+  CJobManager::GetInstance().AddJob(updateJob, NULL);
+
   if (language.empty())
     language = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE);
 

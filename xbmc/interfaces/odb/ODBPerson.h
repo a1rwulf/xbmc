@@ -59,4 +59,12 @@ PRAGMA_DB (index member(m_name))
   
 };
 
+PRAGMA_DB (view object(CODBPerson) \
+           object(CODBArt inner: CODBPerson::m_art)
+           query(distinct))
+struct ODBView_Person_Art
+{
+  std::shared_ptr<CODBArt> art;
+};
+
 #endif /* ODBPERSON_H */

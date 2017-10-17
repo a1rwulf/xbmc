@@ -65,6 +65,8 @@
 #include <odb/odb_gen/ODBVersionTagScan.h>
 #include <odb/odb_gen/ODBVersionTagScan_odb.h>
 
+#include "MusicDatabaseCache.h"
+
 using namespace XFILE;
 using namespace MUSICDATABASEDIRECTORY;
 using namespace KODI::MESSAGING;
@@ -80,6 +82,8 @@ using KODI::MESSAGING::HELPERS::DialogResponse;
 using namespace CDDB;
 using namespace MEDIA_DETECT;
 #endif
+
+CMusicDatabaseCache gMusicDatabaseCache;
 
 static void AnnounceRemove(const std::string& content, int id)
 {
@@ -2672,9 +2676,18 @@ bool CMusicDatabase::GetTop100(const std::string& strBaseDir, CFileItemList& ite
     
     for (auto song : res)
     {
+      CFileItemPtr cached = gMusicDatabaseCache.getSong(song.song->m_idSong);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(song.song, item.get(), baseUrl);
       items.Add(item);
+      
+      gMusicDatabaseCache.addSong(song.song->m_idSong, item);
     }
 
     return true;
@@ -2759,9 +2772,18 @@ bool CMusicDatabase::GetTop100AlbumSongs(const std::string& strBaseDir, CFileIte
       
       for (auto resSong : resSongs)
       {
+        CFileItemPtr cached = gMusicDatabaseCache.getSong(resSong.song->m_idSong);
+        if (cached)
+        {
+          items.Add(cached);
+          continue;
+        }
+        
         CFileItemPtr item(new CFileItem);
         GetFileItemFromODBObject(resSong.song, item.get(), baseUrl);
         items.Add(item);
+        
+        gMusicDatabaseCache.addSong(resSong.song->m_idSong, item);
       }
     }
 
@@ -2856,6 +2878,14 @@ bool CMusicDatabase::GetRecentlyPlayedAlbumSongs(const std::string& strBaseDir, 
       for (auto resSong : resSongs)
       {
         std::shared_ptr<CODBSong> objSong(resSong.song);
+        
+        CFileItemPtr cached = gMusicDatabaseCache.getSong(objSong->m_idSong);
+        if (cached)
+        {
+          items.Add(cached);
+          continue;
+        }
+        
         CFileItemPtr item(new CFileItem);
         GetFileItemFromODBObject(objSong, item.get(), baseUrl);
         items.Add(item);
@@ -2873,6 +2903,8 @@ bool CMusicDatabase::GetRecentlyPlayedAlbumSongs(const std::string& strBaseDir, 
         
         GetFileItemFromArtistCredits(artistCredits, items[items.Size() - 1].get());
         artistCredits.clear();
+        
+        gMusicDatabaseCache.addSong(objSong->m_idSong, item);
       }
     }
 
@@ -3137,9 +3169,18 @@ bool CMusicDatabase::SearchSongs(const std::string& search, CFileItemList &items
     
     for (auto song : res)
     {
+      CFileItemPtr cached = gMusicDatabaseCache.getSong(song.song->m_idSong);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(song.song, item.get(), baseUrl);
       items.Add(item);
+      
+      gMusicDatabaseCache.addSong(song.song->m_idSong, item);
     }
 
     return true;
@@ -3179,6 +3220,13 @@ bool CMusicDatabase::SearchAlbums(const std::string& search, CFileItemList &albu
     
     for (auto objAlbum : res)
     {
+      CFileItemPtr cached = gMusicDatabaseCache.getAlbum(objAlbum.album->m_idAlbum);
+      if (cached)
+      {
+        albums.Add(cached);
+        continue;
+      }
+      
       CAlbum album = GetAlbumFromODBObject(objAlbum.album);
       std::string path = StringUtils::Format("musicdb://albums/%ld/", album.idAlbum);
       CFileItemPtr pItem(new CFileItem(path, album));
@@ -3187,6 +3235,8 @@ bool CMusicDatabase::SearchAlbums(const std::string& search, CFileItemList &albu
       label = StringUtils::Format("B %s", album.strAlbum.c_str()); // sort label is stored in the title tag
       pItem->GetMusicInfoTag()->SetTitle(label);
       albums.Add(pItem);
+      
+      gMusicDatabaseCache.addAlbum(objAlbum.album->m_idAlbum, pItem);
     }
 
     return true;
@@ -4318,6 +4368,13 @@ bool CMusicDatabase::GetArtistsByWhere(const std::string& strBaseDir, const Filt
       if (countOnly)
         continue;
       
+      CFileItemPtr cached = gMusicDatabaseCache.getArtist(resObj.artist->m_idPerson);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CArtist artist = GetArtistFromODBObject(resObj.artist);
       CFileItemPtr pItem(new CFileItem(artist));
       
@@ -4331,6 +4388,7 @@ bool CMusicDatabase::GetArtistsByWhere(const std::string& strBaseDir, const Filt
       
       SetPropertiesFromArtist(*pItem, artist);
       items.Add(pItem);
+      gMusicDatabaseCache.addArtist(resObj.artist->m_idPerson, pItem);
     }
     
     if (countOnly)
@@ -4454,6 +4512,13 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
       if (countOnly)
         continue;
       
+      CFileItemPtr cached = gMusicDatabaseCache.getAlbum(resObj.album->m_idAlbum);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CMusicDbUrl itemUrl = musicUrl;
       std::string path = StringUtils::Format("%lu/", resObj.album->m_idAlbum);
       itemUrl.AppendPath(path);
@@ -4461,6 +4526,8 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
       CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), GetAlbumFromODBObject(resObj.album)));
       pItem->SetIconImage("DefaultAlbumCover.png");
       items.Add(pItem);
+      
+      gMusicDatabaseCache.addAlbum(resObj.album->m_idAlbum, pItem);
     }
     
     if (countOnly)
@@ -4607,6 +4674,14 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     for (auto resSong : res)
     {
       std::shared_ptr<CODBSong> objSong(resSong.song);
+      
+      CFileItemPtr cached = gMusicDatabaseCache.getSong(objSong->m_idSong);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(objSong, item.get(), musicUrl);
       items.Add(item);
@@ -4624,6 +4699,8 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
       
       GetFileItemFromArtistCredits(artistCredits, items[items.Size() - 1].get());
       artistCredits.clear();
+      
+      gMusicDatabaseCache.addSong(objSong->m_idSong, item);
     }
     
     // If Limits are set, we need to query the total amount of items again
@@ -4693,6 +4770,14 @@ bool CMusicDatabase::GetSongsByWhere(const std::string &baseDir, const Filter &f
     for (auto resSong : res)
     {
       std::shared_ptr<CODBSong> objSong(resSong.song);
+      
+      CFileItemPtr cached = gMusicDatabaseCache.getSong(objSong->m_idSong);
+      if (cached)
+      {
+        items.Add(cached);
+        continue;
+      }
+      
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(objSong, item.get(), musicUrl);
       items.Add(item);
@@ -4710,6 +4795,8 @@ bool CMusicDatabase::GetSongsByWhere(const std::string &baseDir, const Filter &f
       
       GetFileItemFromArtistCredits(artistCredits, items[items.Size() - 1].get());
       artistCredits.clear();
+      
+      gMusicDatabaseCache.addSong(objSong->m_idSong, item);
     }
     
     // If Limits are set, we need to query the total amount of items again
@@ -8348,6 +8435,14 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool b
   try
   {
     if (songId <= 0 && albumId <= 0 && artistId <= 0) return false;
+
+    std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, bPrimaryArtist);
+    if (cached)
+    {
+      art = *cached;
+      return !art.empty();
+    }
+
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     if (albumId > 0)
@@ -8489,6 +8584,8 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool b
       }
     }
 
+    gMusicDatabaseCache.addArtThumbLoader(songId, albumId, artistId, bPrimaryArtist, art);
+
     return !art.empty();
   }
   catch (std::exception& e)
@@ -8506,6 +8603,13 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
 {
   try
   {
+    std::shared_ptr<std::map<std::string, std::string> > cached = gMusicDatabaseCache.getArtMap(mediaId, mediaType);
+    if (cached)
+    {
+      art = *cached;
+      return !art.empty();
+    }
+    
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     if (mediaType == MediaTypeAlbum)
@@ -8557,6 +8661,10 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
       CLog::Log(LOGERROR, "%s(%d) map unknown media type - %s", __FUNCTION__, mediaId, mediaType.c_str());
     }
     
+    std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
+    *artItem = art;
+    gMusicDatabaseCache.addArtMap(mediaId, artItem, mediaType);
+
     return !art.empty();
   }
   catch (std::exception& e)
@@ -8575,6 +8683,12 @@ std::string CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaT
 {
   try
   {
+    std::shared_ptr<std::pair<std::string, std::string> > cached = gMusicDatabaseCache.getArtistArt(mediaId, mediaType);
+    if (cached)
+    {
+      return cached->second;
+    }
+    
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     if (mediaType == MediaTypeAlbum)
@@ -8585,6 +8699,11 @@ std::string CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaT
                                                       && query::CODBArt::media_type == mediaType
                                                       && query::CODBArt::type == artType, objViewArt))
       {
+        std::shared_ptr< std::pair<std::string, std::string> > artItem(new std::pair<std::string, std::string>);
+        artItem->first = artType;
+        artItem->second = objViewArt.art->m_url;
+        gMusicDatabaseCache.addArtistArt(mediaId, artItem, mediaType);
+
         return objViewArt.art->m_url;
       }
     }
@@ -8596,6 +8715,11 @@ std::string CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaT
                                                       && query::CODBArt::media_type == mediaType
                                                       && query::CODBArt::type == artType, objViewArt))
       {
+        std::shared_ptr< std::pair<std::string, std::string> > artItem(new std::pair<std::string, std::string>);
+        artItem->first = artType;
+        artItem->second = objViewArt.art->m_url;
+        gMusicDatabaseCache.addArtistArt(mediaId, artItem, mediaType);
+
         return objViewArt.art->m_url;
       }
     }
@@ -8606,13 +8730,25 @@ std::string CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaT
       if (m_cdb.getDB()->query_one<CODBPerson>(query::idPerson == mediaId, objPerson))
       {
         if (objPerson.m_art.load())
+        {
+          std::shared_ptr< std::pair<std::string, std::string> > artItem(new std::pair<std::string, std::string>);
+          artItem->first = artType;
+          artItem->second = objPerson.m_art->m_url;
+          gMusicDatabaseCache.addArtistArt(mediaId, artItem, mediaType);
+
           return objPerson.m_art->m_url;
+        }
       }
     }
     else
     {
       CLog::Log(LOGERROR, "%s(%d) unknown media type - %s", __FUNCTION__, mediaId, mediaType.c_str());
     }
+
+    std::shared_ptr< std::pair<std::string, std::string> > artItem(new std::pair<std::string, std::string>);
+    artItem->first = artType;
+    artItem->second = "";
+    gMusicDatabaseCache.addArtistArt(mediaId, artItem, mediaType);
     
     return "";
   }

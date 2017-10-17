@@ -65,6 +65,7 @@ public:
     m_sortTitle = "";
     m_userrating = 0;
     m_runtime = 0;
+    m_updatedAt = 0;
     m_synced = false;
   };
   
@@ -87,6 +88,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_sortTitle;
   int m_userrating;
   int m_runtime;
+  uint64_t m_updatedAt;
   
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBRating> m_defaultRating;
@@ -175,6 +177,9 @@ PRAGMA_DB(column(CODBTVShow::m_idTVShow))
   
 PRAGMA_DB(column(CODBSeason::m_idSeason))
   unsigned long m_idSeason;
+
+PRAGMA_DB(column(CODBSeason::m_updatedAt))
+  unsigned long m_updatedAt;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \

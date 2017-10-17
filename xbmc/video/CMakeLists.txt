@@ -10,7 +10,9 @@ set(SOURCES Bookmark.cpp
             VideoInfoTag.cpp
             VideoLibraryQueue.cpp
             VideoThumbLoader.cpp
-            ViewModeSettings.cpp)
+            ViewModeSettings.cpp
+            VideoDatabaseCache.cpp
+            VideoCacheUpdater.cpp)
 
 set(HEADERS Bookmark.h
             ContextMenus.h
@@ -26,6 +28,8 @@ set(HEADERS Bookmark.h
             VideoInfoTag.h
             VideoLibraryQueue.h
             VideoThumbLoader.h
-            ViewModeSettings.h)
+            ViewModeSettings.h
+            VideoDatabaseCache.h
+            VideoCacheUpdater.h)
 
 core_add_library(video)

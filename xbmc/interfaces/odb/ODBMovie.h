@@ -70,6 +70,7 @@ public:
     m_trailer = "";
     m_fanart = "";
     m_userrating = 0;
+    m_updatedAt = 0;
     m_synced = false;
   };
   
@@ -94,6 +95,8 @@ PRAGMA_DB (type("VARCHAR(255)"))
 PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_originalTitle;
   std::string m_thumbUrl_spoof;
+  uint64_t m_updatedAt;
+  
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBFile> m_file;
 PRAGMA_DB (section(section_foreign))

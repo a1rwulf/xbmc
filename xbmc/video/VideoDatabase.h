@@ -27,6 +27,8 @@
 #include <odb/odb_gen/ODBTVShow.h>
 #include <odb/odb_gen/ODBTVShow_odb.h>
 
+#include "VideoDatabaseCache.h"
+
 class CFileItem;
 class CFileItemList;
 class CVideoSettings;
@@ -1014,4 +1016,13 @@ private:
 
   static void AnnounceRemove(std::string content, int id, bool scanning = false);
   static void AnnounceUpdate(std::string content, int id);
+  
+  void GetTranslatedString(unsigned long id, std::string& var, std::string context);
+public:
+  bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
+  bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);
+  bool GetTVShowTranslation(CVideoInfoTag* details, bool force = false);
+  bool GetEpisodeTranslation(CVideoInfoTag* details, bool force = false);
+  CVideoDatabaseCache& getCache();
+  
 };

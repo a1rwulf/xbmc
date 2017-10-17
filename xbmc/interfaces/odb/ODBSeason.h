@@ -45,6 +45,7 @@ public:
     m_name = "";
     m_season = -1;
     m_userrating = 0;
+    m_updatedAt = 0;
     m_synced = false;
   }
   
@@ -55,6 +56,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
   int m_season;
   int m_userrating;
   CODBDate m_firstAired;
+  uint64_t m_updatedAt;
   
 PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBEpisode> > m_episodes;

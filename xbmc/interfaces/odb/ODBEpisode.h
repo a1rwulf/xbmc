@@ -62,6 +62,7 @@ public:
     m_identId = 0;
     m_userrating = 0;
     m_idShow = 0;
+    m_updatedAt = 0;
   }
   
 PRAGMA_DB (id auto)
@@ -80,6 +81,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
   int m_sortEpisode;
   int m_identId;
   int m_userrating;
+  uint64_t m_updatedAt;
   
   //Temporary Show ID as used in CVideoInfoScanner:1264
   //See if this can be refactored away when odb is fully integrated
