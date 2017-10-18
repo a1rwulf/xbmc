@@ -600,7 +600,6 @@ namespace PVR
       std::make_shared<CONTEXTMENUITEM::PlayRecording>(19687), /* Play recording */
       std::make_shared<CONTEXTMENUITEM::ShowInformation>(),
       std::make_shared<CONTEXTMENUITEM::ShowChannelGuide>(19686), /* Channel guide */
-      std::make_shared<CONTEXTMENUITEM::FindSimilar>(19003), /* Find similar */
       std::make_shared<CONTEXTMENUITEM::ToggleTimerState>(),
       std::make_shared<CONTEXTMENUITEM::AddTimerRule>(19061), /* Add timer */
       std::make_shared<CONTEXTMENUITEM::EditTimerRule>(),
