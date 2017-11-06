@@ -14419,7 +14419,7 @@ CVideoDatabaseCache& CVideoDatabase::getCache()
 std::string CVideoDatabase::GetMACAddress()
 {
 #if defined(HAS_LINUX_NETWORK) || defined(HAS_WIN32_NETWORK)
-  CNetworkInterface* iface = g_application.getNetwork().GetFirstConnectedInterface();
+  CNetworkInterface* iface = CServiceBroker::GetNetwork().GetFirstConnectedInterface();
   if (iface)
     return iface->GetMacAddress();
 #endif
