@@ -711,15 +711,16 @@ void ShowGUINotification(CGUIDialogKaiToast::eMessageType eType, const std::stri
 void CMediaManager::OnStorageAdded(const std::string &label, const std::string &path)
 {
   m_usbConnected = true;
+  CJobManager::GetInstance().AddJob(new CAutorunMediaJob(label, path), this, CJob::PRIORITY_HIGH);
 #ifdef HAS_DVD_DRIVE
-  const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+  /*const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
   if (settings->GetInt(CSettings::SETTING_AUDIOCDS_AUTOACTION) != AUTOCD_NONE || settings->GetBool(CSettings::SETTING_DVDS_AUTORUN))
     if (settings->GetInt(CSettings::SETTING_AUDIOCDS_AUTOACTION) == AUTOCD_RIP)
       CJobManager::GetInstance().AddJob(new CAutorunMediaJob(label, path), this, CJob::PRIORITY_LOW);
     else
       CJobManager::GetInstance().AddJob(new CAutorunMediaJob(label, path), this, CJob::PRIORITY_HIGH);
   else
-    ShowGUINotification(CGUIDialogKaiToast::Info, g_localizeStrings.Get(13021), label);
+    ShowGUINotification(CGUIDialogKaiToast::Info, g_localizeStrings.Get(13021), label);*/
 #endif
 }
 

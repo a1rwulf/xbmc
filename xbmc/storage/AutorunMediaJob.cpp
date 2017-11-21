@@ -24,12 +24,15 @@ CAutorunMediaJob::CAutorunMediaJob(const std::string &label, const std::string &
 
 bool CAutorunMediaJob::DoWork()
 {
-  CGUIDialogSelect* pDialog= CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIDialogSelect>(WINDOW_DIALOG_SELECT);
+  //CGUIDialogSelect* pDialog= CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIDialogSelect>(WINDOW_DIALOG_SELECT);
 
   // wake up and turn off the screensaver if it's active
   g_application.WakeUpScreenSaverAndDPMS();
+  
+  std::string strAction = StringUtils::Format("ActivateWindow(Videos, %s,return)", m_path.c_str());
+  CBuiltins::GetInstance().Execute(strAction);
 
-  pDialog->Reset();
+  /*pDialog->Reset();
   if (!m_label.empty())
     pDialog->SetHeading(CVariant{m_label});
   else
@@ -38,16 +41,15 @@ bool CAutorunMediaJob::DoWork()
   pDialog->Add(g_localizeStrings.Get(21332));
   pDialog->Add(g_localizeStrings.Get(21333));
   pDialog->Add(g_localizeStrings.Get(21334));
-  pDialog->Add(g_localizeStrings.Get(21335));
 
   pDialog->Open();
 
   int selection = pDialog->GetSelectedItem();
   if (selection >= 0)
   {
-    std::string strAction = StringUtils::Format("ActivateWindow(%s, %s)", GetWindowString(selection), m_path.c_str());
+    std::string strAction = StringUtils::Format("ActivateWindow(%s, %s,return)", GetWindowString(selection), m_path.c_str());
     CBuiltins::GetInstance().Execute(strAction);
-  }
+  }*/
 
   return true;
 }
@@ -62,9 +64,7 @@ const char *CAutorunMediaJob::GetWindowString(int selection)
       return "Music";
     case 2:
       return "Pictures";
-    case 3:
-      return "FileManager";
     default:
-      return "FileManager";
+      return "Videos";
   }
 }

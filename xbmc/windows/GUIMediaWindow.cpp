@@ -1766,7 +1766,7 @@ void CGUIMediaWindow::SetupShares()
   CGUIViewState* viewState=CGUIViewState::GetViewState(GetID(), items);
   if (viewState)
   {
-    m_rootDir.SetMask(viewState->GetExtensions());
+    //m_rootDir.SetMask(viewState->GetExtensions());
     m_rootDir.SetSources(viewState->GetSources());
     delete viewState;
   }

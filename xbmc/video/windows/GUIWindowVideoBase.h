@@ -124,6 +124,8 @@ protected:
   static bool OnUnAssignContent(const std::string &path, int header, int text);
 
   static bool StackingAvailable(const CFileItemList &items);
+  
+  bool ShowPicture(int iItem, bool startSlideShow);
 
   bool OnPlayStackPart(int item);
 

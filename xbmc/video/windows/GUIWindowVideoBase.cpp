@@ -53,6 +53,7 @@
 #include "URL.h"
 #include "utils/GroupUtils.h"
 #include "TextureDatabase.h"
+#include "pictures/GUIWindowSlideShow.h"
 
 using namespace XFILE;
 using namespace PLAYLIST;
@@ -1081,6 +1082,9 @@ bool CGUIWindowVideoBase::OnPlayMedia(int iItem, const std::string &player)
     return false;
 
   CFileItemPtr pItem = m_vecItems->Get(iItem);
+  
+  if (pItem->IsPicture())
+    return ShowPicture(iItem, false);
 
   // party mode
   if (g_partyModeManager.IsEnabled(PARTYMODECONTEXT_VIDEO))
@@ -1106,6 +1110,58 @@ bool CGUIWindowVideoBase::OnPlayMedia(int iItem, const std::string &player)
 
   PlayMovie(&item, player);
 
+  return true;
+}
+
+bool CGUIWindowVideoBase::ShowPicture(int iItem, bool startSlideShow)
+{
+  if ( iItem < 0 || iItem >= (int)m_vecItems->Size() ) return false;
+  CFileItemPtr pItem = m_vecItems->Get(iItem);
+  std::string strPicture = pItem->GetPath();
+  
+#ifdef HAS_DVD_DRIVE
+  if (pItem->IsDVD())
+    return MEDIA_DETECT::CAutorun::PlayDiscAskResume(m_vecItems->Get(iItem)->GetPath());
+#endif
+  
+  if (pItem->m_bIsShareOrDrive)
+    return false;
+  
+  CGUIWindowSlideShow *pSlideShow = CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIWindowSlideShow>(WINDOW_SLIDESHOW);
+  if (!pSlideShow)
+    return false;
+  if (g_application.GetAppPlayer().IsPlayingVideo())
+    g_application.StopPlaying();
+  
+  pSlideShow->Reset();
+  for (int i = 0; i < (int)m_vecItems->Size();++i)
+  {
+    CFileItemPtr pItem = m_vecItems->Get(i);
+    if (!pItem->m_bIsFolder && !(URIUtils::IsRAR(pItem->GetPath()) ||
+                                 URIUtils::IsZIP(pItem->GetPath())) && (pItem->IsPicture() || (
+                                                                                               CServiceBroker::GetSettings().GetBool(CSettings::SETTING_PICTURES_SHOWVIDEOS) &&
+                                                                                               pItem->IsVideo())))
+    {
+      pSlideShow->Add(pItem.get());
+    }
+  }
+  
+  if (pSlideShow->NumSlides() == 0)
+    return false;
+  
+  pSlideShow->Select(strPicture);
+  
+  if (startSlideShow)
+    pSlideShow->StartSlideShow();
+  else
+  {
+    CVariant param;
+    param["player"]["speed"] = 1;
+    param["player"]["playerid"] = PLAYLIST_PICTURE;
+  }
+  
+  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_SLIDESHOW);
+  
   return true;
 }
 
