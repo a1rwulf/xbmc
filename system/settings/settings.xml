@@ -1347,7 +1347,7 @@
         </setting>
         <setting id="epg.selectaction" type="integer" label="22079" help="36424">
           <level>1</level>
-          <default>2</default> <!-- EPG_SELECT_ACTION_INFO -->
+          <default>1</default> <!-- EPG_SELECT_ACTION_INFO -->
           <constraints>
             <options>
               <option label="36425">0</option> <!-- EPG_SELECT_ACTION_CONTEXT_MENU -->
@@ -1368,7 +1368,7 @@
       <group id="2" label="14303">
         <setting id="epg.epgupdate" type="integer" label="19071" help="36221">
           <level>2</level>
-          <default>120</default>
+          <default>240</default>
           <constraints>
             <minimum>15</minimum>
             <step>15</step>
@@ -1437,7 +1437,7 @@
         </setting>
         <setting id="pvrplayback.fps" type="integer" label="19108" help="36261">
           <level>0</level>
-          <default>0</default>
+          <default>1</default>
           <constraints>
             <options>
               <option label="351">0</option>   <!-- OFF -->
