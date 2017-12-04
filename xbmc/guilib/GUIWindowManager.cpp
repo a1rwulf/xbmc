@@ -136,6 +136,8 @@
 #include "peripherals/dialogs/GUIDialogPeripheralSettings.h"
 #include "addons/interfaces/AddonInterfaces.h"
 
+#include "guilib/LocalizeStrings.h"
+
 /* Game related include files */
 #include "cores/RetroPlayer/guiwindows/GameWindowFullScreen.h"
 #include "games/controllers/windows/GUIControllerWindow.h"
@@ -983,15 +985,31 @@ void CGUIWindowManager::OnApplicationMessage(ThreadMessage* pMsg)
       options.text = pMsg->param2;
       pMsg->SetResult(dialog->ShowAndGetInput(options));
     }
-
+ 
   }
   break;
 
   case TMSG_GUI_DIALOG_OK:
   {
-
     if (!pMsg->lpVoid && pMsg->param1 < 0 && pMsg->param2 < 0)
       return;
+    
+    if (pMsg->lpVoid)
+    {
+      auto options = static_cast<HELPERS::DialogOKMessage*>(pMsg->lpVoid);
+      
+      std::string heading;
+      std::string text;
+      
+      if (!options->heading.isNull())
+        heading = g_localizeStrings.Get(options->heading.asInteger());
+      if (!options->text.isNull())
+        text = g_localizeStrings.Get(options->text.asInteger());
+      
+      CGUIDialogKaiToast::QueueNotification(CGUIDialogKaiToast::Error, heading, text, 3000, false);
+    }
+    pMsg->SetResult(static_cast<int>(true));
+    return;
 
     auto dialogOK = static_cast<CGUIDialogOK*>(GetWindow(WINDOW_DIALOG_OK));
     if (!dialogOK)
