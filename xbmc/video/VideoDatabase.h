@@ -436,6 +436,9 @@ public:
 
   int AddMovie(const std::string& strFilenameAndPath); //ODB DONE
   int AddEpisode(int idShow, const std::string& strFilenameAndPath);
+  
+  int GetPlayerPlayCount(const CODBFile& file);
+  void SetPlayerPlayCount(const CODBFile& file, int playcount);
 
   // editing functions
   /*! \brief Set the playcount of an item

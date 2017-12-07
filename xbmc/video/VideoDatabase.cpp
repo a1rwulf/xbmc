@@ -37,6 +37,8 @@
 #include <odb/odb_gen/ODBStacktime_odb.h>
 #include <odb/odb_gen/ODBTranslation.h>
 #include <odb/odb_gen/ODBTranslation_odb.h>
+#include <odb/odb_gen/ODBPlayCount.h>
+#include <odb/odb_gen/ODBPlayCount_odb.h>
 
 #include <algorithm>
 #include <map>
@@ -1642,6 +1644,75 @@ int CVideoDatabase::AddEpisode(int idShow, const std::string& strFilenameAndPath
   return -1;
 }
 
+int CVideoDatabase::GetPlayerPlayCount(const CODBFile& file)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    CODBPlayCount objPlayCount;
+    if (!m_cdb.getDB()->query_one<CODBPlayCount>(odb::query<CODBPlayCount>::file->idFile == file.m_idFile
+                                                 && odb::query<CODBPlayCount>::macAddress == GetMACAddress()
+                                                 , objPlayCount))
+      return 0;
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+    
+    return objPlayCount.m_playCount;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  return 0;
+}
+
+void CVideoDatabase::SetPlayerPlayCount(const CODBFile& file, int playcount)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    CODBPlayCount objPlayCount;
+    if (m_cdb.getDB()->query_one<CODBPlayCount>(odb::query<CODBPlayCount>::file->idFile == file.m_idFile
+                                                 && odb::query<CODBPlayCount>::macAddress == GetMACAddress()
+                                                 , objPlayCount))
+    {
+      objPlayCount.m_playCount = playcount;
+      m_cdb.getDB()->update(objPlayCount);
+    }
+    else
+    {
+      std::shared_ptr<CODBFile> objFile(new CODBFile);
+      if (!m_cdb.getDB()->query_one<CODBFile>(odb::query<CODBFile>::idFile == file.m_idFile, *objFile))
+        return;
+      
+      objPlayCount.m_file = objFile;
+      objPlayCount.m_macAddress = GetMACAddress();
+      objPlayCount.m_playCount = playcount;
+      
+      m_cdb.getDB()->persist(objPlayCount);
+    }
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  return;
+}
+
 int CVideoDatabase::AddMusicVideo(const std::string& strFilenameAndPath)
 {
   try
@@ -2400,7 +2471,7 @@ bool CVideoDatabase::GetFileInfo(const std::string& strFilenameAndPath, CVideoIn
           details.m_strPath = odbFile.m_path->m_path;
       std::string strFileName = odbFile.m_filename;
       ConstructPath(details.m_strFileNameAndPath, details.m_strPath, strFileName);
-      details.SetPlayCount(std::max(details.GetPlayCount(), static_cast<int>(odbFile.m_playCount))); //TODO: Replace by signed int?
+      details.SetPlayCount(std::max(details.GetPlayCount(), static_cast<int>(GetPlayerPlayCount(odbFile)))); //TODO: Replace by signed int?
       if (!details.m_lastPlayed.IsValid())
       {
         CDateTime datetime;
@@ -5889,7 +5960,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
     std::string strFileName = record->movie->m_file->m_filename;
     ConstructPath(details->m_strFileNameAndPath, details->m_strPath, strFileName);
-    details->SetPlayCount(record->movie->m_file->m_playCount);
+    details->SetPlayCount(GetPlayerPlayCount(*record->movie->m_file));
 
     CDateTime lastplayed;
     lastplayed.SetFromULongLong(record->movie->m_file->m_lastPlayed.m_ulong_date);
@@ -6255,7 +6326,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Epi
       std::string strFileName = record->episode->m_file->m_filename;
       ConstructPath(details.m_strFileNameAndPath,details.m_strPath,strFileName);
 
-      details.SetPlayCount(record->episode->m_file->m_playCount);
+      details.SetPlayCount(GetPlayerPlayCount(*record->episode->m_file));
       CDateTime lastplayed;
       lastplayed.SetFromULongLong(record->episode->m_file->m_lastPlayed.m_ulong_date);
       details.m_lastPlayed = lastplayed;
@@ -8190,7 +8261,7 @@ bool CVideoDatabase::GetPlayCounts(const std::string &strPath, CFileItemList &it
       CFileItemPtr item = items.Get(path);
       if (item)
       {
-        item->GetVideoInfoTag()->SetPlayCount(i->m_playCount);
+        item->GetVideoInfoTag()->SetPlayCount(GetPlayerPlayCount(*i));
         if (!item->GetVideoInfoTag()->GetResumePoint().IsSet())
         {
           CODBBookmark bookmark;
@@ -8237,7 +8308,7 @@ int CVideoDatabase::GetPlayCount(int iFileId)
     if(odb_transaction)
       odb_transaction->commit();
 
-    return odb_file.m_playCount;
+    return GetPlayerPlayCount(odb_file);
   }
   catch (std::exception& e)
   {
@@ -8325,7 +8396,10 @@ void CVideoDatabase::SetPlayCount(const CFileItem &item, int count, const CDateT
       return;
 
     if (count)
+    {
       odb_file.m_playCount = count;
+      SetPlayerPlayCount(odb_file, count);
+    }
 
     if (date.IsValid())
     {
