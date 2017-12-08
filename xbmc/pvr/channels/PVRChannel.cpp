@@ -62,7 +62,7 @@ CPVRChannel::CPVRChannel(bool bRadio /* = false */)
 CPVRChannel::CPVRChannel(const PVR_CHANNEL &channel, unsigned int iClientId)
 : m_clientChannelNumber(channel.iChannelNumber, channel.iSubChannelNumber)
 {
-  m_iChannelId              = -1;
+  m_iChannelId              = channel.iChannelNumber;
   m_bIsRadio                = channel.bIsRadio;
   m_bIsHidden               = channel.bIsHidden;
   m_bIsUserSetIcon          = false;
