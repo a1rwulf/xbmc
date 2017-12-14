@@ -667,8 +667,15 @@ bool CGUIWindowVideoBase::OnFileAction(int iItem, int action, std::string player
   case SELECT_ACTION_PLAY_OR_RESUME:
     return OnResumeItem(iItem, player);
   case SELECT_ACTION_INFO:
-    if (OnItemInfo(iItem))
-      return true;
+    if (StringUtils::StartsWith(item->GetPath(), "videodb://tvshows/titles"))
+    {
+      return OnResumeItem(iItem, player);
+    }
+    else
+    {
+      if (OnItemInfo(iItem))
+        return true;
+    }
     break;
   case SELECT_ACTION_MORE:
     OnPopupMenu(iItem);
