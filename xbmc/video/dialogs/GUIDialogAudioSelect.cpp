@@ -112,7 +112,7 @@ bool CGUIDialogAudioSelect::ShowAudioSelect()
     if (info.name.length() == 0)
       strItem = strLanguage;
     else
-      strItem = StringUtils::Format("%s - %s", strLanguage.c_str(), info.name.c_str());
+      strItem = StringUtils::Format("%s (%s)", strLanguage.c_str(), info.name.c_str());
     
     CFileItemPtr item(new CFileItem(strItem.c_str()));
     item->SetProperty("value", i);
