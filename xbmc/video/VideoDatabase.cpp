@@ -6409,12 +6409,9 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Epi
           
           details.m_iIdShow = objTVshow.show->m_idTVShow;
           
-          if (getDetails & VideoDbDetailsCast)
-          {
-            GetCast(record->episode->m_actors, details.m_cast);
-            GetCast(objTVshow.show->m_actors, details.m_cast);
-            castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis(); //TODO: What are all those timers in the code??
-          }
+          GetCast(record->episode->m_actors, details.m_cast);
+          GetCast(objTVshow.show->m_actors, details.m_cast);
+          castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis(); //TODO: What are all those timers in the code??
         }
       }
     }
