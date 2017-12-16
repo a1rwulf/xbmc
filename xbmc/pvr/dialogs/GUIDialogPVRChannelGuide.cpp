@@ -20,6 +20,28 @@ using namespace PVR;
 CGUIDialogPVRChannelGuide::CGUIDialogPVRChannelGuide()
   : CGUIDialogPVRItemsViewBase(WINDOW_DIALOG_PVR_CHANNEL_GUIDE, "DialogPVRChannelGuide.xml")
 {
+  switch (message.GetMessage())
+  {
+  case GUI_MSG_CLICKED:
+    {
+      int iControl = message.GetSenderId();
+
+      if (m_viewControl.HasControl(iControl))   // list/thumb control
+      {
+        int iItem = m_viewControl.GetSelectedItem();
+        int iAction = message.GetParam1();
+
+        if (iAction == ACTION_SELECT_ITEM || iAction == ACTION_MOUSE_LEFT_CLICK)
+        {
+          //ShowInfoShowInfo(iItem);
+          return true;
+        }
+      }
+    }
+    break;
+  }
+
+  return CGUIDialog::OnMessage(message);
 }
 
 void CGUIDialogPVRChannelGuide::Open(const CPVRChannelPtr &channel)
