@@ -1251,7 +1251,7 @@
           <dependencies>
             <dependency type="visible" on="property" name="pvrsettingvisible" setting="pvrmanager.usebackendchannelnumbers" operator="is">true</dependency>
           </dependencies>
-          <default>false</default>
+          <default>true</default>
           <control type="toggle" />
         </setting>
         <setting id="pvrmanager.clientpriorities" type="action" label="19240" help="36210">
