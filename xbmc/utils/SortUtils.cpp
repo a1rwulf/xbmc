@@ -220,6 +220,10 @@ std::string ByCountry(SortAttribute attributes, const SortItem &values)
 std::string ByYear(SortAttribute attributes, const SortItem &values)
 {
   std::string label;
+  label += StringUtils::Format("%i", (int)values.at(FieldYear).asInteger());
+  label += " " + ByLabel(attributes, values);
+  return label;
+
   const CVariant &airDate = values.at(FieldAirDate);
   if (!airDate.isNull() && !airDate.asString().empty())
     label = airDate.asString() + " ";
@@ -624,6 +628,7 @@ std::map<SortBy, Fields> fillSortingFields()
 
   sortingFields[SortByLabel].insert(FieldLabel);
   sortingFields[SortByDate].insert(FieldDate);
+  sortingFields[SortByDate].insert(FieldLabel);
   sortingFields[SortBySize].insert(FieldSize);
   sortingFields[SortByFile].insert(FieldPath);
   sortingFields[SortByFile].insert(FieldStartOffset);
@@ -651,10 +656,12 @@ std::map<SortBy, Fields> fillSortingFields()
   sortingFields[SortByGenre].insert(FieldGenre);
   sortingFields[SortByCountry].insert(FieldCountry);
   sortingFields[SortByYear].insert(FieldYear);
+  sortingFields[SortByYear].insert(FieldLabel);
   sortingFields[SortByYear].insert(FieldAirDate);
   sortingFields[SortByYear].insert(FieldAlbum);
   sortingFields[SortByYear].insert(FieldTrackNumber);
   sortingFields[SortByRating].insert(FieldRating);
+  sortingFields[SortByRating].insert(FieldLabel);
   sortingFields[SortByUserRating].insert(FieldUserRating);
   sortingFields[SortByVotes].insert(FieldVotes);
   sortingFields[SortByTop250].insert(FieldTop250);
@@ -685,7 +692,7 @@ std::map<SortBy, Fields> fillSortingFields()
   sortingFields[SortBySubtitleLanguage].insert(FieldSubtitleLanguage);
   sortingFields[SortByStudio].insert(FieldStudio);
   sortingFields[SortByDateAdded].insert(FieldDateAdded);
-  sortingFields[SortByDateAdded].insert(FieldId);
+  sortingFields[SortByDateAdded].insert(FieldLabel);
   sortingFields[SortByLastPlayed].insert(FieldLastPlayed);
   sortingFields[SortByPlaycount].insert(FieldPlaycount);
   sortingFields[SortByListeners].insert(FieldListeners);
