@@ -7038,7 +7038,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
       
       //Fallback
       if (art.empty())
-        art.insert(std::make_pair("thumb", "DefaultSeason.png"));
+        art.insert(std::make_pair("thumb", "DefaultEpisode.png"));
     }
     else if (mediaType == MediaTypeVideoCollection)
     {
