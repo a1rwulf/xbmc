@@ -1361,7 +1361,7 @@
         </setting>
         <setting id="epg.hidenoinfoavailable" type="boolean" label="19268" help="36224">
           <level>2</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle" />
         </setting>
       </group>
