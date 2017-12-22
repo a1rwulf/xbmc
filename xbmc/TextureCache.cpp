@@ -9,6 +9,7 @@
 #include "TextureCache.h"
 #include "TextureCacheJob.h"
 #include "filesystem/File.h"
+#include "guilib/GUIComponent.h"
 #include "profiles/ProfileManager.h"
 #include "threads/SingleLock.h"
 #include "utils/Crc32.h"
@@ -17,6 +18,9 @@
 #include "utils/log.h"
 #include "utils/URIUtils.h"
 #include "utils/StringUtils.h"
+#include "FileItem.h"
+#include "guilib/GUIWindowManager.h"
+#include "GUIUserMessages.h"
 #include "URL.h"
 #include "ServiceBroker.h"
 
@@ -109,7 +113,7 @@ std::string CTextureCache::CheckCachedImage(const std::string &url, bool &needsR
   return "";
 }
 
-void CTextureCache::BackgroundCacheImage(const std::string &url)
+void CTextureCache::BackgroundCacheImage(const std::string &url, bool updateWindows)
 {
   if (url.empty())
     return;
@@ -124,7 +128,9 @@ void CTextureCache::BackgroundCacheImage(const std::string &url)
     return;
 
   // needs (re)caching
-  AddJob(new CTextureCacheJob(path, details.hash));
+  CTextureCacheJob* job = new CTextureCacheJob(path, details.hash);
+    job->sendUpdateMsg = updateWindows;
+  AddJob(job);
 }
 
 std::string CTextureCache::CacheImage(const std::string &image, CBaseTexture **texture /* = NULL */, CTextureDetails *details /* = NULL */)
@@ -269,6 +275,19 @@ void CTextureCache::OnCachingComplete(bool success, CTextureCacheJob *job)
       SetCachedTextureValid(job->m_url, job->m_details.updateable);
     else
       AddCachedTexture(job->m_url, job->m_details);
+
+    if (job->sendUpdateMsg)
+    {
+      CURL url(job->m_url);
+      std::string path = url.GetHostName();
+      std::cout << "update for " << path << std::endl;
+      CFileItemPtr pItem(new CFileItem(path, false));
+      CTextureDetails details;
+      path = GetCachedImage(job->m_url, details);
+      pItem->SetArt("thumb", path);
+      CGUIMessage msg(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE_ITEM, 0, pItem);
+      CServiceBroker::GetGUI()->GetWindowManager().SendThreadMessage(msg);
+    }
   }
 
   { // remove from our processing list
