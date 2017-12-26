@@ -980,7 +980,7 @@
     "items": { "type": "string",
       "enum": [ "thumbnail", "channeltype", "hidden", "locked", "channel", "lastplayed",
                 "broadcastnow", "broadcastnext", "uniqueid", "icon", "channelnumber",
-                "subchannelnumber", "isrecording" ]
+                "subchannelnumber", "isrecording", "dynpath" ]
     }
   },
   "PVR.Details.Channel": {
@@ -999,7 +999,8 @@
       "icon": { "type": "string" },
       "channelnumber": { "type": "integer" },
       "subchannelnumber": { "type": "integer" },
-      "isrecording": { "type": "boolean" }
+      "isrecording": { "type": "boolean" },
+      "dynpath": { "type": "string"}
     }
   },
   "PVR.Details.ChannelGroup": {

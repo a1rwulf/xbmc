@@ -163,6 +163,15 @@ bool CFileItemHandler::GetField(const std::string &field, const CVariant &info, 
       }
     }
 
+    if (item->HasPVRChannelInfoTag())
+    {
+      if (field == "dynpath")
+      {
+        result[field] = item->GetDynPath();
+        return true;
+      }
+    }
+
     if (item->HasProperty(field))
     {
       result[field] = item->GetProperty(field);

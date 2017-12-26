@@ -20,6 +20,7 @@
 #include "pvr/timers/PVRTimers.h"
 #include "utils/Variant.h"
 
+
 using namespace JSONRPC;
 using namespace PVR;
 using namespace KODI::MESSAGING;
@@ -134,7 +135,9 @@ JSONRPC_STATUS CPVROperations::GetChannelDetails(const std::string &method, ITra
   if (channel == NULL)
     return InvalidParams;
 
-  HandleFileItem("channelid", false, "channeldetails", CFileItemPtr(new CFileItem(channel)), parameterObject, parameterObject["properties"], result, false);
+  CFileItemPtr fileItemPtr(new CFileItem(channel));
+  CServiceBroker::GetPVRManager().FillStreamFileItem(*fileItemPtr);
+  HandleFileItem("channelid", false, "channeldetails", fileItemPtr, parameterObject, parameterObject["properties"], result, false);
 
   return OK;
 }
