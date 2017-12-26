@@ -334,7 +334,7 @@ void CGUIDialogVideoInfo::SetMovie(const CFileItem *item)
         if (!thumb.empty())
         {
           item->SetArt("thumb", thumb);
-          CTextureCache::GetInstance().BackgroundCacheImage(thumb);
+          CTextureCache::GetInstance().BackgroundCacheImage(thumb, true);
         }
       }
       item->SetIconImage("DefaultActor.png");

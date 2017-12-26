@@ -97,7 +97,7 @@ bool CProgramThumbLoader::FillThumb(CFileItem &item)
 
   if (!thumb.empty())
   {
-    CTextureCache::GetInstance().BackgroundCacheImage(thumb);
+    CTextureCache::GetInstance().BackgroundCacheImage(thumb, true);
     item.SetArt("thumb", thumb);
   }
   return true;

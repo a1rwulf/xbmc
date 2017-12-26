@@ -388,7 +388,7 @@ bool CVideoThumbLoader::LoadItemLookup(CFileItem* pItem)
       if (!art.empty()) // cache it
       {
         SetCachedImage(*pItem, type, art);
-        CTextureCache::GetInstance().BackgroundCacheImage(art);
+        CTextureCache::GetInstance().BackgroundCacheImage(art, true);
         artwork.insert(std::make_pair(type, art));
       }
       else
@@ -425,7 +425,7 @@ bool CVideoThumbLoader::LoadItemLookup(CFileItem* pItem)
       std::string thumbURL = GetEmbeddedThumbURL(*pItem);
       if (CTextureCache::GetInstance().HasCachedImage(thumbURL))
       {
-        CTextureCache::GetInstance().BackgroundCacheImage(thumbURL);
+        CTextureCache::GetInstance().BackgroundCacheImage(thumbURL, true);
         pItem->SetProperty("HasAutoThumb", true);
         pItem->SetProperty("AutoThumbImage", thumbURL);
         pItem->SetArt("thumb", thumbURL);

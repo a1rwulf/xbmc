@@ -1516,7 +1516,7 @@ namespace VIDEO
     }
 
     for (CGUIListItem::ArtMap::const_iterator i = art.begin(); i != art.end(); ++i)
-      CTextureCache::GetInstance().BackgroundCacheImage(i->second);
+      CTextureCache::GetInstance().BackgroundCacheImage(i->second, true);
 
     pItem->SetArt(art);
 
@@ -2019,7 +2019,7 @@ namespace VIDEO
         if (i->thumb.empty() && !i->thumbUrl.GetFirstThumb().m_url.empty())
           i->thumb = CScraperUrl::GetThumbURL(i->thumbUrl.GetFirstThumb());
         if (!i->thumb.empty())
-          CTextureCache::GetInstance().BackgroundCacheImage(i->thumb);
+          CTextureCache::GetInstance().BackgroundCacheImage(i->thumb, true);
       }
     }
   }

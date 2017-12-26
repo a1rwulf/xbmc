@@ -56,7 +56,7 @@ bool CImageLoader::DoWork()
     if (m_texture)
     {
       if (needsChecking)
-        CTextureCache::GetInstance().BackgroundCacheImage(texturePath);
+        CTextureCache::GetInstance().BackgroundCacheImage(texturePath, true);
 
       return true;
     }

@@ -137,7 +137,7 @@ void CPictureThumbLoader::ProcessFoldersAndArchives(CFileItem *pItem)
     if (CFile::Exists(strTBN))
     {
       db.SetTextureForPath(pItem->GetPath(), "thumb", strTBN);
-      CTextureCache::GetInstance().BackgroundCacheImage(strTBN);
+      CTextureCache::GetInstance().BackgroundCacheImage(strTBN, true);
       pItem->SetArt("thumb", strTBN);
       return;
     }
@@ -164,7 +164,7 @@ void CPictureThumbLoader::ProcessFoldersAndArchives(CFileItem *pItem)
     if (CFile::Exists(thumb))
     {
       db.SetTextureForPath(pItem->GetPath(), "thumb", thumb);
-      CTextureCache::GetInstance().BackgroundCacheImage(thumb);
+      CTextureCache::GetInstance().BackgroundCacheImage(thumb, true);
       pItem->SetArt("thumb", thumb);
       return;
     }
@@ -218,7 +218,7 @@ void CPictureThumbLoader::ProcessFoldersAndArchives(CFileItem *pItem)
         items.Sort(SortByLabel, SortOrderAscending);
         std::string thumb = CTextureUtils::GetWrappedThumbURL(items[0]->GetPath());
         db.SetTextureForPath(pItem->GetPath(), "thumb", thumb);
-        CTextureCache::GetInstance().BackgroundCacheImage(thumb);
+        CTextureCache::GetInstance().BackgroundCacheImage(thumb, true);
         pItem->SetArt("thumb", thumb);
       }
       else
