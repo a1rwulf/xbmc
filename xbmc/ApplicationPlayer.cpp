@@ -219,6 +219,12 @@ bool CApplicationPlayer::HasGame() const
   return (player && player->HasGame());
 }
 
+bool CApplicationPlayer::IsAudioOnly() const
+{
+  std::shared_ptr<IPlayer> player = GetInternal();
+  return (player && player->IsAudioOnly());
+}
+
 int CApplicationPlayer::GetPreferredPlaylist() const
 {
   if (IsPlayingVideo())

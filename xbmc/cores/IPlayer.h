@@ -98,6 +98,7 @@ public:
   virtual void Pause() = 0;
   virtual bool HasVideo() const = 0;
   virtual bool HasAudio() const = 0;
+  virtual bool IsAudioOnly() const { return false; }
   virtual bool HasGame() const { return false; }
   virtual bool HasRDS() const { return false; }
   virtual bool IsPassthrough() const { return false;}

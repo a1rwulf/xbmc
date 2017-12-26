@@ -108,6 +108,7 @@ public:
   bool HasMenu() const;
   bool HasVideo() const;
   bool HasGame() const;
+  bool IsAudioOnly() const;
   bool HasRDS() const;
   bool IsCaching() const;
   bool IsInMenu() const;

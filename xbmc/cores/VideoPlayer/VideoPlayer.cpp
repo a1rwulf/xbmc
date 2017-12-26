@@ -643,6 +643,7 @@ CVideoPlayer::CVideoPlayer(IPlayerCallback& callback)
   m_HasVideo = false;
   m_HasAudio = false;
   m_UpdateStreamDetails = false;
+  m_IsAudioOnly = false;
 
   memset(&m_SpeedState, 0, sizeof(m_SpeedState));
 
@@ -1640,6 +1641,9 @@ void CVideoPlayer::Process()
 
     // process the packet
     ProcessPacket(pStream, pPacket);
+
+    if (m_CurrentVideo.id == -1)
+      m_IsAudioOnly = true;
   }
 }
 
@@ -3136,6 +3140,11 @@ bool CVideoPlayer::HasVideo() const
 bool CVideoPlayer::HasAudio() const
 {
   return m_HasAudio;
+}
+
+bool CVideoPlayer::IsAudioOnly() const
+{
+  return m_IsAudioOnly;
 }
 
 bool CVideoPlayer::HasRDS() const

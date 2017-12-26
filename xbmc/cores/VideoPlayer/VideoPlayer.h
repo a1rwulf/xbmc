@@ -287,6 +287,7 @@ public:
   void Pause() override;
   bool HasVideo() const override;
   bool HasAudio() const override;
+  bool IsAudioOnly() const override;
   bool HasRDS() const override;
   bool IsPassthrough() const override;
   bool CanSeek() override;
@@ -577,6 +578,7 @@ protected:
 
   bool m_HasVideo;
   bool m_HasAudio;
+  bool m_IsAudioOnly;
 
   bool m_UpdateStreamDetails;
 

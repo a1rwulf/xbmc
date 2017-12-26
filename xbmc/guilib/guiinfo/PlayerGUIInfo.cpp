@@ -419,6 +419,9 @@ bool CPlayerGUIInfo::GetBool(bool& value, const CGUIListItem *gitem, int context
     case PLAYER_HAS_GAME:
       value = g_application.GetAppPlayer().IsPlayingGame();
       return true;
+    case PLAYER_IS_AUDIO_ONLY:
+      value = g_application.GetAppPlayer().IsAudioOnly();
+      return true;
     case PLAYER_PLAYING:
       value = g_application.GetAppPlayer().GetPlaySpeed() == 1.0;
       return true;
