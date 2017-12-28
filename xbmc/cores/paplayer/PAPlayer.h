@@ -40,6 +40,7 @@ public:
   void Pause() override;
   bool HasVideo() const override { return false; }
   bool HasAudio() const override { return true; }
+  bool IsAudioOnly() const override { return true; }
   bool CanSeek() override;
   void Seek(bool bPlus = true, bool bLargeStep = false, bool bChapterOverride = false) override;
   void SeekPercentage(float fPercent = 0.0f) override;
