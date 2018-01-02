@@ -518,6 +518,7 @@ JSONRPC_STATUS CPlayerOperations::Open(const std::string &method, ITransportLaye
   if (parameterObject["item"].isMember("playlistid"))
   {
     int playlistid = (int)parameterObject["item"]["playlistid"].asInteger();
+    int playlistStartPosition = (int)parameterObject["item"]["position"].asInteger();
 
     if (playlistid < PLAYLIST_PICTURE)
     {
@@ -527,9 +528,15 @@ JSONRPC_STATUS CPlayerOperations::Open(const std::string &method, ITransportLaye
       // Apply the "repeat" option if available
       if (!optionRepeat.isNull())
         CServiceBroker::GetPlaylistPlayer().SetRepeat(playlistid, (REPEAT_STATE)ParseRepeatState(optionRepeat), false);
+      
+      if (optionResume.isBoolean() && optionResume.asBoolean())
+        CServiceBroker::GetPlaylistPlayer().SetSongResume(playlistid, playlistStartPosition, STARTOFFSET_RESUME);
+      else if (optionResume.isObject())
+        CServiceBroker::GetPlaylistPlayer().SetSongResume(playlistid, playlistStartPosition, (int)CUtil::ConvertSecsToMilliSecs(ParseTimeInSeconds(optionResume)));
+      else if (optionResume.isInteger())
+        CServiceBroker::GetPlaylistPlayer().SetSongResume(playlistid, playlistStartPosition, (int)CUtil::ConvertSecsToMilliSecs(optionResume.asInteger()));
+      
     }
-
-    int playlistStartPosition = (int)parameterObject["item"]["position"].asInteger();
 
     switch (playlistid)
     {

@@ -90,6 +90,8 @@ public:
    \return the index of the entry, or -1 if there is no current playlist. There is no guarantee that the returned index is valid.
    */
   int GetNextSong(int offset) const;
+  
+  void SetSongResume(int iPlaylist, int iIndex, int iOffset);
 
   /*! \brief Set the active playlist
    \param playList Values can be PLAYLIST_NONE, PLAYLIST_MUSIC or PLAYLIST_VIDEO
