@@ -410,7 +410,8 @@ void CPVRManager::Process(void)
 
   /* load the pvr data from the db and clients if it's not already loaded */
   XbmcThreads::EndTime progressTimeout(30000); // 30 secs
-  while (!LoadComponents(false))
+  CPVRGUIProgressHandler* progressHandler = nullptr;
+  while (!LoadComponents(progressHandler))
   {
     CLog::Log(LOGWARNING, "PVR Manager failed to load data, retrying");
     Sleep(1000);
