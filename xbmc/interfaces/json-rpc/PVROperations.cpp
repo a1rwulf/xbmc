@@ -232,6 +232,7 @@ JSONRPC_STATUS CPVROperations::Scan(const std::string &method, ITransportLayer *
     return FailedToExecute;
 
   CServiceBroker::GetPVRManager().GUIActions()->StartChannelScan();
+  CServiceBroker::GetPVRManager().GUIActions()->ResetPVRDatabase(true);
   return ACK;
 }
 
