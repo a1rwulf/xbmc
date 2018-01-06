@@ -1431,47 +1431,9 @@ namespace PVR
 
   bool CPVRGUIActions::ResetPVRDatabase(bool bResetEPGOnly)
   {
-    CGUIDialogProgress* pDlgProgress = CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIDialogProgress>(WINDOW_DIALOG_PROGRESS);
-    if (!pDlgProgress)
-    {
-      CLog::LogF(LOGERROR, "Unable to get WINDOW_DIALOG_PROGRESS!");
-      return false;
-    }
-
-    if (bResetEPGOnly)
-    {
-      if (!CGUIDialogYesNo::ShowAndGetInput(CVariant{19098},  // "Warning!"
-                                            CVariant{19188})) // "All your guide data will be cleared. Are you sure?"
-        return false;
-    }
-    else
-    {
-      if (CheckParentalPIN() != ParentalCheckResult::SUCCESS ||
-          !CGUIDialogYesNo::ShowAndGetInput(CVariant{19098},  // "Warning!"
-                                            CVariant{19186})) // "All your TV related data (channels, groups, guide) will be cleared. Are you sure?"
-        return false;
-    }
+    CLog::Log(LOGNOTICE,"CPVRGUIActions - %s - clearing the PVR database", __FUNCTION__);
 
     CDateTime::ResetTimezoneBias();
-
-    CLog::LogFC(LOGDEBUG, LOGPVR, "PVR clearing %s database", bResetEPGOnly ? "EPG" : "PVR and EPG");
-
-    pDlgProgress->SetHeading(CVariant{313}); // "Cleaning database"
-    pDlgProgress->SetLine(0, CVariant{g_localizeStrings.Get(19187)}); // "Clearing all related data."
-    pDlgProgress->SetLine(1, CVariant{""});
-    pDlgProgress->SetLine(2, CVariant{""});
-
-    pDlgProgress->Open();
-    pDlgProgress->Progress();
-
-    if (CServiceBroker::GetPVRManager().IsPlaying())
-    {
-      CLog::Log(LOGNOTICE, "PVR is stopping playback for %s database reset", bResetEPGOnly ? "EPG" : "PVR and EPG");
-      CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
-    }
-
-    pDlgProgress->SetPercentage(10);
-    pDlgProgress->Progress();
 
     const CPVRDatabasePtr pvrDatabase(CServiceBroker::GetPVRManager().GetTVDatabase());
     const CPVREpgDatabasePtr epgDatabase(CServiceBroker::GetPVRManager().EpgContainer().GetEpgDatabase());
@@ -1485,28 +1447,18 @@ namespace PVR
 
     /* reset the EPG pointers */
     pvrDatabase->ResetEPG();
-    pDlgProgress->SetPercentage(bResetEPGOnly ? 40 : 20);
-    pDlgProgress->Progress();
 
     /* clean the EPG database */
     epgDatabase->DeleteEpg();
-    pDlgProgress->SetPercentage(bResetEPGOnly ? 70 : 40);
-    pDlgProgress->Progress();
 
     if (!bResetEPGOnly)
     {
       pvrDatabase->DeleteChannelGroups();
-      pDlgProgress->SetPercentage(60);
-      pDlgProgress->Progress();
 
       /* delete all channels */
       pvrDatabase->DeleteChannels();
-      pDlgProgress->SetPercentage(70);
-      pDlgProgress->Progress();
 
       pvrDatabase->DeleteClients();
-      pDlgProgress->SetPercentage(80);
-      pDlgProgress->Progress();
 
       /* delete all channel and recording settings */
       CVideoDatabase videoDatabase;
@@ -1528,8 +1480,6 @@ namespace PVR
     CLog::Log(LOGNOTICE, "Restarting the PVR Manager after %s database reset", bResetEPGOnly ? "EPG" : "PVR and EPG");
     CServiceBroker::GetPVRManager().Start();
 
-    pDlgProgress->SetPercentage(100);
-    pDlgProgress->Close();
     return true;
   }
 
