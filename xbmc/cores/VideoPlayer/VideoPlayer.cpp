@@ -3709,7 +3709,7 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
     }
     hint.dvd = true;
   }
-  else if (m_pInputStream && m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER))
+  else if (m_pInputStream && (m_pInputStream->IsStreamType(DVDSTREAM_TYPE_PVRMANAGER) || m_pInputStream->IsStreamType(DVDSTREAM_TYPE_FFMPEG)))
   {
     // set framerate if not set by demuxer
     if (hint.fpsrate == 0 || hint.fpsscale == 0)
