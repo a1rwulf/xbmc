@@ -30,4 +30,5 @@ class CScreenShot
 public:
   static void TakeScreenshot();
   static void TakeScreenshot(const std::string &filename, bool sync);
+  static std::string TakeScreenshotBase64();
 };

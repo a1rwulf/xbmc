@@ -18,6 +18,7 @@
 #include "filesystem/File.h"
 #include "utils/log.h"
 #include "utils/URIUtils.h"
+#include "utils/Base64.h"
 #include "guilib/Texture.h"
 #include "guilib/imagefactory.h"
 #if defined(TARGET_RASPBERRY_PI)
@@ -52,6 +53,24 @@ bool CPicture::GetThumbnailFromSurface(const unsigned char* buffer, int width, i
   image->ReleaseThumbnailBuffer();
   delete image;
 
+  return true;
+}
+
+bool CPicture::CreateBase64ThumbnailFromSurface(const unsigned char *buffer, int width, int height, int stride, const std::string &thumbFile, std::string &base64buffer)
+{
+  CLog::Log(LOGDEBUG, "cached image '%s' size %dx%d", CURL::GetRedacted(thumbFile).c_str(), width, height);
+  
+  unsigned char *thumb = NULL;
+  unsigned int thumbsize=0;
+  IImage* pImage = ImageFactory::CreateLoader(thumbFile);
+  if(pImage == NULL || !pImage->CreateThumbnailFromSurface(const_cast<unsigned char*>(buffer), width, height, XB_FMT_A8R8G8B8, stride, thumbFile.c_str(), thumb, thumbsize))
+  {
+    CLog::Log(LOGERROR, "Failed to CreateThumbnailFromSurface for %s", CURL::GetRedacted(thumbFile).c_str());
+    delete pImage;
+    return false;
+  }
+  
+  Base64::Encode(reinterpret_cast<char*>(thumb), thumbsize, base64buffer);
   return true;
 }
 

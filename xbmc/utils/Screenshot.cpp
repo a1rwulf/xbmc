@@ -188,7 +188,6 @@ bool CScreenshotSurface::capture()
 
 void CScreenShot::TakeScreenshot(const std::string &filename, bool sync)
 {
-
   CScreenshotSurface surface;
   if (!surface.capture())
   {
@@ -302,4 +301,33 @@ void CScreenShot::TakeScreenshot()
       CLog::Log(LOGWARNING, "Too many screen shots or invalid folder");
     }
   }
+}
+
+std::string CScreenShot::TakeScreenshotBase64()
+{
+  //Create a filename in order not to have to re-implement all function calls
+  std::string filename = "special://temp/base64.jpg";
+  std::string base64data;
+  CScreenshotSurface surface;
+  if (!surface.capture())
+  {
+    CLog::Log(LOGERROR, "Base64 Screenshot %s failed", CURL::GetRedacted(filename).c_str());
+    return base64data;
+  }
+  
+  //set alpha byte to 0xFF
+  for (int y = 0; y < surface.m_height; y++)
+  {
+    unsigned char* alphaptr = surface.m_buffer - 1 + y * surface.m_stride;
+    for (int x = 0; x < surface.m_width; x++)
+      *(alphaptr += 4) = 0xFF;
+  }
+  
+  if (!CPicture::CreateBase64ThumbnailFromSurface(surface.m_buffer, surface.m_width, surface.m_height, surface.m_stride, filename, base64data))
+    base64data.clear();
+  
+  delete [] surface.m_buffer;
+  surface.m_buffer = NULL;
+  
+  return base64data;
 }
