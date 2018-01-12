@@ -4525,8 +4525,8 @@ bool CApplication::SwitchToFullScreen(bool force /* = false */)
     windowID = WINDOW_FULLSCREEN_VIDEO;
 
   // special case for switching between GUI & visualisation mode. (only if we're playing an audio song)
-  if (m_appPlayer.IsPlayingAudio() && CServiceBroker::GetGUI()->GetWindowManager().GetActiveWindow() != WINDOW_VISUALISATION)
-    windowID = WINDOW_VISUALISATION;
+  //if (m_appPlayer.IsPlayingAudio() && CServiceBroker::GetGUI()->GetWindowManager().GetActiveWindow() != WINDOW_VISUALISATION)
+  //  windowID = WINDOW_VISUALISATION;
 
 
   if (windowID != WINDOW_INVALID)
