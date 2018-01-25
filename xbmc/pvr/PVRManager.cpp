@@ -301,11 +301,12 @@ void CPVRManager::Stop(void)
     return;
 
   /* stop playback if needed */
+  /* YC do not interrupt playback when doing channelscan end epg repopulation
   if (IsPlaying())
   {
     CLog::LogFC(LOGDEBUG, LOGPVR, "Stopping PVR playback");
     CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
-  }
+  }*/
 
   CLog::Log(LOGNOTICE, "PVR Manager: Stopping");
   SetState(ManagerStateStopping);
