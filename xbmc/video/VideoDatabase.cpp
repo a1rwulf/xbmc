@@ -10398,6 +10398,7 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
 
     typedef odb::query<ODBView_Movie> query;
     query movie_query = optionalQueries;
+    bool hasTags = false;
 
     for (auto option: options)
     {
@@ -10427,8 +10428,10 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
         movie_query += query(query::set::name.like(option.second.asString()));
       else if (option.first == "year")
         movie_query += query(query::CODBMovie::premiered.year == option.second.asInteger());
-      else if (option.first == "tagid")
+      else if (option.first == "tagid") {
         movie_query += query(query::tag::idTag == option.second.asInteger());
+        hasTags = true;
+      }
       else if (option.first == "tag")
         movie_query += query(query::tag::name.like(option.second.asString()));
       else if (option.first == "filter" || option.first == "xsp")
@@ -10448,6 +10451,10 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
           videoUrl.RemoveOption(option.first);
       }
       CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
+    }
+    
+    if (!hasTags) {
+      movie_query += query(query::tag::idTag.is_null());
     }
 
     int total = 0;
