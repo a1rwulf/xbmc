@@ -10454,7 +10454,7 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     }
     
     if (!hasTags) {
-      movie_query += query(query::tag::idTag.is_null());
+      movie_query = movie_query && query(query::tag::idTag.is_null());
     }
 
     int total = 0;
