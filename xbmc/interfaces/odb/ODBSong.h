@@ -208,6 +208,7 @@ PRAGMA_DB (view)
  struct ODBView_GetAlbumPath
  {
   std::string path;
+  unsigned long idPath;
   unsigned int count;
  };
 

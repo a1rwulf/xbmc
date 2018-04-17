@@ -52,6 +52,7 @@ public:
     capath.clear();
     ciphers.clear();
     compression = false;
+    tracer = false;
   };
   std::string type;
   std::string host;
@@ -65,6 +66,7 @@ public:
   std::string capath;
   std::string ciphers;
   bool compression;
+  bool tracer;
 };
 
 struct TVShowRegexp
@@ -338,6 +340,7 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
     DatabaseSettings m_databaseTV;    // advanced tv database setup
     DatabaseSettings m_databaseEpg;   /*!< advanced EPG database setup */
     DatabaseSettings m_databaseSavestates; /*!< advanced savestate database setup */
+    DatabaseSettings m_databaseCommon;/*!< advanced common database setup */
 
     bool m_guiVisualizeDirtyRegions;
     int  m_guiAlgorithmDirtyRegions;

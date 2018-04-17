@@ -647,8 +647,9 @@ JSONRPC_STATUS CVideoLibrary::SetSeasonDetails(const std::string &method, ITrans
   if (ParameterNotNull(parameterObject, "title"))
     infos.SetSortTitle(parameterObject["title"].asString());
 
-  if (videodatabase.SetDetailsForSeason(infos, artwork, infos.m_iIdShow, id) <= 0)
-    return InternalError;
+  //TODO: Migrate to ODB
+  /*if (videodatabase.SetDetailsForSeason(infos, artwork, infos.m_iIdShow, id) <= 0)
+    return InternalError;*/
 
   if (!videodatabase.RemoveArtForItem(infos.m_iDbId, MediaTypeSeason, removedArtwork))
     return InternalError;

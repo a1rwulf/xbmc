@@ -8,6 +8,7 @@
 
 #include "DatabaseManager.h"
 #include "utils/log.h"
+#include "dbwrappers/CommonDatabase.h"
 #include "addons/AddonDatabase.h"
 #include "view/ViewDatabase.h"
 #include "TextureDatabase.h"
@@ -46,6 +47,7 @@ void CDatabaseManager::Initialize()
   { CAddonDatabase db; UpdateDatabase(db); }
   { CViewDatabase db; UpdateDatabase(db); }
   { CTextureDatabase db; UpdateDatabase(db); }
+  { CCommonDatabase db = CCommonDatabase::GetInstance(); db.init(); }
   { CMusicDatabase db; UpdateDatabase(db, &advancedSettings->m_databaseMusic); }
   { CVideoDatabase db; UpdateDatabase(db, &advancedSettings->m_databaseVideo); }
   { CPVRDatabase db; UpdateDatabase(db, &advancedSettings->m_databaseTV); }

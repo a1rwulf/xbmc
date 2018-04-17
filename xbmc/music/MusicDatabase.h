@@ -23,9 +23,22 @@
 #include "MediaSource.h"
 #include "settings/LibExportSettings.h"
 #include "utils/SortUtils.h"
+#include "dbwrappers/CommonDatabase.h"
+#include <odb/odb_gen/ODBSong.h>
+#include <odb/odb_gen/ODBSong_odb.h>
 
 class CArtist;
 class CFileItem;
+
+class CODBFile;
+class CODBAlbum;
+class CODBPerson;
+class CODBSong;
+class CODBRole;
+class CODBPath;
+class CODBPersonLink;
+class ODBView_Album;
+class ODBView_Music_Genres;
 
 namespace dbiplus
 {
@@ -115,7 +128,7 @@ public:
   // Song CRUD
   /////////////////////////////////////////////////
   /*! \brief Add a song to the database
-   \param idAlbum [in] the database ID of the album for the song
+   \param objAlbum [in] the odb object of the album for the song
    \param strTitle [in] the title of the song (required to be non-empty)
    \param strMusicBrainzTrackID [in] the MusicBrainz track ID of the song
    \param strPathAndFileName [in] the path and filename to the song
@@ -136,32 +149,54 @@ public:
    \param userrating [in] a userrating (my rating) for the song
    \param votes [in] a vote counter for the song rating
    \param replayGain [in] album and track replaygain and peak values
-   \return the id of the song
+   \return the odb object of the song
    */
-  int AddSong(const int idAlbum,
-              const std::string& strTitle,
-              const std::string& strMusicBrainzTrackID,
-              const std::string& strPathAndFileName,
-              const std::string& strComment,
-              const std::string& strMood,
-              const std::string& strThumb,
-              const std::string &artistDisp, const std::string &artistSort,
-              const std::vector<std::string>& genres,
-              int iTrack, int iDuration, int iYear,
-              const int iTimesPlayed, int iStartOffset, int iEndOffset,
-              const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
-              const ReplayGain& replayGain);
+  std::shared_ptr<CODBSong> AddSong(const std::shared_ptr<CODBAlbum> objAlbum,
+    const std::string& strTitle, 
+    const std::string& strMusicBrainzTrackID,
+    const std::string& strPathAndFileName, 
+    const std::string& strComment,
+    const std::string& strMood, 
+    const std::string& strThumb,
+    const std::string &artistDisp, 
+    const std::string &artistSort,
+    const std::vector<std::string>& genres,
+    int iTrack, 
+    int iDuration, 
+    int iYear,
+    const int iTimesPlayed, 
+    int iStartOffset, 
+    int iEndOffset,
+    const CDateTime& dtLastPlayed, 
+    float rating, 
+    int userrating, 
+    int votes,
+    const ReplayGain& replayGain);
+
   bool GetSong(int idSong, CSong& song);
 
-   /*! \brief Update a song and all its nested entities (genres, artists, contributors)
+  /*! \brief Update a song and all its nested entities (genres, artists, contributors)
     \param song [in/out] the song to update, artist ids are returned in artist credits
     \param bArtists to update artist credits and contributors, default is true
     \return true if sucessfull
    */
   bool UpdateSong(CSong& song, bool bArtists = true);
+  
+  /*! \brief Update a song in the database.
+
+   NOTE: This function assumes that song.artist contains the artist string to be concatenated.
+         Most internal functions should instead use the long-form function as the artist string
+         should be constructed from the artist credits.
+         This function will eventually be demised.
+
+   \param objSong  the odb object of the song to update
+   \param song the song
+   \return the odb object of the song.
+   */
+  std::shared_ptr<CODBSong> UpdateSong(std::shared_ptr<CODBSong> objSong, const CSong &song);
 
   /*! \brief Update a song in the database
-   \param idSong [in] the database ID of the song to update
+   \param objSong [in] the odbObject of the song to update
    \param strTitle [in] the title of the song (required to be non-empty)
    \param strMusicBrainzTrackID [in] the MusicBrainz track ID of the song
    \param strPathAndFileName [in] the path and filename to the song
@@ -182,17 +217,29 @@ public:
    \param userrating [in] a userrating (my rating) for the song
    \param votes [in] a vote counter for the song rating
    \param replayGain [in] album and track replaygain and peak values
-   \return the id of the song
+   \return the odbObject of the song
    */
-  int UpdateSong(int idSong,
-                 const std::string& strTitle, const std::string& strMusicBrainzTrackID,
-                 const std::string& strPathAndFileName, const std::string& strComment,
-                 const std::string& strMood, const std::string& strThumb,
-                 const std::string &artistDisp, const std::string &artistSort,
-                 const std::vector<std::string>& genres,
-                 int iTrack, int iDuration, int iYear,
-                 int iTimesPlayed, int iStartOffset, int iEndOffset,
-                 const CDateTime& dtLastPlayed, float rating, int userrating, int votes, const ReplayGain& replayGain);
+  std::shared_ptr<CODBSong> UpdateSong(std::shared_ptr<CODBSong> objSong,
+    const std::string& strTitle, 
+    const std::string& strMusicBrainzTrackID,
+    const std::string& strPathAndFileName, 
+    const std::string& strComment,
+    const std::string& strMood, 
+    const std::string& strThumb,
+    const std::string &artistDisp, 
+    const std::string &artistSort,
+    const std::vector<std::string>& genres,
+    int iTrack, 
+    int iDuration, 
+    int iYear,
+    int iTimesPlayed, 
+    int iStartOffset, 
+    int iEndOffset,
+    const CDateTime& dtLastPlayed, 
+    float rating, 
+    int userrating, 
+    int votes,
+    const ReplayGain& replayGain);
 
   //// Misc Song
   bool GetSongByFileName(const std::string& strFileName, CSong& song, int64_t startOffset = 0);
@@ -233,13 +280,18 @@ public:
    \param releaseType "album" or "single"
    \return the id of the album
    */
-  int  AddAlbum(const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
-                const std::string& strReleaseGroupMBID,
-                const std::string& strArtist, const std::string& strArtistSort,
-                const std::string& strGenre, int year,
-                const std::string& strRecordLabel, const std::string& strType,
-                bool bCompilation, CAlbum::ReleaseType releaseType);
-
+  std::shared_ptr<CODBAlbum> AddAlbum(const std::string& strAlbum, 
+    const std::string& strMusicBrainzAlbumID,
+    const std::string& strReleaseGroupMBID,
+    const std::string& strArtist, 
+    const std::string& strArtistSort, 
+    const std::string& strGenre, 
+    int year,
+    const std::string& strRecordLabel, 
+    const std::string& strType,
+    bool bCompilation, 
+    CAlbum::ReleaseType releaseType);
+    
   /*! \brief retrieve an album, optionally with all songs.
    \param idAlbum the database id of the album.
    \param album [out] the album to fill.
@@ -247,18 +299,28 @@ public:
    \return true if the album is retrieved, false otherwise.
    */
   bool GetAlbum(int idAlbum, CAlbum& album, bool getSongs = true);
-  int  UpdateAlbum(int idAlbum,
-                   const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
-                   const std::string& strReleaseGroupMBID,
-                   const std::string& strArtist, const std::string& strArtistSort,
-                   const std::string& strGenre,
-                   const std::string& strMoods, const std::string& strStyles,
-                   const std::string& strThemes, const std::string& strReview,
-                   const std::string& strImage, const std::string& strLabel,
-                   const std::string& strType,
-                   float fRating, int iUserrating, int iVotes, int iYear, bool bCompilation,
-                   CAlbum::ReleaseType releaseType,
-                   bool bScrapedMBID);
+  std::shared_ptr<CODBAlbum> GetODBAlbum(int idAlbum);
+  std::shared_ptr<CODBAlbum> UpdateAlbum(int idAlbum,
+    const std::string& strAlbum, 
+    const std::string& strMusicBrainzAlbumID,
+    const std::string& strReleaseGroupMBID,
+    const std::string& strArtist, 
+    const std::string& strArtistSort,
+    const std::string& strGenre,
+    const std::string& strMoods, 
+    const std::string& strStyles,
+    const std::string& strThemes, 
+    const std::string& strReview,
+    const std::string& strImage, 
+    const std::string& strLabel,
+    const std::string& strType,
+    float fRating, 
+    int iUserrating, 
+    int iVotes, 
+    int iYear, 
+    bool bCompilation,
+    CAlbum::ReleaseType releaseType,
+    bool bScrapedMBID);
   bool ClearAlbumLastScrapedTime(int idAlbum);
   bool HasAlbumBeenScraped(int idAlbum);
 
@@ -288,28 +350,37 @@ public:
   /////////////////////////////////////////////////
   bool UpdateArtist(const CArtist& artist);
 
-  int  AddArtist(const std::string& strArtist, const std::string& strMusicBrainzArtistID, const std::string& strSortName, bool bScrapedMBID = false);
-  int  AddArtist(const std::string& strArtist, const std::string& strMusicBrainzArtistID, bool bScrapedMBID = false);
+  std::shared_ptr<CODBPerson> AddArtist(const std::string& strArtist, const std::string& strMusicBrainzArtistID, const std::string& strSortName, bool bScrapedMBID = false);
+  std::shared_ptr<CODBPerson> AddArtist(const std::string& strArtist, const std::string& strMusicBrainzArtistID, bool bScrapedMBID = false);
   bool GetArtist(int idArtist, CArtist& artist, bool fetchAll = true);
   bool GetArtistExists(int idArtist);
   int GetLastArtist();
-  int  UpdateArtist(int idArtist,
-                    const std::string& strArtist, const std::string& strSortName,
-                    const std::string& strMusicBrainzArtistID, bool bScrapedMBID,
-                    const std::string& strType, const std::string& strGender,
-                    const std::string& strDisambiguation,
-                    const std::string& strBorn, const std::string& strFormed,
-                    const std::string& strGenres, const std::string& strMoods,
-                    const std::string& strStyles, const std::string& strInstruments,
-                    const std::string& strBiography, const std::string& strDied,
-                    const std::string& strDisbanded, const std::string& strYearsActive,
-                    const std::string& strImage, const std::string& strFanart);
+  std::shared_ptr<CODBPerson> UpdateArtist(std::shared_ptr<CODBPerson> objArtist,
+                                  const std::string& strArtist, 
+                                  const std::string& strSortName,
+                                  const std::string& strMusicBrainzArtistID, 
+                                  const bool bScrapedMBID,
+                                  const std::string& strType,
+                                  const std::string& strGender,
+                                  const std::string& strDisambiguation,
+                                  const std::string& strBorn, 
+                                  const std::string& strFormed,
+                                  const std::vector<std::string>& genres, 
+                                  const std::string& strMoods,
+                                  const std::string& strStyles, 
+                                  const std::string& strInstruments,
+                                  const std::string& strBiography, 
+                                  const std::string& strDied,
+                                  const std::string& strDisbanded, 
+                                  const std::string& strYearsActive,
+                                  const std::string& strImage, 
+                                  const std::string& strFanart);
   bool UpdateArtistScrapedMBID(int idArtist, const std::string& strMusicBrainzArtistID);
   bool GetTranslateBlankArtist() { return m_translateBlankArtist; }
   void SetTranslateBlankArtist(bool translate) { m_translateBlankArtist = translate; }
   bool HasArtistBeenScraped(int idArtist);
   bool ClearArtistLastScrapedTime(int idArtist);
-  int  AddArtistDiscography(int idArtist, const std::string& strAlbum, const std::string& strYear);
+  bool  AddArtistDiscography(std::shared_ptr<CODBPerson> objPerson, const std::string& strAlbum, const std::string& strYear);
   bool DeleteArtistDiscography(int idArtist);
   bool GetArtistDiscography(int idArtist, CFileItemList& items);
 
@@ -330,7 +401,14 @@ public:
   /////////////////////////////////////////////////
   // Paths
   /////////////////////////////////////////////////
-  int AddPath(const std::string& strPath);
+  std::shared_ptr<CODBPath> AddPath(const std::string& strPath);
+  
+  /*! \brief Add file an path
+   \param strFileName the filename
+   \param strPath thepath
+   \return the id of the file
+   */
+  std::shared_ptr<CODBFile> AddFileAndPath(const std::string& strFileName, const std::string& strPath);
 
   bool GetPaths(std::set<std::string> &paths);
   bool SetPathHash(const std::string &path, const std::string &hash);
@@ -354,6 +432,7 @@ public:
   int GetSourceFromPath(const std::string& strPath);
   bool AddAlbumSource(int idAlbum, int idSource);
   bool AddAlbumSources(int idAlbum,  const std::string& strPath);
+  bool DeleteAlbumSources(int idAlbum);
   bool GetSources(CFileItemList& items);
 
   bool GetSourcesByArtist(int idArtist, CFileItem* item);
@@ -365,7 +444,8 @@ public:
   /////////////////////////////////////////////////
   // Genres
   /////////////////////////////////////////////////
-  int AddGenre(std::string& strGenre);
+  template <typename T>
+  void SetODBDetailsGenres(T odbObject, std::vector<std::string> genres);
   std::string GetGenreById(int id);
   int GetGenreByName(const std::string& strGenre);
   bool GetGenresJSON(CFileItemList& items, bool bSources = false);
@@ -373,25 +453,19 @@ public:
   /////////////////////////////////////////////////
   // Link tables
   /////////////////////////////////////////////////
-  bool AddAlbumArtist(int idArtist, int idAlbum, std::string strArtist, int iOrder);
+  bool AddAlbumArtist(std::shared_ptr<CODBPerson> artist, std::shared_ptr<CODBAlbum> album, int iOrder);
   bool GetAlbumsByArtist(int idArtist, std::vector<int>& albums);
   bool GetArtistsByAlbum(int idAlbum, CFileItem* item);
-  bool DeleteAlbumArtistsByAlbum(int idAlbum);
 
-  int AddRole(const std::string &strRole);
-  bool AddSongArtist(int idArtist, int idSong, const std::string& strRole, const std::string& strArtist, int iOrder);
-  bool AddSongArtist(int idArtist, int idSong, int idRole, const std::string& strArtist, int iOrder);
-  int  AddSongContributor(int idSong, const std::string& strRole, const std::string& strArtist, const std::string &strSort);
-  void AddSongContributors(int idSong, const VECMUSICROLES& contributors, const std::string &strSort);
+  bool AddSongArtist(std::shared_ptr<CODBPerson> artist, std::shared_ptr<CODBSong> song, int iOrder, const std::string& strRole = "artist");
+  std::shared_ptr<CODBPerson>  AddSongContributor(std::shared_ptr<CODBSong> objSong, const std::string& strRole, const std::string& strArtist, const std::string &strSort);
+  void AddSongContributors(std::shared_ptr<CODBSong> objSong, const VECMUSICROLES& contributors, const std::string &strSort);
   int GetRoleByName(const std::string& strRole);
+  std::shared_ptr<CODBRole> AddRole(const std::string& strRole);
   bool GetRolesByArtist(int idArtist, CFileItem* item);
-  bool GetSongsByArtist(int idArtist, std::vector<int>& songs);
   bool GetArtistsBySong(int idSong, std::vector<int>& artists);
-  bool DeleteSongArtistsBySong(int idSong);
-
-  bool AddSongGenres(int idSong, const std::vector<std::string>& genres);
+  bool DeleteSongArtistsBySong(std::shared_ptr<CODBSong> objSong);
   bool GetGenresBySong(int idSong, std::vector<int>& genres);
-
   bool GetGenresByAlbum(int idAlbum, CFileItem* item);
 
   bool GetGenresByArtist(int idArtist, CFileItem* item);
@@ -451,10 +525,14 @@ public:
   bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, VECALBUMS& albums, int& total, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetArtistsByWhere(const std::string& strBaseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
-  bool GetRandomSong(CFileItem* item, int& idSong, const Filter &filter);
-  int GetSongsCount(const Filter &filter = Filter());
-  unsigned int GetSongIDs(const Filter &filter, std::vector<std::pair<int,int> > &songIDs);
-  bool GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting) override;
+  bool GetRandomSong(CFileItem* item, int& idSong, odb::query<ODBView_Song> objQuery);
+  int GetSongsCount(odb::query<ODBView_Song_Count> query = odb::query<ODBView_Song_Count>());
+  unsigned int GetSongIDs(odb::query<ODBView_Song>& query, std::vector<std::pair<int,int> > &songIDs);
+  
+  template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
+  template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
+  template <typename T> T GetODBFilterAlbums(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
+  template <typename T> T GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
 
   /////////////////////////////////////////////////
   // Scraper
@@ -467,7 +545,7 @@ public:
    \param scraperID the scraper to check for.
    \return true if the scraper is in use, false otherwise.
    */
-  bool ScraperInUse(const std::string &scraperID) const;
+  bool ScraperInUse(const std::string &scraperID);
 
   /////////////////////////////////////////////////
   // Filters
@@ -605,6 +683,8 @@ protected:
   std::map<std::string, int> m_genreCache;
   std::map<std::string, int> m_pathCache;
 
+  CCommonDatabase m_cdb;
+
   void CreateTables() override;
   void CreateAnalytics() override;
   int GetMinSchemaVersion() const override { return 32; }
@@ -618,26 +698,21 @@ private:
   virtual void CreateViews();
 
   void SplitPath(const std::string& strFileNameAndPath, std::string& strPath, std::string& strFileName);
+  CSong GetSongFromODBObject(std::shared_ptr<CODBSong> objSong);
+  CArtist GetArtistFromODBObject(std::shared_ptr<CODBPerson> objArtist, bool needThumb = true);
+  CAlbum GetAlbumFromODBObject(std::shared_ptr<CODBAlbum> objAlbum, bool imageURL = false);
+  CArtistCredit GetArtistCreditFromODBObject(std::shared_ptr<CODBPersonLink> objPersonLinks);
+  CMusicRole GetArtistRoleFromODBObject(std::shared_ptr<CODBPersonLink> objArtist);
 
-  CSong GetSongFromDataset();
-  CSong GetSongFromDataset(const dbiplus::sql_record* const record, int offset = 0);
-  CArtist GetArtistFromDataset(dbiplus::Dataset* pDS, int offset = 0, bool needThumb = true);
-  CArtist GetArtistFromDataset(const dbiplus::sql_record* const record, int offset = 0, bool needThumb = true);
-  CAlbum GetAlbumFromDataset(dbiplus::Dataset* pDS, int offset = 0, bool imageURL = false);
-  CAlbum GetAlbumFromDataset(const dbiplus::sql_record* const record, int offset = 0, bool imageURL = false);
-  CArtistCredit GetArtistCreditFromDataset(const dbiplus::sql_record* const record, int offset = 0);
-  CMusicRole GetArtistRoleFromDataset(const dbiplus::sql_record* const record, int offset = 0);
   /*! \brief Updates the dateAdded field in the song table for the file
   with the given songId and the given path based on the files modification date
-  \param songId id of the song in the song table
+  \param objFile odb object of the file
   \param strFileNameAndPath path to the file
   */
-  void UpdateFileDateAdded(int songId, const std::string& strFileNameAndPath);
-  void GetFileItemFromDataset(CFileItem* item, const CMusicDbUrl &baseUrl);
-  void GetFileItemFromDataset(const dbiplus::sql_record* const record, CFileItem* item, const CMusicDbUrl &baseUrl);
+  void UpdateFileDateAdded(const std::shared_ptr<CODBFile> objFile, const std::string& strFileNameAndPath);
+  void GetFileItemFromODBObject(std::shared_ptr<CODBSong> objSong, CFileItem* item, const CMusicDbUrl &baseUrl);
   void GetFileItemFromArtistCredits(VECARTISTCREDITS& artistCredits, CFileItem* item);
   bool CleanupSongs(CGUIDialogProgress* progressDialog = nullptr);
-  bool CleanupSongsByIds(const std::string &strSongIds);
   bool CleanupPaths();
   bool CleanupAlbums();
   bool CleanupArtists();
@@ -648,7 +723,7 @@ private:
   bool SearchArtists(const std::string& search, CFileItemList &artists);
   bool SearchAlbums(const std::string& search, CFileItemList &albums);
   bool SearchSongs(const std::string& strSearch, CFileItemList &songs);
-  int GetSongIDFromPath(const std::string &filePath);
+  std::shared_ptr<CODBSong> GetSongObjFromPath(const std::string &filePath);
 
   /*! \brief Checks that source table matches sources.xml
   returns true when they do 

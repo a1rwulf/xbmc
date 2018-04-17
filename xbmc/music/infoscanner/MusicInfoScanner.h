@@ -239,7 +239,7 @@ protected:
   bool m_needsCleanup = false;
   int m_scanType = 0; // 0 - load from files, 1 - albums, 2 - artists
   int m_idSourcePath;
-  CMusicDatabase m_musicDatabase;
+  std::shared_ptr<CMusicDatabase> m_musicDatabase;
 
   std::set<int> m_albumsAdded;
 
