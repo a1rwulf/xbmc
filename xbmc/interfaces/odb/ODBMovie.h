@@ -95,7 +95,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
 PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_originalTitle;
   std::string m_thumbUrl_spoof;
-  uint64_t m_updatedAt;
+  unsigned long m_updatedAt;
   
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBFile> m_file;

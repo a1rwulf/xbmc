@@ -70,7 +70,7 @@ public:
     m_year = 0;
   }
   
-  uint64_t m_ulong_date;
+  unsigned long m_ulong_date;
   int m_year;
 PRAGMA_DB (type("VARCHAR(20)"))
   std::string m_date;

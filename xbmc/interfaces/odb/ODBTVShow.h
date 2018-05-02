@@ -88,7 +88,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_sortTitle;
   int m_userrating;
   int m_runtime;
-  uint64_t m_updatedAt;
+  unsigned long m_updatedAt;
   
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBRating> m_defaultRating;

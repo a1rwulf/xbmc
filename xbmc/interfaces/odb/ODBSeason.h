@@ -56,7 +56,7 @@ PRAGMA_DB (type("VARCHAR(255)"))
   int m_season;
   int m_userrating;
   CODBDate m_firstAired;
-  uint64_t m_updatedAt;
+  unsigned long m_updatedAt;
   
 PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBEpisode> > m_episodes;
