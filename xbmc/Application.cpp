@@ -2471,6 +2471,34 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     CBuiltins::GetInstance().Execute(pMsg->strParam.c_str());
     break;
 
+  case TMSG_RENDERER_REINIT:
+    audioengine = CServiceBroker::GetActiveAE();
+    if (audioengine)
+    {
+      if (!audioengine->Suspend())
+      {
+        CLog::Log(LOGNOTICE, "%s: Failed to suspend AudioEngine before Application reinit", __FUNCTION__);
+      }
+    }
+
+    m_bStop = true; //pause rendering
+    CServiceBroker::GetRenderSystem()->DestroyRenderSystem();
+    CServiceBroker::GetWinSystem()->DestroyWindow();
+    CServiceBroker::GetWinSystem()->DestroyWindowSystem();
+    CServiceBroker::GetWinSystem()->InitWindowSystem();
+    InitWindow();
+    ReloadSkin(false);
+    m_bStop = false; //unpause rendering
+    if (audioengine)
+    {
+      if (!audioengine->Resume())
+      {
+        CLog::Log(LOGFATAL, "%s: Failed to restart AudioEngine after Application reinit", __FUNCTION__);
+      }
+    }
+
+    break;
+
   case TMSG_PICTURE_SHOW:
   {
     CGUIWindowSlideShow *pSlideShow = CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIWindowSlideShow>(WINDOW_SLIDESHOW);
