@@ -41,7 +41,8 @@ CWinSystemGbm::CWinSystemGbm() :
   m_GBM(new CGBMUtils),
   m_delayDispReset(false),
   m_libinput(new CLibInputHandler),
-  m_offScreen(false)
+  m_offScreen(false),
+  m_offscreen_fd(-1)
 {
   std::string envSink;
   if (getenv("KODI_AE_SINK"))
@@ -112,8 +113,8 @@ bool CWinSystemGbm::InitWindowSystem()
   }
   else // Most likely no screen is attached use off screen rendering
   {
-    int32_t fd = open("/dev/dri/renderD128", O_RDWR);
-    if (!m_GBM->CreateDevice(fd))
+    m_offscreen_fd = open("/dev/dri/renderD128", O_RDWR);
+    if (!m_GBM->CreateDevice(m_offscreen_fd))
     {
       CLog::Log(LOGINFO, "CWinSystemGbm::%s - failed to initialize off screen rendering", __FUNCTION__);
       m_GBM.reset();
@@ -128,8 +129,20 @@ bool CWinSystemGbm::InitWindowSystem()
 
 bool CWinSystemGbm::DestroyWindowSystem()
 {
-  m_GBM->DestroySurface();
-  m_GBM->DestroyDevice();
+  if (m_GBM)
+  {
+    m_GBM->DestroySurface();
+    m_GBM->DestroyDevice();
+  }
+
+  if (m_DRM)
+    m_DRM->DestroyDrm();
+
+  if (m_offscreen_fd != -1)
+  {
+    CLog::Log(LOGINFO, "CWinSystemGbm::%s - close off screen rendering file descriptor", __FUNCTION__);
+    close(m_offscreen_fd);
+  }
 
   CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
   return true;
@@ -162,7 +175,8 @@ bool CWinSystemGbm::CreateNewWindow(const std::string& name,
 
 bool CWinSystemGbm::DestroyWindow()
 {
-  m_GBM->DestroySurface();
+  if (m_GBM)
+    m_GBM->DestroySurface();
 
   CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized GBM", __FUNCTION__);
   return true;

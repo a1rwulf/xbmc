@@ -82,4 +82,5 @@ protected:
   std::unique_ptr<CLibInputHandler> m_libinput;
 
   bool m_offScreen;
+  int32_t m_offscreen_fd;
 };
