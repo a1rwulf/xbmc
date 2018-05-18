@@ -88,6 +88,9 @@ void CGBMUtils::DestroySurface()
 
 struct gbm_bo *CGBMUtils::LockFrontBuffer()
 {
+  if (!m_surface)
+    return nullptr;
+
   if (m_next_bo)
     CLog::Log(LOGWARNING, "CGBMUtils::%s - uneven surface buffer usage", __FUNCTION__);
 
@@ -97,6 +100,9 @@ struct gbm_bo *CGBMUtils::LockFrontBuffer()
 
 void CGBMUtils::ReleaseBuffer()
 {
+  if (!m_surface)
+    return;
+
   if (m_bo)
     gbm_surface_release_buffer(m_surface, m_bo);
 
