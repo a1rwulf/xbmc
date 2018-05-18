@@ -11,6 +11,7 @@
 #include "DRMUtils.h"
 #include "VideoLayerBridge.h"
 #include "threads/CriticalSection.h"
+#include "windowing/DisplayUdevMonitor.h"
 #include "windowing/WinSystem.h"
 
 #include "platform/linux/OptionalsReg.h"
@@ -53,10 +54,13 @@ public:
   void Unregister(IDispResource* resource) override;
 
   std::shared_ptr<CVideoLayerBridge> GetVideoLayerBridge() const { return m_videoLayerBridge; };
-  void RegisterVideoLayerBridge(std::shared_ptr<CVideoLayerBridge> bridge) { m_videoLayerBridge = bridge; };
+  void RegisterVideoLayerBridge(std::shared_ptr<CVideoLayerBridge> bridge)
+  {
+    m_videoLayerBridge = bridge;
+  };
 
   std::string GetModule() const { return m_DRM->GetModule(); }
-  struct gbm_device *GetGBMDevice() const { return m_GBM->GetDevice(); }
+  struct gbm_device* GetGBMDevice() const { return m_GBM->GetDevice(); }
   std::shared_ptr<CDRMUtils> GetDrm() const { return m_DRM; }
 
 protected:
@@ -67,14 +71,15 @@ protected:
   std::shared_ptr<CVideoLayerBridge> m_videoLayerBridge;
 
   CCriticalSection m_resourceSection;
-  std::vector<IDispResource*>  m_resources;
+  std::vector<IDispResource*> m_resources;
 
   bool m_delayDispReset = false;
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;
   std::unique_ptr<CLibInputHandler> m_libinput;
+  CDisplayUdevMonitor m_deviceMonitor;
 };
 
-}
-}
-}
+} // namespace GBM
+} // namespace WINDOWING
+} // namespace KODI

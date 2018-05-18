@@ -77,6 +77,8 @@ CWinSystemGbm::CWinSystemGbm() :
   CLinuxPowerSyscall::Register();
   m_lirc.reset(OPTIONALS::LircRegister());
   m_libinput->Start();
+
+  m_deviceMonitor.Start();
 }
 
 bool CWinSystemGbm::InitWindowSystem()
