@@ -621,6 +621,9 @@ bool CDRMUtils::RestoreOriginalMode()
     return false;
   }
 
+  if (!m_connector || !m_connector->connector)
+    return false;
+
   auto ret = drmModeSetCrtc(m_fd,
                             m_orig_crtc->crtc_id,
                             m_orig_crtc->buffer_id,
@@ -656,19 +659,28 @@ void CDRMUtils::DestroyDrm()
   drmModeFreeResources(m_drm_resources);
   m_drm_resources = nullptr;
 
-  drmModeFreeConnector(m_connector->connector);
-  FreeProperties(m_connector);
-  delete m_connector;
-  m_connector = nullptr;
+  if (m_connector)
+  {
+    drmModeFreeConnector(m_connector->connector);
+    FreeProperties(m_connector);
+    delete m_connector;
+    m_connector = nullptr;
+  }
 
-  drmModeFreeEncoder(m_encoder->encoder);
-  delete m_encoder;
-  m_encoder = nullptr;
+  if (m_encoder)
+  {
+    drmModeFreeEncoder(m_encoder->encoder);
+    delete m_encoder;
+    m_encoder = nullptr;
+  }
 
-  drmModeFreeCrtc(m_crtc->crtc);
-  FreeProperties(m_crtc);
-  delete m_crtc;
-  m_crtc = nullptr;
+  if (m_crtc)
+  {
+    drmModeFreeCrtc(m_crtc->crtc);
+    FreeProperties(m_crtc);
+    delete m_crtc;
+    m_crtc = nullptr;
+  }
 
   drmModeFreePlane(m_primary_plane->plane);
   FreeProperties(m_primary_plane);
