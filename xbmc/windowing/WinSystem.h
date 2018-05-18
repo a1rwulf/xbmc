@@ -154,6 +154,8 @@ public:
   // Access render system interface
   CGraphicContext& GetGfxContext();
 
+  virtual bool UseOffScreenRendering() { return false; }
+
 protected:
   void UpdateDesktopResolution(RESOLUTION_INFO& newRes, int screen, int width, int height, float refreshRate, uint32_t dwFlags = 0);
   virtual std::unique_ptr<KODI::WINDOWING::IOSScreenSaver> GetOSScreenSaverImpl() { return nullptr; }

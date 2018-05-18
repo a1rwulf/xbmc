@@ -64,6 +64,7 @@ public:
 
   std::string GetModule() const { return m_DRM->GetModule(); }
   std::string GetDevicePath() const { return m_DRM->GetDevicePath(); }
+  bool UseOffScreenRendering() override;
 
   std::shared_ptr<CDRMUtils> m_DRM;
 
@@ -79,4 +80,6 @@ protected:
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;
   std::unique_ptr<CLibInputHandler> m_libinput;
+
+  bool m_offScreen;
 };

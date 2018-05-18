@@ -36,12 +36,12 @@
 #include "DRMLegacy.h"
 #include "messaging/ApplicationMessenger.h"
 
-
 CWinSystemGbm::CWinSystemGbm() :
   m_DRM(nullptr),
   m_GBM(new CGBMUtils),
   m_delayDispReset(false),
-  m_libinput(new CLibInputHandler)
+  m_libinput(new CLibInputHandler),
+  m_offScreen(false)
 {
   std::string envSink;
   if (getenv("KODI_AE_SINK"))
@@ -96,17 +96,33 @@ bool CWinSystemGbm::InitWindowSystem()
     {
       CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize Legacy DRM", __FUNCTION__);
       m_DRM.reset();
-      return false;
     }
   }
 
-  if (!m_GBM->CreateDevice(m_DRM->m_fd))
+  // Create DRM GBM device if we could initialize DRM
+  if (m_DRM)
   {
-    m_GBM.reset();
-    return false;
+    if (!m_GBM->CreateDevice(m_DRM->m_fd))
+    {
+      m_GBM.reset();
+      return false;
+    }
+    CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - initialized DRM", __FUNCTION__);
+    m_offScreen = false;
+  }
+  else // Most likely no screen is attached use off screen rendering
+  {
+    int32_t fd = open("/dev/dri/renderD128", O_RDWR);
+    if (!m_GBM->CreateDevice(fd))
+    {
+      CLog::Log(LOGINFO, "CWinSystemGbm::%s - failed to initialize off screen rendering", __FUNCTION__);
+      m_GBM.reset();
+      return false;
+    }
+    CLog::Log(LOGINFO, "CWinSystemGbm::%s - initialized off screen rendering", __FUNCTION__);
+    m_offScreen = true;
   }
 
-  CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - initialized DRM", __FUNCTION__);
   return CWinSystemBase::InitWindowSystem();
 }
 
@@ -126,13 +142,13 @@ bool CWinSystemGbm::CreateNewWindow(const std::string& name,
   //Notify other subsystems that we change resolution
   OnLostDevice();
 
-  if(!m_DRM->SetMode(res))
+  if(m_DRM && !m_DRM->SetMode(res))
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to set DRM mode", __FUNCTION__);
     return false;
   }
 
-  if(!m_GBM->CreateSurface(m_DRM->m_mode->hdisplay, m_DRM->m_mode->vdisplay))
+  if(m_DRM && !m_GBM->CreateSurface(m_DRM->m_mode->hdisplay, m_DRM->m_mode->vdisplay))
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize GBM", __FUNCTION__);
     return false;
@@ -155,6 +171,19 @@ bool CWinSystemGbm::DestroyWindow()
 void CWinSystemGbm::UpdateResolutions()
 {
   CWinSystemBase::UpdateResolutions();
+
+  if (!m_DRM)
+  {
+    CLog::Log(LOGWARNING, "CWinSystemGbm::%s - no display connected use defaults", __FUNCTION__);
+    UpdateDesktopResolution(CDisplaySettings::GetInstance().GetResolutionInfo(RES_DESKTOP),
+                          0,
+                          1920,
+                          1080,
+                          60);
+
+
+    return;
+  }
 
   UpdateDesktopResolution(CDisplaySettings::GetInstance().GetResolutionInfo(RES_DESKTOP),
                           0,
@@ -197,6 +226,10 @@ bool CWinSystemGbm::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
 
 bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  // If DRM isn't initialized (we are in offscreen rendering mode) we cannot set modes
+  if (!m_DRM)
+    return true;
+
   // Notify other subsystems that we will change resolution
   OnLostDevice();
 
@@ -232,6 +265,9 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
 
 void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer)
 {
+  if (!m_DRM)
+    return;
+
   struct gbm_bo *bo = m_GBM->LockFrontBuffer();
 
   m_DRM->FlipPage(bo, rendered, videoLayer);
@@ -241,7 +277,8 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer)
 
 void CWinSystemGbm::WaitVBlank()
 {
-  m_DRM->WaitVBlank();
+  if (m_DRM)
+    m_DRM->WaitVBlank();
 }
 
 bool CWinSystemGbm::UseLimitedColor()
@@ -287,4 +324,9 @@ void CWinSystemGbm::OnLostDevice()
     for (std::vector<IDispResource *>::iterator i = m_resources.begin(); i != m_resources.end(); ++i)
       (*i)->OnLostDisplay();
   }
+}
+
+bool CWinSystemGbm::UseOffScreenRendering()
+{
+  return m_offScreen;
 }
