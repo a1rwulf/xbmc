@@ -2471,6 +2471,14 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     CBuiltins::GetInstance().Execute(pMsg->strParam.c_str());
     break;
 
+  case TMSG_RENDERER_REINIT:
+    CServiceBroker::GetRenderSystem()->DestroyRenderSystem();
+    CServiceBroker::GetWinSystem()->DestroyWindow();
+    CServiceBroker::GetWinSystem()->DestroyWindowSystem();
+    CServiceBroker::GetWinSystem()->InitWindowSystem();
+    InitWindow();
+    break;
+
   case TMSG_PICTURE_SHOW:
   {
     CGUIWindowSlideShow *pSlideShow = CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIWindowSlideShow>(WINDOW_SLIDESHOW);
