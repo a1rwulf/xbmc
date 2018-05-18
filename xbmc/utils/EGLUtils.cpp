@@ -170,12 +170,19 @@ bool CEGLContextUtils::CreateContext(const EGLint* contextAttribs)
 
 bool CEGLContextUtils::BindContext()
 {
-  if (!eglMakeCurrent(m_eglDisplay, m_eglSurface,
-                      m_eglSurface, m_eglContext))
+  if (m_eglSurface == EGL_NO_SURFACE)
   {
-    CLog::Log(LOGERROR, "Failed to make context current %p %p %p",
-                         m_eglDisplay, m_eglSurface, m_eglContext);
-    return false;
+    eglMakeCurrent (m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
+  }
+  else
+  {
+    if (!eglMakeCurrent(m_eglDisplay, m_eglSurface,
+                        m_eglSurface, m_eglContext))
+    {
+      CLog::Log(LOGERROR, "Failed to make context current %p %p %p",
+                          m_eglDisplay, m_eglSurface, m_eglContext);
+      return false;
+    }
   }
 
   return true;
@@ -203,15 +210,18 @@ bool CEGLContextUtils::SurfaceAttrib()
 
 bool CEGLContextUtils::CreateSurface(EGLNativeWindowType surface)
 {
-  m_eglSurface = eglCreateWindowSurface(m_eglDisplay,
-                                        m_eglConfig,
-                                        surface,
-                                        nullptr);
-
-  if (m_eglSurface == EGL_NO_SURFACE)
+  if (surface)
   {
-    CLog::Log(LOGERROR, "failed to create EGL window surface %d", eglGetError());
-    return false;
+    m_eglSurface = eglCreateWindowSurface(m_eglDisplay,
+                                          m_eglConfig,
+                                          surface,
+                                          nullptr);
+
+    if (m_eglSurface == EGL_NO_SURFACE)
+    {
+      CLog::Log(LOGERROR, "failed to create EGL window surface %d", eglGetError());
+      return false;
+    }
   }
 
   return true;
