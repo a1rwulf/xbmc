@@ -29,7 +29,7 @@ bool CGBMUtils::CreateDevice(int fd)
   m_device = gbm_create_device(fd);
   if (!m_device)
   {
-    CLog::Log(LOGERROR, "CGBMUtils::%s - failed to create device", __FUNCTION__);
+    CLog::Log(LOGERROR, "CGBMUtils::%s - failed to create device: %s", __FUNCTION__, strerror(errno));
     return false;
   }
 
@@ -43,6 +43,7 @@ void CGBMUtils::DestroyDevice()
 
   if (m_device)
   {
+    CLog::Log(LOGINFO, "CGBMUtils::%s - DestroyDevice", __FUNCTION__);
     gbm_device_destroy(m_device);
     m_device = nullptr;
   }

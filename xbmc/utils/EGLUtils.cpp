@@ -118,6 +118,7 @@ bool CEGLContextUtils::CreateDisplay(EGLDisplay display,
 
   if (m_eglDisplay == EGL_NO_DISPLAY)
   {
+    CLog::Log(LOGINFO, "%s - eglGetDisplay", __FUNCTION__);
     m_eglDisplay = eglGetDisplay((EGLNativeDisplayType)display);
   }
 
@@ -132,6 +133,7 @@ bool CEGLContextUtils::CreateDisplay(EGLDisplay display,
     CLog::Log(LOGERROR, "failed to initialize EGL display");
     return false;
   }
+  CLog::Log(LOGINFO, "%s - eglInitialize successful", __FUNCTION__);
 
   eglBindAPI(rendering_api);
 
@@ -165,11 +167,14 @@ bool CEGLContextUtils::CreateContext(const EGLint* contextAttribs)
     return false;
   }
 
+  CLog::Log(LOGINFO, "%s - eglCreateContext successful", __FUNCTION__);
+
   return true;
 }
 
 bool CEGLContextUtils::BindContext()
 {
+  CLog::Log(LOGINFO, "%s - BindContext", __FUNCTION__);
   if (m_eglSurface == EGL_NO_SURFACE)
   {
     eglMakeCurrent (m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
@@ -231,6 +236,7 @@ void CEGLContextUtils::Destroy()
 {
   if (m_eglContext != EGL_NO_CONTEXT)
   {
+    CLog::Log(LOGINFO, "%s - Destroy eglContext", __FUNCTION__);
     eglDestroyContext(m_eglDisplay, m_eglContext);
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     m_eglContext = EGL_NO_CONTEXT;
@@ -238,12 +244,14 @@ void CEGLContextUtils::Destroy()
 
   if (m_eglSurface != EGL_NO_SURFACE)
   {
+    CLog::Log(LOGINFO, "%s - Destroy eglSurface", __FUNCTION__);
     eglDestroySurface(m_eglDisplay, m_eglSurface);
     m_eglSurface = EGL_NO_SURFACE;
   }
 
   if (m_eglDisplay != EGL_NO_DISPLAY)
   {
+    CLog::Log(LOGINFO, "%s - Destroy eglDisplay", __FUNCTION__);
     eglTerminate(m_eglDisplay);
     m_eglDisplay = EGL_NO_DISPLAY;
   }
