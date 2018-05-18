@@ -1,7 +1,8 @@
 set(SOURCES GraphicContext.cpp
             OSScreenSaver.cpp
             Resolution.cpp
-            WinSystem.cpp)
+            WinSystem.cpp
+            DisplayUdevMonitor.cpp)
 
 set(HEADERS GraphicContext.h
             OSScreenSaver.h
@@ -9,7 +10,8 @@ set(HEADERS GraphicContext.h
             WinEvents.h
             WinSystem.h
             XBMC_events.h
-            VideoSync.h)
+            VideoSync.h
+            DisplayUdevMonitor.h)
 
 if(CORE_PLATFORM_NAME_LC STREQUAL rbpi)
   add_subdirectory(rpi)
