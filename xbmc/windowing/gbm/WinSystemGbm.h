@@ -28,6 +28,8 @@
 #include "threads/CriticalSection.h"
 #include "windowing/WinSystem.h"
 #include "DRMUtils.h"
+#include "OffScreenModeSetting.h"
+#include "windowing/DisplayUdevMonitor.h"
 
 class IDispResource;
 
@@ -80,4 +82,5 @@ protected:
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;
   std::unique_ptr<CLibInputHandler> m_libinput;
+  CDisplayUdevMonitor m_deviceMonitor;
 };
