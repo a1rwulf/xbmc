@@ -10,21 +10,28 @@
 
 #include <gbm.h>
 #include <EGL/egl.h>
-
+#include "DRMUtils.h"
+#include "HdmiMonitor.h"
+#include "OffScreenModeSetting.h"
 #include "platform/linux/input/LibInputHandler.h"
 #include "platform/linux/OptionalsReg.h"
 #include "threads/CriticalSection.h"
 #include "windowing/WinSystem.h"
-#include "DRMUtils.h"
 #include "VideoLayerBridge.h"
 
 class IDispResource;
+
+enum HdmiState
+{
+  DISCONNECTED,
+  CONNECTED
+};
 
 class CWinSystemGbm : public CWinSystemBase
 {
 public:
   CWinSystemGbm();
-  virtual ~CWinSystemGbm() = default;
+  virtual ~CWinSystemGbm();
 
   bool InitWindowSystem() override;
   bool DestroyWindowSystem() override;
@@ -58,8 +65,12 @@ public:
   struct gbm_device *GetGBMDevice() const { return m_GBM->GetDevice(); }
   std::shared_ptr<CDRMUtils> GetDrm() const { return m_DRM; }
 
+  void SetHdmiState(HdmiState state) { m_hdmiState = state; }
+  HdmiState GetHdmiState() const { return m_hdmiState; }
+
 protected:
   void OnLostDevice();
+  bool WaitForHdmi();
 
   std::shared_ptr<CDRMUtils> m_DRM;
   std::unique_ptr<CGBMUtils> m_GBM;
@@ -72,4 +83,7 @@ protected:
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;
   std::unique_ptr<CLibInputHandler> m_libinput;
+  std::unique_ptr<CHdmiMonitor> m_hdmiMonitor;
+
+  HdmiState m_hdmiState;
 };

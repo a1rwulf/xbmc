@@ -17,6 +17,7 @@
 #include "platform/linux/OptionalsReg.h"
 #include "windowing/GraphicContext.h"
 #include "platform/linux/powermanagement/LinuxPowerSyscall.h"
+#include "platform/linux/XTimeUtils.h"
 #include "settings/DisplaySettings.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
@@ -25,11 +26,12 @@
 #include "OffScreenModeSetting.h"
 #include "messaging/ApplicationMessenger.h"
 
-
 CWinSystemGbm::CWinSystemGbm() :
   m_DRM(nullptr),
   m_GBM(new CGBMUtils),
-  m_libinput(new CLibInputHandler)
+  m_libinput(new CLibInputHandler),
+  m_hdmiMonitor(new CHdmiMonitor(*this)),
+  m_hdmiState(HdmiState::CONNECTED)
 {
   std::string envSink;
   if (getenv("KODI_AE_SINK"))
@@ -67,6 +69,12 @@ CWinSystemGbm::CWinSystemGbm() :
   CLinuxPowerSyscall::Register();
   m_lirc.reset(OPTIONALS::LircRegister());
   m_libinput->Start();
+  m_hdmiMonitor->Start();
+}
+
+CWinSystemGbm::~CWinSystemGbm()
+{
+  m_hdmiMonitor->Stop();
 }
 
 bool CWinSystemGbm::InitWindowSystem()
@@ -88,6 +96,7 @@ bool CWinSystemGbm::InitWindowSystem()
       m_DRM = std::make_shared<COffScreenModeSetting>();
       if (!m_DRM->InitDrm())
       {
+        m_hdmiState = HdmiState::DISCONNECTED;
         CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize off screen DRM", __FUNCTION__);
         m_DRM.reset();
         return false;
@@ -118,6 +127,9 @@ bool CWinSystemGbm::CreateNewWindow(const std::string& name,
                                     bool fullScreen,
                                     RESOLUTION_INFO& res)
 {
+  if (!std::dynamic_pointer_cast<COffScreenModeSetting>(m_DRM))
+    WaitForHdmi();
+
   //Notify other subsystems that we change resolution
   OnLostDevice();
 
@@ -200,6 +212,9 @@ bool CWinSystemGbm::ResizeWindow(int newWidth, int newHeight, int newLeft, int n
 
 bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  if (!std::dynamic_pointer_cast<COffScreenModeSetting>(m_DRM))
+    WaitForHdmi();
+
   // Notify other subsystems that we will change resolution
   OnLostDevice();
 
@@ -296,4 +311,17 @@ void CWinSystemGbm::OnLostDevice()
   CSingleLock lock(m_resourceSection);
   for (auto resource : m_resources)
     resource->OnLostDisplay();
+}
+
+bool CWinSystemGbm::WaitForHdmi()
+{
+  unsigned retryCnt = 7;
+  while (m_hdmiState != HdmiState::CONNECTED && retryCnt > 0)
+  {
+    CLog::Log(LOGERROR, "CWinSystemGbm::%s - HDMI not connected - refrain from modeset", __FUNCTION__);
+    retryCnt--;
+    Sleep(1000);
+  }
+
+  return m_hdmiState == HdmiState::CONNECTED;
 }
