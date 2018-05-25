@@ -56,7 +56,7 @@ bool CWinSystemBase::DestroyWindowSystem()
   CGUIFontTTFGL::DestroyStaticVertexBuffers();
 #endif
   m_screenSaverManager.reset();
-  return false;
+  return true;
 }
 
 void CWinSystemBase::UpdateDesktopResolution(RESOLUTION_INFO& newRes, int screen, int width, int height, float refreshRate, uint32_t dwFlags)
