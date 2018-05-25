@@ -42,6 +42,7 @@ std::unique_ptr<CWinSystemBase> CWinSystemBase::CreateWinSystem()
 
 bool CWinSystemGbmGLESContext::InitWindowSystem()
 {
+  CSingleLock lock(m_ctxSection);
   CLinuxRendererGLES::Register();
   RETRO::CRPProcessInfoGbm::Register();
   RETRO::CRPProcessInfoGbm::RegisterRendererFactory(new RETRO::CRendererFactoryOpenGLES);
@@ -77,6 +78,7 @@ bool CWinSystemGbmGLESContext::InitWindowSystem()
 
 bool CWinSystemGbmGLESContext::DestroyWindowSystem()
 {
+  CSingleLock lock(m_ctxSection);
   CDVDFactoryCodec::ClearHWAccels();
   VIDEOPLAYER::CRendererFactory::ClearRenderer();
 
@@ -131,6 +133,8 @@ bool CWinSystemGbmGLESContext::CreateNewWindow(const std::string& name,
 
 bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
+  CSingleLock lock(m_ctxSection);
+
   if (!m_DRM)
   {
       res.iWidth = 1920;
@@ -165,6 +169,8 @@ bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& r
 
 void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
 {
+  CSingleLock lock(m_ctxSection);
+
   if (!m_bRenderCreated)
     return;
 

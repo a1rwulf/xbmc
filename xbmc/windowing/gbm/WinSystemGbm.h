@@ -85,4 +85,6 @@ protected:
   bool m_offScreen;
   int32_t m_offscreen_fd;
   CDisplayUdevMonitor m_deviceMonitor;
+
+  CCriticalSection m_ctxSection;
 };
