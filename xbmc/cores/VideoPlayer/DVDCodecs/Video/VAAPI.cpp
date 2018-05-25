@@ -841,7 +841,10 @@ CDVDVideoCodec::VCReturn CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame
   CSingleLock lock(m_DecoderSection);
 
   if (!m_vaapiConfigured)
+  {
+    CLog::Log(LOGWARNING, "VAAPI::Decode - not configured");
     return CDVDVideoCodec::VC_ERROR;
+  }
 
   if (pFrame)
   { // we have a new frame from decoder
@@ -884,7 +887,10 @@ CDVDVideoCodec::VCReturn CDecoder::Decode(AVCodecContext* avctx, AVFrame* pFrame
   m_bufferStats.Get(decoded, processed, render, vpp);
   // if all pics are drained, break the loop by setting VC_EOF
   if (drain && decoded <= 0 && processed <= 0 && render <= 0)
+  {
+    CLog::Log(LOGWARNING, "VAAPI::Decode - drained");
     return CDVDVideoCodec::VC_EOF;
+  }
 
   while (true)
   {
@@ -1090,7 +1096,10 @@ bool CDecoder::ConfigVAAPI()
   m_vaapiConfig.configId = m_vaapiConfig.context->CreateConfig(m_vaapiConfig.profile,
                                                                m_vaapiConfig.attrib);
   if (m_vaapiConfig.configId == VA_INVALID_ID)
+  {
+    CLog::Log(LOGERROR, "VAAPI::ConfigVAAPI - CreateConfig failed (invalid id): %d", m_vaapiConfig.configId);
     return false;
+  }
 
   // create surfaces
   unsigned int format = VA_RT_FORMAT_YUV420;
@@ -1119,6 +1128,7 @@ bool CDecoder::ConfigVAAPI()
                                      nb_surfaces,
                                      attribs, 1)))
   {
+    CLog::Log(LOGERROR, "VAAPI::ConfigVAAPI - vaCreateSurfaces failed");
     return false;
   }
   for (int i=0; i<nb_surfaces; i++)
@@ -1158,6 +1168,8 @@ bool CDecoder::ConfigVAAPI()
   m_inMsgEvent.Reset();
   m_vaapiConfigured = true;
   m_ErrorCount = 0;
+
+  CLog::Log(LOGERROR, "VAAPI::%s - successfully initialized", __FUNCTION__);
 
   return true;
 }
