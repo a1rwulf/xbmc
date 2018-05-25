@@ -2472,11 +2472,14 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     break;
 
   case TMSG_RENDERER_REINIT:
+    m_bStop = true; //pause rendering
     CServiceBroker::GetRenderSystem()->DestroyRenderSystem();
     CServiceBroker::GetWinSystem()->DestroyWindow();
     CServiceBroker::GetWinSystem()->DestroyWindowSystem();
     CServiceBroker::GetWinSystem()->InitWindowSystem();
     InitWindow();
+    ReloadSkin(false);
+    m_bStop = false; //unpause rendering
     break;
 
   case TMSG_PICTURE_SHOW:
