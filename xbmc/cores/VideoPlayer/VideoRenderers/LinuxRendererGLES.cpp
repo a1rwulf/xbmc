@@ -485,7 +485,7 @@ void CLinuxRendererGLES::UpdateVideoFilter()
 
       if (!m_fbo.fbo.CreateAndBindToTexture(GL_TEXTURE_2D, m_sourceWidth, m_sourceHeight, GL_RGBA))
       {
-        CLog::Log(LOGERROR, "GL: Error creating texture and binding to FBO");
+        CLog::Log(LOGERROR, "CLinuxRendererGLES::UpdateVideoFilter - GLES: Error creating texture and binding to FBO");
         break;
       }
     }
@@ -493,7 +493,7 @@ void CLinuxRendererGLES::UpdateVideoFilter()
     m_pVideoFilterShader = new ConvolutionFilterShader(m_scalingMethod);
     if (!m_pVideoFilterShader->CompileAndLink())
     {
-      CLog::Log(LOGERROR, "GL: Error compiling and linking video filter shader");
+      CLog::Log(LOGERROR, "CLinuxRendererGLES::UpdateVideoFilter - GLES: Error compiling and linking video filter shader");
       break;
     }
     SetTextureFilter(GL_LINEAR);
@@ -825,7 +825,7 @@ void CLinuxRendererGLES::RenderToFBO(int index, int field, bool weave /*= false*
     }
     if (!m_fbo.fbo.CreateAndBindToTexture(GL_TEXTURE_2D, m_sourceWidth, m_sourceHeight, GL_RGBA))
     {
-      CLog::Log(LOGERROR, "GL: Error creating texture and binding to FBO");
+      CLog::Log(LOGERROR, "CLinuxRendererGLES::RenderToFBO - GLES: Error creating texture and binding to FBO");
       return;
     }
   }
