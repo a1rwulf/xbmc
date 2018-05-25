@@ -147,7 +147,7 @@ bool CWinSystemGbm::DestroyWindowSystem()
   }
 
   CLog::Log(LOGDEBUG, "CWinSystemGbm::%s - deinitialized DRM", __FUNCTION__);
-  return true;
+  return CWinSystemBase::DestroyWindowSystem();
 }
 
 bool CWinSystemGbm::CreateNewWindow(const std::string& name,
