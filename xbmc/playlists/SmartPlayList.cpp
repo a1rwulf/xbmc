@@ -96,6 +96,8 @@ static const translateField fields[] = {
   { "audiochannels",     FieldAudioChannels,           CDatabaseQueryRule::REAL_FIELD,     NULL,                                 false, 21444 },
   { "audiocodec",        FieldAudioCodec,              CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21446 },
   { "audiolanguage",     FieldAudioLanguage,           CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21447 },
+  { "streamaudiolang",   FieldStreamAudioLanguage,     CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  31540 },
+  { "streamsubtlang",    FieldStreamSubtitleLanguage,  CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  31541 },
   { "audiocount",        FieldAudioCount,              CDatabaseQueryRule::REAL_FIELD,     StringValidation::IsPositiveInteger,  false, 21481 },
   { "subtitlecount",     FieldSubtitleCount,           CDatabaseQueryRule::REAL_FIELD,     StringValidation::IsPositiveInteger,  false, 21482 },
   { "subtitlelanguage",  FieldSubtitleLanguage,        CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21448 },
@@ -1200,6 +1202,16 @@ odb::query<ODBView_Movie> CSmartPlaylistRule::FormatMovieWhereClause(const bool 
   {
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::genre::name_type_, std::string>(query::genre::name, oper, prepared_string);
+  }
+  else if (m_field == FieldStreamAudioLanguage)
+  {
+    std::string prepared_string = FormatODBString(oper, param);
+    where_query = query(query::CODBFileStream::type == "audio" && FormatODBParam<query, query::CODBLanguage::name_type_, std::string>(query::CODBLanguage::name, oper, prepared_string));
+  }
+  else if (m_field == FieldStreamSubtitleLanguage)
+  {
+    std::string prepared_string = FormatODBString(oper, param);
+    where_query = query(query::subtitlestreams::type == "subtitle" && FormatODBParam<query, query::subtitlelanguage::name_type_, std::string>(query::subtitlelanguage::name, oper, prepared_string));
   }
   else if (m_field == FieldYear)
   {

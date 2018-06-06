@@ -635,6 +635,8 @@ void CVideoInfoTag::ToSortable(SortItem& sortable, Field field) const
   switch (field)
   {
   case FieldDirector:                 sortable[FieldDirector] = m_director; break;
+  case FieldStreamAudioLanguage:      sortable[FieldStreamAudioLanguage] = m_streamAudioLanguage; break;
+  case FieldStreamSubtitleLanguage:   sortable[FieldStreamSubtitleLanguage] = m_streamSubtitleLanguage; break;
   case FieldWriter:                   sortable[FieldWriter] = m_writingCredits; break;
   case FieldGenre:                    sortable[FieldGenre] = m_genre; break;
   case FieldCountry:                  sortable[FieldCountry] = m_country; break;

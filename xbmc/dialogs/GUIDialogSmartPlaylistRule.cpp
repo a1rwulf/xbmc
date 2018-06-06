@@ -220,6 +220,16 @@ void CGUIDialogSmartPlaylistRule::OnBrowse()
     videodatabase.GetDirectorsNav(basePath + "directors/", items, type);
     iLabel = 20339;
   }
+  else if (m_rule.m_field == FieldStreamAudioLanguage)
+  {
+    videodatabase.GetFileStreamLanguageNav(basePath + "filestreams/", items, type, CDatabase::Filter(), false, "audio");
+    iLabel = 21447;
+  }
+  else if (m_rule.m_field == FieldStreamSubtitleLanguage)
+  {
+    videodatabase.GetFileStreamLanguageNav(basePath + "filestreams/", items, type, CDatabase::Filter(), false, "subtitle");
+    iLabel = 21448;
+  }
   else if (m_rule.m_field == FieldStudio)
   {
     videodatabase.GetStudiosNav(basePath + "studios/", items, type);

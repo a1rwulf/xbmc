@@ -53,6 +53,8 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "movies",       FieldActor,         20337,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   { "movies",       FieldDirector,      20339,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   //{ "movies",       FieldStudio,        572,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
+  { "movies",       FieldStreamAudioLanguage,    21447,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
+  { "movies",       FieldStreamSubtitleLanguage,    21448,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
 
   { "tvshows",      FieldTitle,         556,    SettingType::String,  "edit",   "string",   CDatabaseQueryRule::OPERATOR_CONTAINS },
   //{ "tvshows",      FieldTvShowStatus,  126,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
@@ -669,6 +671,10 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
       videodb.GetMusicVideoAlbumsNav(m_dbUrl->ToString(), selectItems, -1, dbfilter, countOnly);
     else if (filter.field == FieldTag)
       videodb.GetTagsNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+    else if (filter.field == FieldStreamAudioLanguage)
+      videodb.GetFileStreamLanguageNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly, "audio");
+    else if (filter.field == FieldStreamSubtitleLanguage)
+      videodb.GetFileStreamLanguageNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly, "subtitle");
   }
   else if (m_mediaType == "artists" || m_mediaType == "albums" || m_mediaType == "songs")
   {

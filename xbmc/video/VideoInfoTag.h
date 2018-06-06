@@ -218,6 +218,8 @@ public:
   std::vector<std::string> m_writingCredits;
   std::vector<std::string> m_genre;
   std::vector<std::string> m_country;
+  std::vector<std::string> m_streamAudioLanguage;
+  std::vector<std::string> m_streamSubtitleLanguage;
   std::string m_strTagLine;
   std::string m_strPlotOutline;
   std::string m_strTrailer;

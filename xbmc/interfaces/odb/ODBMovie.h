@@ -44,6 +44,7 @@
 #include "ODBArt.h"
 #include "ODBDate.h"
 #include "ODBTVShow.h"
+#include "ODBFileStream.h"
 
 
 PRAGMA_DB (model version(1, 1, open))
@@ -179,6 +180,10 @@ PRAGMA_DB (view \
   object(CODBFile = fileView: CODBMovie::m_file) \
   object(CODBPath = pathView: fileView::m_path) \
   object(CODBStreamDetails: CODBMovie::m_file == CODBStreamDetails::m_file) \
+  object(CODBFileStream: CODBMovie::m_file == CODBFileStream::m_file) \
+  object(CODBLanguage: CODBFileStream::m_language) \
+  object(CODBFileStream = subtitlestreams: CODBMovie::m_file == subtitlestreams::m_file) \
+  object(CODBLanguage = subtitlelanguage: subtitlestreams::m_language) \
   object(CODBRating = defaultRating: CODBMovie::m_defaultRating) \
   query(distinct))
 struct ODBView_Movie
@@ -203,6 +208,10 @@ PRAGMA_DB (view \
            object(CODBFile = fileView: CODBMovie::m_file) \
            object(CODBPath = pathView: fileView::m_path) \
            object(CODBStreamDetails: CODBMovie::m_file == CODBStreamDetails::m_file) \
+           object(CODBFileStream: CODBMovie::m_file == CODBFileStream::m_file) \
+           object(CODBLanguage: CODBFileStream::m_language) \
+           object(CODBFileStream = subtitlestreams: CODBMovie::m_file == subtitlestreams::m_file) \
+           object(CODBLanguage = subtitlelanguage: subtitlestreams::m_language) \
            object(CODBRating = defaultRating: CODBMovie::m_defaultRating))
 struct ODBView_Movie_Total
 {
@@ -350,6 +359,17 @@ PRAGMA_DB (view object(CODBMovie) \
 struct ODBView_Movie_Art
 {
   std::shared_ptr<CODBArt> art;
+};
+
+PRAGMA_DB (view \
+  object(CODBMovie) \
+  object(CODBFile inner: CODBMovie::m_file) \
+  object(CODBFileStream inner: CODBMovie::m_file == CODBFileStream::m_file) \
+  object(CODBLanguage inner: CODBFileStream::m_language) \
+  query(distinct))
+struct ODBView_MovieFileStreamLanguages
+{
+  std::shared_ptr<CODBLanguage> language;
 };
 
 #endif /* ODBMOVIE_H */

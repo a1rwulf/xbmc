@@ -5968,6 +5968,22 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
     CDateTime dateadded;
     dateadded.SetFromULongLong(record->movie->m_file->m_dateAdded.m_ulong_date);
     details->m_dateAdded = dateadded;
+    
+    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record->movie->m_file->m_idFile);
+    for (odb::result<CODBFileStream>::iterator i = res.begin(); i != res.end(); i++)
+    {
+      if (i->m_language.load())
+      {
+        if (i->m_type == "audio")
+        {
+          details->m_streamAudioLanguage.emplace_back(i->m_language->m_name);
+        }
+        else if (i->m_type == "subtitle")
+        {
+          details->m_streamSubtitleLanguage.emplace_back(i->m_language->m_name);
+        }
+      }
+    }
   }
 
   m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
@@ -9164,6 +9180,76 @@ bool CVideoDatabase::GetTagsNav(const std::string& strBaseDir, CFileItemList& it
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
 
+  return false;
+}
+
+bool CVideoDatabase::GetFileStreamLanguageNav(const std::string& strBaseDir, CFileItemList& items, int idContent /* = -1 */, const Filter &filter /* = Filter() */, bool countOnly /* = false */, std::string streamtype /* = "audio" */)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    std::map<unsigned long, std::pair<std::string,std::string> > mapItems;
+    
+    //TODO: Implement the filter for odb
+    if (idContent == VIDEODB_CONTENT_MOVIES)
+    {
+      typedef odb::query<ODBView_MovieFileStreamLanguages> query;
+      odb::result<ODBView_MovieFileStreamLanguages> res(m_cdb.getDB()->query<ODBView_MovieFileStreamLanguages>(query::CODBFileStream::type == streamtype)); //TODO: Just returns all now, filter needs to be added
+      for (odb::result<ODBView_MovieFileStreamLanguages>::iterator i = res.begin(); i != res.end(); i++)
+      {
+        // was this already found?
+        auto it = mapItems.find(i->language->m_idLanguage);
+        if (it == mapItems.end())
+        {
+          mapItems.insert(std::pair<unsigned long, std::pair<std::string,std::string> >(i->language->m_idLanguage, std::pair<std::string, std::string>(i->language->m_name, i->language->m_iso1)));
+        }
+      }
+    }
+    
+    if (countOnly)
+    {
+      CFileItemPtr pItem(new CFileItem());
+      pItem->SetProperty("total", static_cast<int>(mapItems.size()));
+      items.Add(pItem);
+      
+      m_pDS->close();
+      return true;
+    }
+    
+    CVideoDbUrl videoUrl;
+    videoUrl.Reset();
+    videoUrl.FromString(strBaseDir);
+    
+    for (const auto &i : mapItems)
+    {
+      CFileItemPtr pItem(new CFileItem(i.second.first));
+      pItem->GetVideoInfoTag()->m_iDbId = i.first;
+      pItem->GetVideoInfoTag()->m_type = streamtype;
+      
+      CVideoDbUrl itemUrl = videoUrl;
+      std::string path = StringUtils::Format("%i/", i.first);
+      itemUrl.AppendPath(path);
+      pItem->SetPath(itemUrl.ToString());
+      pItem->m_bIsFolder = true;
+      pItem->SetLabelPreformatted(true);
+      items.Add(pItem);
+    }
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+    
+    return true;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  
   return false;
 }
 
