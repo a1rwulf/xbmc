@@ -24,11 +24,16 @@ BASE_URL=http://codesynthesis.com/download/odb/2.4
 SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(SOURCE).tar.gz
 
+CPPFLAGS += -I$(PREFIX)/include -I$(PREFIX)/include/mariadb -I/usr/include
+LDFLAGS += -L$(PREFIX)/lib -L$(PREFIX)/lib/mariadb -L/usr/lib -L/usr/lib/x86_64-linux-gnu -lgcrypt -lssl -lcurl
+
 # configuration settings
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
           ./configure --prefix=$(PREFIX) \
 		  				--disable-shared \
-						--enable-static
+						--enable-static \
+						CPPFLAGS="$(CPPFLAGS)" \
+						LDFLAGS="$(LDFLAGS)"
 
 LIBDYLIB=$(PLATFORM)/odb/sqlite/.libs/$(LIBNAME).a
 
