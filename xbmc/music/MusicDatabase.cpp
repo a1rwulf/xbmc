@@ -5621,6 +5621,17 @@ void CMusicDatabase::SetMusicTagScanVersion(int version /* = 0 */)
   }
 }
 
+std::string CMusicDatabase::GetLibraryLastUpdated()
+{
+  return GetSingleValue("SELECT lastscanned FROM versiontagscan LIMIT 1");
+}
+
+void CMusicDatabase::SetLibraryLastUpdated()
+{
+  CDateTime dateUpdated = CDateTime::GetCurrentDateTime();
+  m_pDS->exec(PrepareSQL("UPDATE versiontagscan SET lastscanned = '%s'", dateUpdated.GetAsDBDateTime().c_str()));
+}
+
 unsigned int CMusicDatabase::GetSongIDs(odb::query<ODBView_Song>& query, std::vector<std::pair<int,int> > &songIDs)
 {
   try

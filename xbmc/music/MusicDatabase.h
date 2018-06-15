@@ -681,7 +681,7 @@ void SetLibraryLastUpdated();
 
 protected:
   std::map<std::string, int> m_genreCache;
-  std::map<std::string, int> m_pathCache;
+  std::map<std::string, std::shared_ptr<CODBPath>> m_pathCache;
 
   CCommonDatabase m_cdb;
 
