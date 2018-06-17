@@ -22,13 +22,14 @@
 #define ODBARTISTDETAIL_H
 
 #include <odb/core.hxx>
-
+#include <odb/section.hxx>
 #include "ODBPerson.h"
 #include "ODBDate.h"
 #include "ODBGenre.h"
 #include "ODBInfoSetting.h"
 
 #include <string>
+#include <vector>
 
 PRAGMA_DB (model version(1, 1, open))
 

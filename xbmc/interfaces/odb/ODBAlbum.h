@@ -31,6 +31,7 @@
 #include "ODBInfoSetting.h"
 
 #include <string>
+#include <vector>
 
 PRAGMA_DB (model version(1, 1, open) )
 
