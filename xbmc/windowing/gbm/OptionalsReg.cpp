@@ -32,33 +32,40 @@ class CVaapiProxy : public VAAPI::IVaapiWinSystem
 {
 public:
   CVaapiProxy() = default;
-  virtual ~CVaapiProxy() = default;
+  virtual ~CVaapiProxy();
   VADisplay GetVADisplay() override;
   void *GetEGLDisplay() override { return eglDisplay; };
 
   VADisplay vaDpy;
   void *eglDisplay;
+  int m_fd;
 };
+
+CVaapiProxy::~CVaapiProxy()
+{
+  close(m_fd);
+  m_fd = -1;
+}
 
 VADisplay CVaapiProxy::GetVADisplay()
 {
   int const buf_size{128};
   char name[buf_size];
-  int fd{-1};
+  m_fd = -1;
 
   // 128 is the start of the NUM in renderD<NUM>
   for (int i = 128; i < (128 + 16); i++)
   {
     snprintf(name, buf_size, "/dev/dri/renderD%u", i);
 
-    fd = open(name, O_RDWR);
+    m_fd = open(name, O_RDWR);
 
-    if (fd < 0)
+    if (m_fd < 0)
     {
       continue;
     }
 
-    auto display = vaGetDisplayDRM(fd);
+    auto display = vaGetDisplayDRM(m_fd);
 
     if (display != nullptr)
     {
