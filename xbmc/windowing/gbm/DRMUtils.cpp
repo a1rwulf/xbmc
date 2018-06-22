@@ -31,6 +31,12 @@ CDRMUtils::CDRMUtils()
 {
 }
 
+CDRMUtils::~CDRMUtils()
+{
+  close(m_fd);
+}
+
+
 bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
 {
   m_mode = &m_connector->connector->modes[atoi(res.strId.c_str())];
