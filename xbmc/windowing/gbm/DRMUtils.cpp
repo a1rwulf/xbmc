@@ -667,9 +667,12 @@ void CDRMUtils::DestroyDrm()
     m_crtc = nullptr;
   }
 
-  drmModeFreePlane(m_primary_plane->plane);
-  FreeProperties(m_primary_plane);
-  delete m_primary_plane;
+  if (m_primary_plane)
+  {
+    drmModeFreePlane(m_primary_plane->plane);
+    FreeProperties(m_primary_plane);
+    delete m_primary_plane;
+  }
 
   if (m_overlay_plane != m_primary_plane)
   {
