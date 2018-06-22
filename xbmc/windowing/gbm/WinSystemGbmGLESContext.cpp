@@ -71,6 +71,62 @@ bool CWinSystemGbmGLESContext::InitWindowSystem()
   return true;
 }
 
+bool CWinSystemGbmGLESContext::DestroyWindowSystem()
+{
+  CDVDFactoryCodec::ClearHWAccels();
+  VIDEOPLAYER::CRendererFactory::ClearRenderer();
+  m_vaapiProxy.reset(GBM::VaapiProxyCreate());
+
+  m_pGLContext.Destroy();
+
+  return CWinSystemGbm::DestroyWindowSystem();
+}
+
+bool CWinSystemGbmGLESContext::CreateNewWindow(const std::string& name,
+                                               bool fullScreen,
+                                               RESOLUTION_INFO& res)
+{
+  m_pGLContext.Detach();
+
+  if (!CWinSystemGbm::DestroyWindow())
+  {
+    return false;
+  }
+
+  if (!CWinSystemGbm::CreateNewWindow(name, fullScreen, res))
+  {
+    return false;
+  }
+
+  if (!m_pGLContext.CreateSurface(reinterpret_cast<EGLNativeWindowType>(m_GBM->GetSurface())))
+  {
+    return false;
+  }
+
+  const EGLint contextAttribs[] =
+  {
+    EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE
+  };
+
+  if (!m_pGLContext.CreateContext(contextAttribs))
+  {
+    return false;
+  }
+
+  if (!m_pGLContext.BindContext())
+  {
+    return false;
+  }
+
+  if (!m_pGLContext.SurfaceAttrib())
+  {
+    return false;
+  }
+>>>>>>> Windowing: close vaapis drm fd on destroy of WindowingSystem
+
+  return true;
+}
+
 bool CWinSystemGbmGLESContext::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays)
 {
   if (res.iWidth != m_nWidth ||
