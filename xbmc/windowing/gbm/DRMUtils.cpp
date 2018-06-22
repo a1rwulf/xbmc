@@ -34,6 +34,12 @@ CDRMUtils::CDRMUtils()
 {
 }
 
+CDRMUtils::~CDRMUtils()
+{
+  close(m_fd);
+}
+
+
 bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
 {
   if (!CheckConnector(m_connector->connector->connector_id))
