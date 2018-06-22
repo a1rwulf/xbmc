@@ -509,7 +509,7 @@ bool CDRMUtils::OpenDrm()
   return false;
 }
 
-bool CDRMUtils::InitDrm()
+bool CDRMUtils::Init()
 {
   if(m_fd >= 0)
   {
@@ -597,7 +597,7 @@ bool CDRMUtils::RestoreOriginalMode()
   return true;
 }
 
-void CDRMUtils::DestroyDrm()
+void CDRMUtils::Destroy()
 {
   RestoreOriginalMode();
 
@@ -637,7 +637,7 @@ void CDRMUtils::DestroyDrm()
   m_primary_plane = nullptr;
 }
 
-RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
+RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode) const
 {
   RESOLUTION_INFO res;
   res.iScreen = 0;
@@ -671,7 +671,7 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
   return res;
 }
 
-RESOLUTION_INFO CDRMUtils::GetCurrentMode()
+RESOLUTION_INFO CDRMUtils::GetCurrentMode() const
 {
   return GetResolutionInfo(m_mode);
 }

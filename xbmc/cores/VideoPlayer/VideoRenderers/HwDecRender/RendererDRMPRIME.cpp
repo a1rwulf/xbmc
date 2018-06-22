@@ -32,7 +32,7 @@
 
 const std::string SETTING_VIDEOPLAYER_USEPRIMERENDERER = "videoplayer.useprimerenderer";
 
-CRendererDRMPRIME::CRendererDRMPRIME(std::shared_ptr<CDRMUtils> drm)
+CRendererDRMPRIME::CRendererDRMPRIME(std::shared_ptr<IModeSettingBase> drm)
   : m_DRM(drm)
 {
 }

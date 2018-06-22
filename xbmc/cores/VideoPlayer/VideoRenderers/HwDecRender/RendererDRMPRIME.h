@@ -28,7 +28,7 @@ class CRendererDRMPRIME
   : public CBaseRenderer
 {
 public:
-  CRendererDRMPRIME(std::shared_ptr<CDRMUtils> drm);
+  CRendererDRMPRIME(std::shared_ptr<IModeSettingBase> drm);
   ~CRendererDRMPRIME();
 
   // Registration
@@ -65,7 +65,7 @@ private:
   bool m_bConfigured = false;
   int m_iLastRenderBuffer = -1;
 
-  std::shared_ptr<CDRMUtils> m_DRM;
+  std::shared_ptr<IModeSettingBase> m_DRM;
 
   struct BUFFER
   {

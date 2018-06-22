@@ -27,6 +27,7 @@
 
 #include "windowing/Resolution.h"
 #include "GBMUtils.h"
+#include "windowing/gbm/ModeSettingBase.h"
 
 struct drm_object
 {
@@ -63,31 +64,31 @@ struct drm_fb
   uint32_t fb_id;
 };
 
-class CDRMUtils
+class CDRMUtils : public IModeSettingBase
 {
 public:
   CDRMUtils();
   virtual ~CDRMUtils() = default;
-  virtual void FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer) {};
-  virtual bool SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo) { return false; };
-  virtual bool SetActive(bool active) { return false; };
-  virtual bool InitDrm();
-  virtual void DestroyDrm();
+  virtual void FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer) override {}
+  virtual bool SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo) override { return false; }
+  virtual bool SetActive(bool active) override { return false; }
+  virtual bool Init() override;
+  virtual void Destroy() override;
 
-  std::string GetModule() const { return m_module; }
-  std::string GetDevicePath() const { return m_device_path; }
-  int GetFileDescriptor() const { return m_fd; }
-  struct plane* GetPrimaryPlane() const { return m_primary_plane; }
-  struct plane* GetOverlayPlane() const { return m_overlay_plane; }
-  struct crtc* GetCrtc() const { return m_crtc; }
+  virtual std::string GetModule() const override { return m_module; }
+  virtual std::string GetDevicePath() const override{ return m_device_path; }
+  virtual int GetFileDescriptor() const override { return m_fd; }
+  virtual struct plane* GetPrimaryPlane() const override { return m_primary_plane; }
+  virtual struct plane* GetOverlayPlane() const override { return m_overlay_plane; }
+  virtual struct crtc* GetCrtc() const override { return m_crtc; }
+  
+  virtual RESOLUTION_INFO GetCurrentMode() const override;
+  virtual std::vector<RESOLUTION_INFO> GetModes() override;
+  virtual bool SetMode(const RESOLUTION_INFO& res) override;
+  virtual void WaitVBlank() override;
 
-  RESOLUTION_INFO GetCurrentMode();
-  std::vector<RESOLUTION_INFO> GetModes();
-  bool SetMode(const RESOLUTION_INFO& res);
-  void WaitVBlank();
-
-  virtual bool AddProperty(struct drm_object *object, const char *name, uint64_t value) { return false; }
-  virtual bool SetProperty(struct drm_object *object, const char *name, uint64_t value) { return false; }
+  virtual bool AddProperty(struct drm_object *object, const char *name, uint64_t value) override { return false; }
+  virtual bool SetProperty(struct drm_object *object, const char *name, uint64_t value) override { return false; }
 
 protected:
   bool OpenDrm();
@@ -114,7 +115,7 @@ private:
   bool FindPreferredMode();
   bool RestoreOriginalMode();
   static void DrmFbDestroyCallback(struct gbm_bo *bo, void *data);
-  RESOLUTION_INFO GetResolutionInfo(drmModeModeInfoPtr mode);
+  RESOLUTION_INFO GetResolutionInfo(drmModeModeInfoPtr mode) const;
 
   int m_crtc_index;
   std::string m_module;
