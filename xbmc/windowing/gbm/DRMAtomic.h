@@ -26,12 +26,12 @@ class CDRMAtomic : public CDRMUtils
 {
 public:
   CDRMAtomic() = default;
-  ~CDRMAtomic() { DestroyDrm(); };
+  ~CDRMAtomic() { Destroy(); };
   virtual void FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer) override;
   virtual bool SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo *bo) override;
   virtual bool SetActive(bool active) override;
-  virtual bool InitDrm() override;
-  virtual void DestroyDrm() override;
+  virtual bool Init() override;
+  virtual void Destroy() override;
   virtual bool AddProperty(struct drm_object *object, const char *name, uint64_t value) override;
 
 private:

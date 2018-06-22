@@ -85,18 +85,25 @@ bool CWinSystemGbm::InitWindowSystem()
 {
   m_DRM = std::make_shared<CDRMAtomic>();
 
-  if (!m_DRM->InitDrm())
+  if (!m_DRM->Init())
   {
     CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize Atomic DRM", __FUNCTION__);
     m_DRM.reset();
 
     m_DRM = std::make_shared<CDRMLegacy>();
 
-    if (!m_DRM->InitDrm())
+    if (!m_DRM->Init())
     {
       CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize Legacy DRM", __FUNCTION__);
       m_DRM.reset();
-      return false;
+
+      m_DRM = std::make_shared<COffScreenModeSetting>();
+      if (!m_DRM->Init())
+      {
+        CLog::Log(LOGERROR, "CWinSystemGbm::%s - failed to initialize off screen ModeSettings", __FUNCTION__);
+        m_DRM.reset();
+        return false;
+      }
     }
   }
 

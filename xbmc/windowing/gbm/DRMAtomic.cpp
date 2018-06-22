@@ -141,7 +141,7 @@ void CDRMAtomic::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
   DrmAtomicCommit(!drm_fb ? 0 : drm_fb->fb_id, flags, rendered, videoLayer);
 }
 
-bool CDRMAtomic::InitDrm()
+bool CDRMAtomic::Init()
 {
   if (!CDRMUtils::OpenDrm())
   {
@@ -157,7 +157,7 @@ bool CDRMAtomic::InitDrm()
 
   m_req = drmModeAtomicAlloc();
 
-  if (!CDRMUtils::InitDrm())
+  if (!CDRMUtils::Init())
   {
     return false;
   }
@@ -166,9 +166,9 @@ bool CDRMAtomic::InitDrm()
   return true;
 }
 
-void CDRMAtomic::DestroyDrm()
+void CDRMAtomic::Destroy()
 {
-  CDRMUtils::DestroyDrm();
+  CDRMUtils::Destroy();
 
   drmModeAtomicFree(m_req);
   m_req = nullptr;

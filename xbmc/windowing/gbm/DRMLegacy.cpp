@@ -158,14 +158,14 @@ void CDRMLegacy::FlipPage(struct gbm_bo *bo, bool rendered, bool videoLayer)
   }
 }
 
-bool CDRMLegacy::InitDrm()
+bool CDRMLegacy::Init()
 {
   if (!CDRMUtils::OpenDrm())
   {
     return false;
   }
 
-  if (!CDRMUtils::InitDrm())
+  if (!CDRMUtils::Init())
   {
     return false;
   }
