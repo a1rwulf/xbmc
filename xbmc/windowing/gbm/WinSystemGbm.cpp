@@ -35,6 +35,9 @@
 #include "DRMAtomic.h"
 #include "DRMLegacy.h"
 #include "messaging/ApplicationMessenger.h"
+#ifdef TARGET_POSIX
+#include "XTimeUtils.h"
+#endif
 
 CWinSystemGbm::CWinSystemGbm() :
   m_DRM(nullptr),
@@ -295,6 +298,8 @@ void CWinSystemGbm::WaitVBlank()
 {
   if (m_DRM)
     m_DRM->WaitVBlank();
+  else
+    Sleep(50);
 }
 
 bool CWinSystemGbm::UseLimitedColor()
