@@ -67,6 +67,8 @@ private:
   
 PRAGMA_DB (index member(m_name))
 PRAGMA_DB (index member(m_type))
+PRAGMA_DB (index member(m_file))
+PRAGMA_DB (index member(m_language))
 };
 
 #endif /* ODBFILESTREAM_H */
