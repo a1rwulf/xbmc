@@ -125,6 +125,8 @@ PRAGMA_DB (section(section_foreign))
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBSet> m_set;
 PRAGMA_DB (section(section_foreign))
+  std::vector< odb::lazy_shared_ptr<CODBSet> > m_sets;
+PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBBookmark> > m_bookmarks;
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBBookmark> m_resumeBookmark;
@@ -175,7 +177,7 @@ PRAGMA_DB (view \
   object(CODBStudio = studio: CODBMovie::m_studios) \
   object(CODBTag = tag: CODBMovie::m_tags) \
   object(CODBCountry = country: CODBMovie::m_countries) \
-  object(CODBSet = set: CODBMovie::m_set) \
+  object(CODBSet = set: CODBMovie::m_sets) \
   object(CODBBookmark = bookmark: CODBMovie::m_bookmarks) \
   object(CODBFile = fileView: CODBMovie::m_file) \
   object(CODBPath = pathView: fileView::m_path) \
@@ -203,7 +205,7 @@ PRAGMA_DB (view \
            object(CODBStudio = studio: CODBMovie::m_studios) \
            object(CODBTag = tag: CODBMovie::m_tags) \
            object(CODBCountry = country: CODBMovie::m_countries) \
-           object(CODBSet = set: CODBMovie::m_set) \
+           object(CODBSet = set: CODBMovie::m_sets) \
            object(CODBBookmark = bookmark: CODBMovie::m_bookmarks) \
            object(CODBFile = fileView: CODBMovie::m_file) \
            object(CODBPath = pathView: fileView::m_path) \

@@ -43,10 +43,17 @@ bool GroupUtils::Group(GroupBy groupBy, const std::string &baseDir, const CFileI
 
     // group by sets
     if ((groupBy & GroupBySet) &&
-      item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_set.id > 0)
+      item->HasVideoInfoTag() && !item->GetVideoInfoTag()->m_sets.empty())
     {
       ungrouped = false;
-      setMap[item->GetVideoInfoTag()->m_set.id].insert(item);
+      for (auto set: item->GetVideoInfoTag()->m_sets)
+      {
+        if (set.id > 0)
+        {
+          item->GetVideoInfoTag()->m_set = set;
+          setMap[set.id].insert(item);
+        }
+      }
     }
 
     if (ungrouped)

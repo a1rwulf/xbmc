@@ -2712,7 +2712,7 @@ int CVideoDatabase::SetDetailsForMovie(const std::string& strFilenameAndPath, CV
         m_cdb.getDB()->update(set);
       }
 
-      odb_movie.m_set = set;
+      odb_movie.m_sets.push_back(set);
     }
 
     if (details.HasStreamDetails())
@@ -5580,13 +5580,13 @@ void CVideoDatabase::SetMovieSet(int idMovie, int idSet)
         return;
 
       m_cdb.getDB()->load(objMovie, objMovie.section_foreign);
-      objMovie.m_set = objSet;
+      objMovie.m_sets.push_back(objSet);
       m_cdb.getDB()->update(objMovie, objMovie.section_foreign);
     }
     else
     {
       m_cdb.getDB()->load(objMovie, objMovie.section_foreign);
-      objMovie.m_set.reset();
+      objMovie.m_sets.clear();
       m_cdb.getDB()->update(objMovie, objMovie.section_foreign);
     }
 
@@ -5942,7 +5942,18 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
     details->SetBasePath(record->movie->m_basePath->m_path);
   if(record->movie->m_parentPath.load())
     details->m_parentPathID = record->movie->m_parentPath->m_idPath;
-
+  
+  for (auto set: record->movie->m_sets)
+  {
+    if (set.load())
+    {
+      details->m_set.id = set->m_idSet;
+      details->m_set.title = set->m_name;
+      details->m_set.overview  = set->m_overview;
+      details->m_sets.push_back(details->m_set);
+    }
+  }
+  
   if (record->movie->m_set.load())
   {
     details->m_set.id = record->movie->m_set->m_idSet;

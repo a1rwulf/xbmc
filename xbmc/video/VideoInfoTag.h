@@ -237,6 +237,7 @@ public:
     std::string overview; //!< Overview/description of the movie set
   };
   SetInfo m_set; //!< Assigned movie set
+  std::vector<SetInfo> m_sets; //!< Allow Multiple Sets per movie
   std::vector<std::string> m_tags;
   std::string m_strFile;
   std::string m_strPath;
