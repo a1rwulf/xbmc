@@ -326,9 +326,13 @@ cmake_install.cmake
 /tools/depends/target/config-binaddons.site
 /tools/depends/target/binary-addons/native
 /tools/depends/target/libodb-mysql/native/
+/tools/depends/target/libodb-mysql/libodb-*.tar.gz
 /tools/depends/target/libodb-sqlite/native/
+/tools/depends/target/libodb-sqlite/libodb-*.tar.gz
 /tools/depends/target/libodb/native/
+/tools/depends/target/libodb/libodb-*.tar.gz
 /tools/depends/target/odb/native/
+/tools/depends/target/odb/odb-*.tar.bz2
 
 # /tools/EventClients/
 /tools/EventClients/*.pyc
