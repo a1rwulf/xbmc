@@ -479,6 +479,8 @@ bool CDRMUtils::OpenDrm(bool needConnector)
       {
         if(!GetResources())
         {
+          drmClose(m_fd);
+          m_fd = -1;
           continue;
         }
 
@@ -486,6 +488,8 @@ bool CDRMUtils::OpenDrm(bool needConnector)
         {
           if(!FindConnector())
           {
+            drmClose(m_fd);
+            m_fd = -1;
             continue;
           }
 
