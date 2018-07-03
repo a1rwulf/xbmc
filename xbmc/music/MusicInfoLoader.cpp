@@ -94,7 +94,7 @@ bool CMusicInfoLoader::LoadAdditionalTagInfo(CFileItem* pItem)
     // incorrectly), otherwise fetch artist using song id.
     CArtist artist;
     bool artistfound = false;
-    if (pItem->HasProperty("artistid") && pItem->GetProperty("artistid").isArray())
+    if (pItem->HasProperty("artistid") && pItem->GetProperty("artistid").isArray() && pItem->GetProperty("artistid").begin_array() != pItem->GetProperty("artistid").end_array())
     {
       CVariant::const_iterator_array varid = pItem->GetProperty("artistid").begin_array();
       int idArtist = varid->asInteger();
