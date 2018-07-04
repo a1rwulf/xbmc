@@ -925,6 +925,13 @@ void CGUIBaseContainer::UpdateListProvider(bool forceRefresh /* = false */)
 {
   if (m_listProvider)
   {
+    // Prevent force-reloading of smart playlists
+    if (StringUtils::StartsWith(m_listProvider->GetCurrentURL(), "special://skin/playlists/") && forceRefresh == true)
+    {
+      UpdateScrollByLetter();
+      return;
+    }
+    
     if (m_listProvider->Update(forceRefresh))
     {
       // save the current item

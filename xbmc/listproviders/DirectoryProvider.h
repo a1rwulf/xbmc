@@ -58,6 +58,7 @@ public:
   bool OnInfo(const CGUIListItemPtr &item) override;
   bool OnContextMenu(const CGUIListItemPtr &item) override;
   bool IsUpdating() const override;
+  std::string GetCurrentURL() const override;
 
   // callback from directory job
   void OnJobComplete(unsigned int jobID, bool success, CJob *job) override;

@@ -426,6 +426,11 @@ bool CDirectoryProvider::IsUpdating() const
   return m_jobID || m_updateState == DONE || m_updateState == INVALIDATED;
 }
 
+std::string CDirectoryProvider::GetCurrentURL() const
+{
+  return m_currentUrl;
+}
+
 bool CDirectoryProvider::UpdateURL()
 {
   CSingleLock lock(m_section);

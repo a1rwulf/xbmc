@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 class TiXmlNode;
 class CGUIListItem;
@@ -95,6 +96,8 @@ public:
    \sa GetDefaultItem, SetDefaultItem
    */
   virtual bool AlwaysFocusDefaultItem() const { return false; }
+  
+  virtual std::string GetCurrentURL() const { return std::string(); }
 protected:
   int m_parentID;
 };
