@@ -72,6 +72,7 @@ public:
   void                        SetParameter(const std::string &value);
   void                        SetParameter(const std::vector<std::string> &values);
 
+  virtual bool HasTagRule();
   virtual std::string         GetWhereClause(const CDatabase &db, const std::string& strType) const;
   virtual odb::query<ODBView_Movie> GetMovieWhereClause(const std::string& strType);
   virtual odb::query<ODBView_TVShow> GetTVShowWhereClause(const std::string& strType);

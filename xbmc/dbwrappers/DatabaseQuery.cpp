@@ -319,6 +319,11 @@ std::string CDatabaseQueryRule::GetOperatorString(SEARCH_OPERATOR op) const
   return operatorString;
 }
 
+bool CDatabaseQueryRule::HasTagRule()
+{
+  return false;
+}
+
 std::string CDatabaseQueryRule::GetWhereClause(const CDatabase &db, const std::string& strType) const
 {
   SEARCH_OPERATOR op = GetOperator(strType);

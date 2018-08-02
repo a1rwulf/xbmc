@@ -51,6 +51,8 @@ public:
   static bool Validate(const std::string &input, void *data);
   static bool ValidateRating(const std::string &input, void *data);
   static bool ValidateMyRating(const std::string &input, void *data);
+  
+  virtual bool HasTagRule();
 
 protected:
   virtual std::string         GetField(int field, const std::string& type) const override;
@@ -149,6 +151,7 @@ private:
   std::string GetVideoResolutionQuery(const std::string &parameter) const;
   odb::query<ODBView_Movie> GetODBVideoResolutionQuery(const std::string &parameter) const;
   static std::string FormatLinkQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter);
+  bool m_hasTagRule;
 };
 
 class CSmartPlaylistRuleCombination : public CDatabaseQueryRuleCombination
@@ -165,6 +168,8 @@ public:
 
   void AddRule(const CSmartPlaylistRule &rule);
   
+  bool HasTagRule();
+  
   odb::query<ODBView_Movie> GetMovieWhereClause(const std::string& strType,
                                                 std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_TVShow> GetTVShowWhereClause(const std::string& strType,
@@ -177,6 +182,8 @@ public:
                                                 std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Song> GetSongWhereClause(const std::string& strType,
                                               std::set<std::string> &referencedPlaylists);
+private:
+  bool m_hasTagRule;
 };
 
 class CSmartPlaylist : public IDatabaseQueryRuleFactory
@@ -205,6 +212,7 @@ public:
   const std::string& GetType() const { return m_playlistType; };
   bool IsVideoType() const;
   bool IsMusicType() const;
+  bool HasTagFilter();
 
   void SetMatchAllRules(bool matchAll) { m_ruleCombination.SetType(matchAll ? CSmartPlaylistRuleCombination::CombinationAnd : CSmartPlaylistRuleCombination::CombinationOr); }
   bool GetMatchAllRules() const { return m_ruleCombination.GetType() == CSmartPlaylistRuleCombination::CombinationAnd; }

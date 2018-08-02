@@ -105,6 +105,7 @@ static const translateField fields[] = {
   { "playlist",          FieldPlaylist,                CDatabaseQueryRule::PLAYLIST_FIELD, NULL,                                 true,  559 },
   { "virtualfolder",     FieldVirtualFolder,           CDatabaseQueryRule::PLAYLIST_FIELD, NULL,                                 true,  614 },
   { "tag",               FieldTag,                     CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  20459 },
+  { "tagid",             FieldTagId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 false, 20459 },
   { "instruments",       FieldInstruments,             CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 21892 },
   { "biography",         FieldBiography,               CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 21887 },
   { "born",              FieldBorn,                    CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 21893 },
@@ -267,6 +268,11 @@ bool CSmartPlaylistRule::ValidateMyRating(const std::string &input, void *data)
   return StringValidation::IsPositiveInteger(input, data) && rating <= 10;
 }
 
+bool CSmartPlaylistRule::HasTagRule()
+{
+  return (m_field == FieldTag) || (m_field == FieldTagId);
+}
+
 std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
 {
   std::vector<Field> fields;
@@ -398,6 +404,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldMPAA);
     fields.push_back(FieldDateAdded);
     fields.push_back(FieldTag);
+    fields.push_back(FieldTagId);
     isVideo = true;
   }
   else if (type == "movies")
@@ -428,6 +435,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldPath);
     fields.push_back(FieldSet);
     fields.push_back(FieldTag);
+    fields.push_back(FieldTagId);
     fields.push_back(FieldDateAdded);
     isVideo = true;
   }
@@ -449,6 +457,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldStudio);
     fields.push_back(FieldPlot);
     fields.push_back(FieldTag);
+    fields.push_back(FieldTagId);
     fields.push_back(FieldDateAdded);
     isVideo = true;
   }
@@ -1320,6 +1329,10 @@ odb::query<ODBView_Movie> CSmartPlaylistRule::FormatMovieWhereClause(const bool 
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::tag::name_type_, std::string>(query::tag::name, oper, prepared_string);
   }
+  else if (m_field == FieldTagId)
+  {
+    where_query = FormatODBParam<query, query::tag::idTag_type_, int>(query::tag::idTag, oper, std::stoi(param));
+  }
   else if (m_field == FieldVideoResolution)
   {
     // OPERATOR_CONTAINS
@@ -1492,6 +1505,10 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::tag::name_type_, std::string>(query::tag::name, oper, prepared_string);
   }
+  else if (m_field == FieldTagId)
+  {
+    where_query = FormatODBParam<query, query::tag::idTag_type_, int>(query::tag::idTag, oper, std::stoi(param));
+  }
   else if (m_field == FieldPlaycount)
   {
     /*if (oper == OPERATOR_EQUALS && param == "0")
@@ -1615,6 +1632,10 @@ odb::query<ODBView_Episode> CSmartPlaylistRule::FormatEpisodeWhereClause(const b
   {
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::tag::name_type_, std::string>(query::tag::name, oper, prepared_string);
+  }
+  else if (m_field == FieldTagId)
+  {
+    where_query = FormatODBParam<query, query::tag::idTag_type_, int>(query::tag::idTag, oper, std::stoi(param));
   }
   else if (m_field == FieldMPAA)
   {
@@ -2126,10 +2147,16 @@ std::string CSmartPlaylistRule::GetField(int field, const std::string &type) con
   return "";
 }
 
+bool CSmartPlaylistRuleCombination::HasTagRule()
+{
+  return m_hasTagRule;
+}
+
 odb::query<ODBView_Movie> CSmartPlaylistRuleCombination::GetMovieWhereClause(const std::string& strType, std::set<std::string> &referencedPlaylists)
 {
   typedef odb::query<ODBView_Movie> query;
   query movie_query;
+  m_hasTagRule = false;
   
   // translate the combinations into SQL
   for (CDatabaseQueryRuleCombinations::const_iterator it = m_combinations.begin(); it != m_combinations.end(); ++it)
@@ -2191,6 +2218,9 @@ odb::query<ODBView_Movie> CSmartPlaylistRuleCombination::GetMovieWhereClause(con
       movie_query = query(movie_query && currentRule);
     else
       movie_query = query(movie_query || currentRule);
+    
+    if (!m_hasTagRule && (*it)->HasTagRule())
+      m_hasTagRule = true;
   }
   
   return movie_query;
@@ -3008,6 +3038,11 @@ bool CSmartPlaylist::IsMusicType(const std::string &type)
 {
   return type == "artists" || type == "albums" ||
          type == "songs" || type == "mixed";
+}
+
+bool CSmartPlaylist::HasTagFilter()
+{
+  return m_ruleCombination.HasTagRule();
 }
 
 odb::query<ODBView_Movie> CSmartPlaylist::GetMovieWhereClause(std::set<std::string> &referencedPlaylists)
