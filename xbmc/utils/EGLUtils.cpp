@@ -348,6 +348,5 @@ void CEGLContextUtils::SwapBuffers()
     // Theoretically, EGL_CONTEXT_LOST could be handled, but it needs to be checked
     // whether egl implementations actually use it (mesa does not)
     CEGLUtils::LogError("eglSwapBuffers failed");
-    throw std::runtime_error("eglSwapBuffers failed");
   }
 }
