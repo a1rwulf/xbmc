@@ -43,11 +43,18 @@ JSONRPC_STATUS CPlayerOperations::GetActivePlayers(const std::string &method, IT
   int activePlayers = GetActivePlayers();
   result = CVariant(CVariant::VariantTypeArray);
 
+  std::string strPlayerType = "internal";
+  if (activePlayers & External)
+    strPlayerType = "external";
+  else if (activePlayers & Remote)
+    strPlayerType = "remote";
+
   if (activePlayers & Video)
   {
     CVariant video = CVariant(CVariant::VariantTypeObject);
     video["playerid"] = GetPlaylist(Video);
     video["type"] = "video";
+    video["playertype"] = strPlayerType;
     result.append(video);
   }
   if (activePlayers & Audio)
@@ -55,6 +62,7 @@ JSONRPC_STATUS CPlayerOperations::GetActivePlayers(const std::string &method, IT
     CVariant audio = CVariant(CVariant::VariantTypeObject);
     audio["playerid"] = GetPlaylist(Audio);
     audio["type"] = "audio";
+    audio["playertype"] = strPlayerType;
     result.append(audio);
   }
   if (activePlayers & Picture)
@@ -62,6 +70,7 @@ JSONRPC_STATUS CPlayerOperations::GetActivePlayers(const std::string &method, IT
     CVariant picture = CVariant(CVariant::VariantTypeObject);
     picture["playerid"] = GetPlaylist(Picture);
     picture["type"] = "picture";
+    picture["playertype"] = "internal";
     result.append(picture);
   }
 
@@ -1066,6 +1075,10 @@ int CPlayerOperations::GetActivePlayers()
     activePlayers |= Audio;
   if (CServiceBroker::GetGUI()->GetWindowManager().IsWindowActive(WINDOW_SLIDESHOW))
     activePlayers |= Picture;
+  if (g_application.GetAppPlayer().IsExternalPlaying())
+    activePlayers |= External;
+  if (g_application.GetAppPlayer().IsRemotePlaying())
+    activePlayers |= Remote;
 
   return activePlayers;
 }
