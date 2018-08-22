@@ -217,7 +217,8 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer)
     bo = m_GBM->LockFrontBuffer();
   }
 
-  m_DRM->FlipPage(bo, rendered, videoLayer);
+  if (bo)
+    m_DRM->FlipPage(bo, rendered, videoLayer);
 
   if (rendered)
   {
