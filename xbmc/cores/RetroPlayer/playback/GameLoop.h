@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "games/addons/streams/GameClientStreamHwFramebuffer.h"
 #include "threads/Event.h"
 #include "threads/Thread.h"
 
@@ -36,7 +37,7 @@ namespace RETRO
   class CGameLoop : protected CThread
   {
   public:
-    CGameLoop(IGameLoopCallback* callback, double fps);
+    CGameLoop(IGameLoopCallback* callback, IHwFramebufferCallback* hwcallback, double fps);
 
     ~CGameLoop() override;
 
@@ -59,6 +60,7 @@ namespace RETRO
     double NowMs() const;
 
     IGameLoopCallback* const m_callback;
+    IHwFramebufferCallback* const m_hwcallback;
     const double             m_fps;
     std::atomic<double>      m_speedFactor;
     double                   m_lastFrameMs;

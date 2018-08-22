@@ -28,7 +28,7 @@ using namespace RETRO;
 
 CReversiblePlayback::CReversiblePlayback(GAME::CGameClient* gameClient, double fps, size_t serializeSize) :
   m_gameClient(gameClient),
-  m_gameLoop(this, fps),
+  m_gameLoop(this, this, fps),
   m_savestateDatabase(new CSavestateDatabase),
   m_totalFrameCount(0),
   m_pastFrameCount(0),
@@ -321,4 +321,9 @@ void CReversiblePlayback::UpdateMemoryStream()
     m_totalTimeMs = 0;
     m_cacheTimeMs = 0;
   }
+}
+
+void CGameClientReversiblePlayback::HardwareContextReset()
+{
+  m_gameClient->HardwareContextReset();
 }
