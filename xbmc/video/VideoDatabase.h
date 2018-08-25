@@ -633,11 +633,6 @@ public:
   void EraseVideoSettings(const CFileItem &item);
 
   /**
-   * Erases all video settings
-   */
-  void EraseAllVideoSettings();
-
-  /**
    * Erases video settings for files starting with path
    * @param path pattern
    */

@@ -2490,7 +2490,7 @@ bool CVideoDatabase::GetFileInfo(const std::string& strFilenameAndPath, CVideoIn
         if(m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == odbFile.m_idFile &&
                                                   odb::query<CODBBookmark>::type == CBookmark::RESUME, odbBookmark))
         {
-          details.SetResumePoint(odbBookmark.m_timeInSeconds, odbBookmark.m_totalTimeInSeconds);
+          details.SetResumePoint(odbBookmark.m_timeInSeconds, odbBookmark.m_totalTimeInSeconds, "");
         }
       }
 
@@ -6755,11 +6755,6 @@ bool CVideoDatabase::GetVideoSettings(int idFile, CVideoSettings &settings)
   return false;
 }
 
-void CVideoDatabase::SetVideoSettings(const CFileItem &item, const CVideoSettings &settings)
-{
-  SetVideoSettings(GetFileId(item), settings);
-}
-
 /// \brief Sets the settings for a particular video file
 void CVideoDatabase::SetVideoSettings(int idFile, const CVideoSettings &setting)
 {
@@ -8575,7 +8570,7 @@ bool CVideoDatabase::UpdateVideoSortTitle(int idDb, const std::string& strNewSor
 }
 
 /// \brief EraseVideoSettings() Erases the videoSettings table and reconstructs it
-void CVideoDatabase::EraseVideoSettings(const std::string &path /* = ""*/)
+void CVideoDatabase::EraseAllVideoSettings(std::string path)
 {
   try
   {

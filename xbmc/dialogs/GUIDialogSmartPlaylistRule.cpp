@@ -148,6 +148,7 @@ void CGUIDialogSmartPlaylistRule::OnBrowse()
     }
     iLabel = 515;
   }
+/*
   else if (m_rule.m_field == FieldSource)
   {
     if (m_type == "songs" ||
@@ -159,6 +160,7 @@ void CGUIDialogSmartPlaylistRule::OnBrowse()
       iLabel = 39030;
     }
   }
+*/
   else if (m_rule.m_field == FieldRole)
   {
     if (m_type == "artists" || m_type == "mixed")

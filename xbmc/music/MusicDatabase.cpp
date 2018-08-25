@@ -663,6 +663,408 @@ bool CMusicDatabase::UpdateAlbum(CAlbum& album)
   return false;
 }
 
+std::shared_ptr<CODBSong> CMusicDatabase::AddSong(const std::shared_ptr<CODBAlbum> objAlbum,
+                            const std::string& strTitle, 
+                            const std::string& strMusicBrainzTrackID,
+                            const std::string& strPathAndFileName, 
+                            const std::string& strComment,
+                            const std::string& strMood, 
+                            const std::string& strThumb,
+                            const std::string &artistDisp, 
+                            const std::string &artistSort,
+                            const std::vector<std::string>& genres,
+                            int iTrack, 
+                            int iDuration, 
+                            int iYear,
+                            const int iTimesPlayed, 
+                            int iStartOffset, 
+                            int iEndOffset,
+                            const CDateTime& dtLastPlayed, 
+                            float rating, 
+                            int userrating, 
+                            int votes,
+                            const ReplayGain& replayGain)
+{
+  try
+  {
+    if (!objAlbum)
+      return nullptr;
+    
+    // We need at least the title
+    if (strTitle.empty())
+      return nullptr;
+
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    typedef odb::query<CODBSong> query;
+
+    std::string strPath, strFileName;
+    URIUtils::Split(strPathAndFileName, strPath, strFileName);
+    //TODO check what to do here
+    //int idPath = AddPath(strPath);
+    query songQuery;
+
+    if (!strMusicBrainzTrackID.empty())
+      songQuery = query::album->idAlbum == objAlbum->m_idAlbum
+                && query::track == iTrack 
+                && query::musicBrainzTrackID == strMusicBrainzTrackID;
+    else
+      songQuery = query::album->idAlbum == objAlbum->m_idAlbum
+              && query::file->filename == strFileName
+              && query::title == strTitle
+              && query::track == iTrack
+              && query::musicBrainzTrackID == "";
+
+    std::shared_ptr<CODBSong> objSong(new CODBSong);
+    if (!m_cdb.getDB()->query_one<CODBSong>(songQuery, *objSong))
+    {
+      objSong->m_album = objAlbum;
+      
+      std::shared_ptr<CODBFile> objFile(AddFileAndPath(strFileName, strPath));
+      if (objFile == nullptr)
+        return nullptr;
+      
+      objFile->m_playCount = iTimesPlayed;
+      if (dtLastPlayed.IsValid())
+      {
+        objFile->m_lastPlayed.setDateTime(dtLastPlayed.GetAsULongLong(), dtLastPlayed.GetAsDBDateTime());
+      }
+      m_cdb.getDB()->update(objFile);
+      
+      objSong->m_file = objFile;
+      
+      objSong->m_artistDisp = artistDisp;
+      objSong->m_artistSort = artistSort;
+      objSong->m_title = strTitle;
+      objSong->m_track = iTrack;
+      objSong->m_duration = iDuration;
+      objSong->m_year = iYear;
+      objSong->m_musicBrainzTrackID = strMusicBrainzTrackID;
+      objSong->m_startOffset = iStartOffset;
+      objSong->m_endOffset = iEndOffset;
+      objSong->m_rating = rating;
+      objSong->m_userrating = userrating;
+      objSong->m_votes = votes;
+      objSong->m_comment = strComment;
+      objSong->m_mood = strMood;
+      objSong->m_replayGain = replayGain.Get();
+
+      m_cdb.getDB()->persist(objSong);
+    }
+    else
+    {
+      UpdateSong( objSong, 
+                  strTitle, 
+                  strMusicBrainzTrackID, 
+                  strPathAndFileName, 
+                  strComment, 
+                  strMood, 
+                  strThumb,
+                  artistDisp, 
+                  artistSort, 
+                  genres, 
+                  iTrack, 
+                  iDuration, 
+                  iYear, 
+                  iTimesPlayed, 
+                  iStartOffset, 
+                  iEndOffset, 
+                  dtLastPlayed, 
+                  rating, 
+                  userrating, 
+                  votes, 
+                  replayGain);
+    }
+    
+    if (!objSong->section_foreign.loaded())
+      m_cdb.getDB()->load(*objSong, objSong->section_foreign);
+
+    if (!strThumb.empty())
+      SetArtForItem(objSong->m_idSong, MediaTypeSong, "thumb", strThumb);
+
+    SetODBDetailsGenres(objSong, genres);
+    
+    std::shared_ptr<CODBFile> objFile(objSong->m_file.get_eager());
+
+    UpdateFileDateAdded(objFile, strPathAndFileName);
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+
+    AnnounceUpdate(MediaTypeSong, objSong->m_idSong, true);
+    
+    return objSong;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "musicdatabase:exception on addsong - %s", e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "musicdatabase:unable to addsong");
+  }
+  return nullptr;
+}
+
+bool CMusicDatabase::GetSong(int idSong, CSong& song)
+{
+  try
+  {
+    song.Clear();
+
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    std::shared_ptr<CODBSong> objSong(new CODBSong);
+    if (!m_cdb.getDB()->query_one<CODBSong>(odb::query<CODBSong>::idSong == idSong, *objSong))
+    {
+      return false;
+    }
+    
+    song = GetSongFromODBObject(objSong);
+
+    return true;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s(%i) failed - %s", __FUNCTION__, idSong, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s(%i) failed", __FUNCTION__, idSong);
+  }
+
+  return false;
+}
+
+
+bool CMusicDatabase::UpdateSong(CSong& song, bool bArtists /*= true*/)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    std::shared_ptr<CODBSong> objSong(new CODBSong);
+    if (!m_cdb.getDB()->query_one<CODBSong>(odb::query<CODBSong>::idSong == song.idSong, *objSong))
+      return false;
+    
+    objSong = UpdateSong(objSong, song);
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+    
+    if (objSong)
+      return true;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  
+  return false;
+}
+
+std::shared_ptr<CODBSong> CMusicDatabase::UpdateSong(std::shared_ptr<CODBSong> objSong, const CSong &song)
+{
+  return UpdateSong(objSong,
+                    song.strTitle,
+                    song.strMusicBrainzTrackID,
+                    song.strFileName,
+                    song.strComment,
+                    song.strMood,
+                    song.strThumb,
+                    song.GetArtistString(),
+                    song.GetArtistSort(),
+                    song.genre,
+                    song.iTrack,
+                    song.iDuration,
+                    song.iYear,
+                    song.iTimesPlayed,
+                    song.iStartOffset,
+                    song.iEndOffset,
+                    song.lastPlayed,
+                    song.rating,
+                    song.userrating,
+                    song.votes,
+                    song.replayGain);
+}
+
+std::shared_ptr<CODBSong> CMusicDatabase::UpdateSong(std::shared_ptr<CODBSong> objSong,
+                                                     const std::string& strTitle, 
+                                                     const std::string& strMusicBrainzTrackID,
+                                                     const std::string& strPathAndFileName, 
+                                                     const std::string& strComment,
+                                                     const std::string& strMood, 
+                                                     const std::string& strThumb,
+                                                     const std::string &artistDisp, 
+                                                     const std::string &artistSort,
+                                                     const std::vector<std::string>& genres,
+                                                     int iTrack, 
+                                                     int iDuration, 
+                                                     int iYear,
+                                                     int iTimesPlayed, 
+                                                     int iStartOffset, 
+                                                     int iEndOffset,
+                                                     const CDateTime& dtLastPlayed, 
+                                                     float rating, 
+                                                     int userrating, 
+                                                     int votes,
+                                                     const ReplayGain& replayGain)
+{
+  try
+  {
+    if (!objSong)
+      return nullptr;
+    
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    
+    if (!objSong->section_foreign.loaded())
+      m_cdb.getDB()->load(*objSong, objSong->section_foreign);
+    
+    std::string strPath, strFileName;
+    URIUtils::Split(strPathAndFileName, strPath, strFileName);
+    
+    std::shared_ptr<CODBFile> objFile(AddFileAndPath(strFileName, strPath));
+    if (objFile == nullptr)
+      return nullptr;
+    
+    objFile->m_playCount = iTimesPlayed;
+    if (dtLastPlayed.IsValid())
+    {
+      objFile->m_lastPlayed.setDateTime(dtLastPlayed.GetAsULongLong(), dtLastPlayed.GetAsDBDateTime());
+    }
+    m_cdb.getDB()->update(*objFile);
+    
+    objSong->m_file = objFile;
+    
+    objSong->m_artistDisp = artistDisp;
+    objSong->m_artistSort = artistSort;
+    objSong->m_genresString = StringUtils::Join(genres, g_advancedSettings.m_musicItemSeparator);
+    objSong->m_title = strTitle;
+    objSong->m_track = iTrack;
+    objSong->m_duration = iDuration;
+    objSong->m_year = iYear;
+    objSong->m_musicBrainzTrackID = strMusicBrainzTrackID;
+    objSong->m_startOffset = iStartOffset;
+    objSong->m_endOffset = iEndOffset;
+    objSong->m_rating = rating;
+    objSong->m_userrating = userrating;
+    objSong->m_votes = votes;
+    objSong->m_comment = strComment;
+    objSong->m_mood = strMood;
+    objSong->m_replayGain = replayGain.Get();
+    
+    m_cdb.getDB()->update(*objSong);
+    m_cdb.getDB()->update(*objSong, objSong->section_foreign);
+
+    UpdateFileDateAdded(objFile, strPathAndFileName);
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+    
+    AnnounceUpdate(MediaTypeSong, objSong->m_idSong);
+    return objSong;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "musicdatabase:exception on UpdateSong - %s", e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "musicdatabase:unable to UpdateSong");
+  }
+  return nullptr;
+}
+
+std::shared_ptr<CODBAlbum> CMusicDatabase::AddAlbum(const std::string& strAlbum, 
+                                                    const std::string& strMusicBrainzAlbumID,
+                                                    const std::string& strReleaseGroupMBID,
+                                                    const std::string& strArtist, 
+                                                    const std::string& strArtistSort, 
+                                                    const std::string& strGenre, 
+                                                    int year,
+                                                    const std::string& strRecordLabel, 
+                                                    const std::string& strType,
+                                                    bool bCompilation, 
+                                                    CAlbum::ReleaseType releaseType)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    typedef odb::query<ODBView_Album> query;
+    query queryAlbum;
+
+    if (!strMusicBrainzAlbumID.empty())
+      queryAlbum = query::CODBAlbum::musicBrainzAlbumID == strMusicBrainzAlbumID;
+    else
+      queryAlbum = query::CODBAlbum::artistDisp.like(strArtist) && query::CODBAlbum::album.like(strAlbum) && query::CODBAlbum::musicBrainzAlbumID == "";
+
+    ODBView_Album objAlbumView;
+    if (!m_cdb.getDB()->query_one<ODBView_Album>(queryAlbum, objAlbumView))
+    {
+      objAlbumView.album = std::shared_ptr<CODBAlbum>(new CODBAlbum);
+      
+      objAlbumView.album->m_album = strAlbum;
+      objAlbumView.album->m_musicBrainzAlbumID = strMusicBrainzAlbumID;
+      objAlbumView.album->m_artistDisp = strArtist;
+      objAlbumView.album->m_genresString = strGenre;
+      objAlbumView.album->m_year = year;
+      objAlbumView.album->m_label = strRecordLabel;
+      objAlbumView.album->m_type = strType;
+      objAlbumView.album->m_compilation = bCompilation;
+      objAlbumView.album->m_releaseGroupMBID = strReleaseGroupMBID;
+      objAlbumView.album->m_releaseType = CAlbum::ReleaseTypeToString(releaseType);
+      
+      m_cdb.getDB()->persist(objAlbumView.album);
+    }
+    else
+    {
+      /* Exists in our database and being re-scanned from tags, so we should update it as the details
+         may have changed.
+
+         Note that for multi-folder albums this will mean the last folder scanned will have the information
+         stored for it.  Most values here should be the same across all songs anyway, but it does mean
+         that if there's any inconsistencies then only the last folders information will be taken.
+
+         We make sure we clear out the link tables (album artists, album genres) and we reset
+         the last scraped time to make sure that online metadata is re-fetched. */
+      
+      objAlbumView.album->m_album = strAlbum;
+      objAlbumView.album->m_musicBrainzAlbumID = strMusicBrainzAlbumID;
+      objAlbumView.album->m_artistDisp = strArtist;
+      objAlbumView.album->m_genresString = strGenre;
+      objAlbumView.album->m_year = year;
+      objAlbumView.album->m_label = strRecordLabel;
+      objAlbumView.album->m_type = strType;
+      objAlbumView.album->m_compilation = bCompilation;
+      objAlbumView.album->m_releaseGroupMBID = strReleaseGroupMBID;
+      objAlbumView.album->m_releaseType = CAlbum::ReleaseTypeToString(releaseType);
+      
+      objAlbumView.album->m_artists.clear();
+      //TODO: We may need to cleanup at some point to remove unassigned artists and genre?
+      
+      m_cdb.getDB()->update(objAlbumView.album);
+      m_cdb.getDB()->update(*(objAlbumView.album), objAlbumView.album->section_foreign);
+    }
+    
+    if(odb_transaction)
+      odb_transaction->commit();
+    
+    return objAlbumView.album;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+
+  return nullptr;
+}
 
 std::shared_ptr<CODBAlbum> CMusicDatabase::UpdateAlbum(int idAlbum,
                                                        const std::string& strAlbum,

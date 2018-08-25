@@ -3297,7 +3297,8 @@ void CApplication::StoreVideoSettings(const CFileItem &fileItem, CVideoSettings 
     }
     else
     {
-      dbs.EraseVideoSettings(fileItem);
+      //TODO implement if necessary
+      //dbs.EraseVideoSettings(fileItem);
     }
     dbs.Close();
   }

@@ -696,8 +696,10 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
       musicdb.GetAlbumTypesNav(m_dbUrl->ToString(), selectItems, dbfilter, countOnly);
     else if (filter.field == FieldMusicLabel)
       musicdb.GetMusicLabelsNav(m_dbUrl->ToString(), selectItems, dbfilter, countOnly);
+/*
     if (filter.field == FieldSource)
       musicdb.GetSourcesNav(m_dbUrl->ToString(), selectItems, dbfilter, countOnly);
+*/
   }
 
   int size = selectItems.Size();
