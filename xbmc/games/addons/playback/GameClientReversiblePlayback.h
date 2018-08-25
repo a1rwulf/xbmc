@@ -59,6 +59,7 @@ namespace GAME
 
     // Implementation of IHwFramebufferCallback
     void HardwareContextReset() override;
+    void CreateHwContext() override;
 
   private:
     void AddFrame();

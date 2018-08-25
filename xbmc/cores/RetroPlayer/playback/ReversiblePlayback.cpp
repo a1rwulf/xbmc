@@ -327,3 +327,8 @@ void CGameClientReversiblePlayback::HardwareContextReset()
 {
   m_gameClient->HardwareContextReset();
 }
+
+void CGameClientReversiblePlayback::CreateHwContext()
+{
+  m_gameClient->CreateHwContext();
+}

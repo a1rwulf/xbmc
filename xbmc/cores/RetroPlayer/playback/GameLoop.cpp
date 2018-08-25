@@ -60,6 +60,8 @@ void CGameLoop::PauseAsync()
 
 void CGameLoop::Process(void)
 {
+  m_hwcallback->CreateHwContext();
+  Sleep(200);
   m_hwcallback->HardwareContextReset();
   while (!m_bStop)
   {

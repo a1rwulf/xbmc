@@ -519,6 +519,14 @@ void CGameClient::HardwareContextReset()
   catch (...) { LogException("HwContextReset()"); }
 }
 
+void CGameClient::CreateHwContext()
+{
+  game_stream_properties properties;
+
+  properties.type = GAME_STREAM_HW_FRAMEBUFFER;
+  Streams().OpenStream((IGameClientStream*)m_stream, properties);
+}
+
 void CGameClient::cb_close_game(void* kodiInstance)
 {
   using namespace MESSAGING;
@@ -535,7 +543,18 @@ void* CGameClient::cb_open_stream(void* kodiInstance, const game_stream_properti
   if (gameClient == nullptr)
     return nullptr;
 
-  return gameClient->Streams().OpenStream(*properties);
+  if (properties->type == GAME_STREAM_HW_FRAMEBUFFER)
+  {
+    gameClient->m_stream = gameClient->Streams().CreateStream(*properties);
+    gameClient->m_hwrendering = true;
+  }
+  else
+  {
+    gameClient->m_stream = gameClient->Streams().CreateStream(*properties);
+    gameClient->Streams().OpenStream((IGameClientStream*)gameClient->m_stream, *properties);
+  }
+
+  return gameClient->m_stream;
 }
 
 bool CGameClient::cb_get_stream_buffer(void* kodiInstance, void *stream, unsigned int width, unsigned int height, game_stream_buffer *buffer)
