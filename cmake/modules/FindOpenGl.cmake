@@ -17,10 +17,11 @@ endif()
 if(NOT CORE_SYSTEM_NAME STREQUAL osx)
   find_path(OPENGL_INCLUDE_DIR GL/gl.h
                                PATHS ${PC_OPENGL_gl_INCLUDEDIR})
-  find_library(OPENGL_gl_LIBRARY NAMES GL
+  find_library(OPENGL_gl_LIBRARY NAMES GL OpenGL
                                  PATHS ${PC_OPENGL_gl_LIBDIR})
   find_library(OPENGL_glu_LIBRARY NAMES GLU
                                   PATHS ${PC_OPENGL_glu_LIBDIR})
+
 else()
   find_library(OPENGL_gl_LIBRARY NAMES OpenGL
                                  PATHS ${CMAKE_OSX_SYSROOT}/System/Library
