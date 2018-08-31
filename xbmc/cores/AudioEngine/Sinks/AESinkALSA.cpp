@@ -575,7 +575,7 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
 
   if (m_passthrough && inconfig.channels != outconfig.channels)
   {
-    CLog::Log(LOGINFO, "CAESinkALSA::Initialize - could not open required number of channels");
+    CLog::Log(LOGERROR, "CAESinkALSA::Initialize - could not open required number of channels (%d/%d)", inconfig.channels, outconfig.channels);
     return false;
   }
   // adjust format to the configuration we got
@@ -583,7 +583,10 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
   // we might end up with an unusable channel layout that contains only UNKNOWN
   // channels, let's do a sanity check.
   if (!format.m_channelLayout.IsLayoutValid())
+  {
+    CLog::Log(LOGERROR, "CAESinkALSA::Initialize - Channel layout is invalid");
     return false;
+  }
 
   format.m_sampleRate = outconfig.sampleRate;
   format.m_frames = outconfig.periodSize;
