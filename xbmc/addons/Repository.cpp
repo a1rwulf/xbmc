@@ -170,11 +170,11 @@ CRepository::CRepository(CAddonInfo addonInfo, DirList dirs)
     CURL datadir(dir.datadir);
     if (datadir.IsProtocol("http"))
     {
-      CLog::Log(LOGWARNING, "Repository {} uses plain HTTP for add-on downloads - this is insecure and will make your Kodi installation vulnerable to attacks if enabled!", Name());
+      CLog::Log(LOGDEBUG, "Repository {} uses plain HTTP for add-on downloads!", Name());
     }
     else if (datadir.IsProtocol("https") && datadir.HasProtocolOption("verifypeer") && datadir.GetProtocolOption("verifypeer") == "false")
     {
-      CLog::Log(LOGWARNING, "Repository {} disabled peer verification for add-on downloads - this is insecure and will make your Kodi installation vulnerable to attacks if enabled!", Name());
+      CLog::Log(LOGDEBUG, "Repository {} disabled peer verification for add-on downloads!", Name());
     }
   }
 }
