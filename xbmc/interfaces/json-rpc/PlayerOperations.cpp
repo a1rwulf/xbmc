@@ -1014,7 +1014,9 @@ JSONRPC_STATUS CPlayerOperations::SetSubtitle(const std::string &method, ITransp
         if (index < 0 || g_application.GetAppPlayer().GetSubtitleCount() <= index)
           return InvalidParams;
 
-        g_application.GetAppPlayer().SetSubtitle(index);
+        int currentSubtitleIndex = g_application.GetAppPlayer().GetSubtitle();
+        if (currentSubtitleIndex != index)
+          g_application.GetAppPlayer().SetSubtitle(index);
 
         // Check if we need to enable subtitles to be displayed
         if (parameterObject["enable"].asBoolean() && !g_application.GetAppPlayer().GetSubtitleVisible())
