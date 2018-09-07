@@ -86,6 +86,8 @@ PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_thumbUrl;
 PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_sortTitle;
+PRAGMA_DB (type("VARCHAR(255)"))
+  std::string m_titleSearch;
   int m_runtime;
   std::string m_mpaa;
   int m_top250;
@@ -157,6 +159,7 @@ PRAGMA_DB (index member(m_title))
 PRAGMA_DB (index member(m_defaultRating))
 PRAGMA_DB (index member(m_sortTitle))
 PRAGMA_DB (index member(m_originalTitle))
+PRAGMA_DB (index member(m_titleSearch))
 PRAGMA_DB (index member(m_basePath))
 PRAGMA_DB (index member(m_parentPath))
 PRAGMA_DB (index member(m_set))

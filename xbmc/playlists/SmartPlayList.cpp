@@ -1206,7 +1206,7 @@ odb::query<ODBView_Movie> CSmartPlaylistRule::FormatMovieWhereClause(const bool 
   if (m_field == FieldTitle)
   {
     std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBMovie::title_type_, std::string>(query::CODBMovie::title, oper, prepared_string);
+    where_query = FormatODBParam<query, query::CODBMovie::titleSearch_type_, std::string>(query::CODBMovie::titleSearch, oper, prepared_string);
   }
   else if (m_field == FieldGenre)
   {
