@@ -716,7 +716,13 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
     if (m_speed != 0)
       pts += m_picture.iDuration * m_speed / abs(m_speed);
 
-    m_outputSate = OutputPicture(&m_picture);
+    if (m_picture.videoBuffer)
+      m_outputSate = OutputPicture(&m_picture);
+    else
+    {
+      CLog::Log(LOGERROR, "%s - Handling decoder output but videoBuffer is null", __FUNCTION__);
+      m_outputSate = OUTPUT_AGAIN;
+    }
 
     if (m_outputSate == OUTPUT_AGAIN)
     {
