@@ -412,8 +412,7 @@ void CDisplaySettings::SetCurrentResolution(RESOLUTION resolution, bool save /* 
       CServiceBroker::GetSettingsComponent()->GetSettings()->SetInt(CSettings::SETTING_VIDEOSCREEN_SCREEN, currentDisplayMode);
     }
   }
-
-  if (resolution != m_currentResolution)
+  else if (resolution != m_currentResolution)
   {
     m_currentResolution = resolution;
     SetChanged();
