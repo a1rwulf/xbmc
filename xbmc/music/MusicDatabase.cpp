@@ -3485,7 +3485,7 @@ error:
 bool CMusicDatabase::LookupCDDBInfo(bool bRequery/*=false*/)
 {
 #ifdef HAS_DVD_DRIVE
-  if (!CServiceBroker::GetSettings()->GetBool(CSettings::SETTING_AUDIOCDS_USECDDB))
+  if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_AUDIOCDS_USECDDB))
     return false;
 
   // check network connectivity
@@ -5843,7 +5843,7 @@ bool CMusicDatabase::GetOldArtistPath(int idArtist, std::string &basePath)
 bool CMusicDatabase::GetArtistPath(const CArtist& artist, std::string &path)
 {
    // Get path for artist in the artists folder
-  path = CServiceBroker::GetSettings()->GetString(CSettings::SETTING_MUSICLIBRARY_ARTISTSFOLDER);
+  path = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_MUSICLIBRARY_ARTISTSFOLDER);
   if (path.empty())
     return false; // No Artists folder not set;
   // Get unique artist folder name
@@ -7613,7 +7613,7 @@ bool CMusicDatabase::GetItems(const std::string &strBaseDir, const std::string &
   else if (StringUtils::EqualsNoCase(itemType, "roles"))
     return GetRolesNav(strBaseDir, items, filter);
   else if (StringUtils::EqualsNoCase(itemType, "artists"))
-    return GetArtistsNav(strBaseDir, items, !CServiceBroker::GetSettings()->GetBool(CSettings::SETTING_MUSICLIBRARY_SHOWCOMPILATIONARTISTS), -1, -1, -1, filter, sortDescription);
+    return GetArtistsNav(strBaseDir, items, !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_MUSICLIBRARY_SHOWCOMPILATIONARTISTS), -1, -1, -1, filter, sortDescription);
   else if (StringUtils::EqualsNoCase(itemType, "albums"))
     return GetAlbumsByWhere(strBaseDir, filter, items, sortDescription);
   else if (StringUtils::EqualsNoCase(itemType, "songs"))
@@ -7669,7 +7669,7 @@ void CMusicDatabase::ExportToXML(const CLibExportSettings& settings,  CGUIDialog
   {
     // Separate files with artists to library folder and albums to music folders.
     // Without an artist information folder can not export artist NFO files or images
-    strFolder = CServiceBroker::GetSettings()->GetString(CSettings::SETTING_MUSICLIBRARY_ARTISTSFOLDER);
+    strFolder = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_MUSICLIBRARY_ARTISTSFOLDER);
     if (!settings.IsItemExported(ELIBEXPORT_ALBUMS) && strFolder.empty())
       return;
   }
@@ -8403,7 +8403,7 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
       if (xsp.GetOrder() != SortByNone)
         sorting.sortBy = xsp.GetOrder();
       sorting.sortOrder = xsp.GetOrderAscending() ? SortOrderAscending : SortOrderDescending;
-      if (CServiceBroker::GetSettings()->GetBool(CSettings::SETTING_FILELISTS_IGNORETHEWHENSORTING))
+      if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_FILELISTS_IGNORETHEWHENSORTING))
         sorting.sortAttributes = SortAttributeIgnoreArticle;
     }
   }
