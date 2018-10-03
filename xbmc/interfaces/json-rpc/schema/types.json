@@ -672,7 +672,7 @@
     "extends": "Item.Fields.Base",
     "items": { "type": "string",
       "enum": [ "season", "showtitle", "playcount", "episode", "fanart", "thumbnail", "tvshowid",
-                "watchedepisodes", "art", "userrating" ]
+                "watchedepisodes", "art", "userrating", "title" ]
     }
   },
   "Video.Fields.Episode": {
@@ -867,7 +867,8 @@
       "episode": { "type": "integer" },
       "watchedepisodes": { "type": "integer" },
       "tvshowid": { "$ref": "Library.Id" },
-      "userrating": { "type": "integer" }
+      "userrating": { "type": "integer" },
+      "title": { "type": "string" }
     }
   },
   "Video.Details.Episode": {
