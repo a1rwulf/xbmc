@@ -10,7 +10,7 @@
 #include "settings/AdvancedSettings.h"
 #include "filesystem/SpecialProtocol.h"
 #include "filesystem/File.h"
-#include "profiles/ProfilesManager.h"
+#include "profiles/ProfileManager.h"
 #include "settings/SettingsComponent.h"
 #include "utils/log.h"
 #include "utils/SortUtils.h"
@@ -140,7 +140,7 @@ bool CDatabase::ExistsSubQuery::BuildSQL(std::string & strSQL)
 }
 
 CDatabase::CDatabase() :
-  m_profileManager(*CServiceBroker::GetSettingsComponent()->GetProfilesManager())
+  m_profileManager(*CServiceBroker::GetSettingsComponent()->GetProfileManager())
 {
   m_openCount = 0;
   m_sqlite = true;
