@@ -1189,7 +1189,7 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
   snd_device_name_free_hint(hints);
 
 #if !defined(HAVE_X11)
-  m_controlMonitor.Start();
+  //m_controlMonitor.Start();
 #endif
 
   /* set the displayname for default device */

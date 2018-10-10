@@ -5,7 +5,8 @@ set(SOURCES OptionalsReg.cpp
             DRMLegacy.cpp
             DRMAtomic.cpp
             OffScreenModeSetting.cpp
-            WinSystemGbmEGLContext.cpp)
+            WinSystemGbmEGLContext.cpp
+            HdmiMonitor.cpp)
 
 set(HEADERS OptionalsReg.h
             WinSystemGbm.h
@@ -14,7 +15,8 @@ set(HEADERS OptionalsReg.h
             DRMLegacy.h
             DRMAtomic.h
             OffScreenModeSetting.h
-            WinSystemGbmEGLContext.h)
+            WinSystemGbmEGLContext.h
+            HdmiMonitor.h)
 
 if (OPENGL_FOUND)
   list(APPEND SOURCES WinSystemGbmGLContext.cpp)
