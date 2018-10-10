@@ -173,8 +173,6 @@ bool CLinuxRendererGL::ValidateRenderTarget()
 {
   if (!m_bValidated)
   {
-      m_textureTarget = GL_TEXTURE_RECTANGLE;
-
     // function pointer for texture might change in
     // call to LoadShaders
     glFinish();
