@@ -51,6 +51,8 @@ void CVideoDatabaseCache::languageChange()
   
   CSingleLock lock(m_mutex);
   
+  m_ArtCacheMap.clear();
+  
   for (tVideoInfoTagCacheMap::iterator iter = m_MovieCacheMap.begin(); iter != m_MovieCacheMap.end(); ++iter)
   {
     videodb.GetMovieTranslation(iter->second.m_item.get(), true);

@@ -573,7 +573,7 @@ bool CVideoThumbLoader::FillThumb(CFileItem &item)
 
 std::string CVideoThumbLoader::GetLocalArt(const CFileItem &item, const std::string &type, bool checkFolder)
 {
-  if (item.SkipLocalArt())
+    if (item.SkipLocalArt())
     return "";
 
   /* Cache directory for (sub) folders on streamed filesystems. We need to do this
