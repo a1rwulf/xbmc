@@ -10,12 +10,13 @@
 
 #include <gbm.h>
 #include <EGL/egl.h>
-
+#include "DRMUtils.h"
+#include "HdmiMonitor.h"
+#include "OffScreenModeSetting.h"
 #include "platform/linux/input/LibInputHandler.h"
 #include "platform/linux/OptionalsReg.h"
 #include "threads/CriticalSection.h"
 #include "windowing/WinSystem.h"
-#include "DRMUtils.h"
 #include "VideoLayerBridge.h"
 
 class IDispResource;
@@ -24,7 +25,7 @@ class CWinSystemGbm : public CWinSystemBase
 {
 public:
   CWinSystemGbm();
-  virtual ~CWinSystemGbm() = default;
+  virtual ~CWinSystemGbm();
 
   bool InitWindowSystem() override;
   bool DestroyWindowSystem() override;
@@ -72,4 +73,5 @@ protected:
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;
   std::unique_ptr<CLibInputHandler> m_libinput;
+  std::unique_ptr<CHdmiMonitor> m_hdmiMonitor;
 };

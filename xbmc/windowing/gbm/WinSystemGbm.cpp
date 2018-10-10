@@ -17,6 +17,7 @@
 #include "platform/linux/OptionalsReg.h"
 #include "windowing/GraphicContext.h"
 #include "platform/linux/powermanagement/LinuxPowerSyscall.h"
+#include "platform/linux/XTimeUtils.h"
 #include "settings/DisplaySettings.h"
 #include "utils/log.h"
 #include "utils/StringUtils.h"
@@ -29,7 +30,8 @@
 CWinSystemGbm::CWinSystemGbm() :
   m_DRM(nullptr),
   m_GBM(new CGBMUtils),
-  m_libinput(new CLibInputHandler)
+  m_libinput(new CLibInputHandler),
+  m_hdmiMonitor(new CHdmiMonitor(*this))
 {
   std::string envSink;
   if (getenv("KODI_AE_SINK"))
@@ -67,6 +69,12 @@ CWinSystemGbm::CWinSystemGbm() :
   CLinuxPowerSyscall::Register();
   m_lirc.reset(OPTIONALS::LircRegister());
   m_libinput->Start();
+  m_hdmiMonitor->Start();
+}
+
+CWinSystemGbm::~CWinSystemGbm()
+{
+  m_hdmiMonitor->Stop();
 }
 
 bool CWinSystemGbm::InitWindowSystem()

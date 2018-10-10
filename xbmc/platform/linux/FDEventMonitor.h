@@ -13,7 +13,7 @@
 
 #include "threads/CriticalSection.h"
 #include "threads/Thread.h"
-
+#include <sys/epoll.h>
 #include "utils/GlobalsHandling.h"
 
 /**
