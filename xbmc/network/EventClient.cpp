@@ -316,6 +316,7 @@ bool CEventClient::OnPacketHELO(CEventPacket *packet)
   }
 
   m_bGreeted = true;
+  return true;
   if (m_eLogoType == LT_NONE)
   {
     CGUIDialogKaiToast::QueueNotification(g_localizeStrings.Get(33200),
