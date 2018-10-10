@@ -13,10 +13,6 @@
   #include <wrl/client.h>
 #endif
 
-#if defined(HAS_GL) || defined(HAS_GLES)
-  #include "EGL/egl.h"
-#endif
-
 #include "threads/Event.h"
 
 

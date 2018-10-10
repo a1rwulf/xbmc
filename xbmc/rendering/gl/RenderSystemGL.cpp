@@ -18,7 +18,6 @@
 #include "utils/SystemInfo.h"
 #include "utils/MathUtils.h"
 #include "utils/StringUtils.h"
-#include "EGL/egl.h"
 #ifdef TARGET_POSIX
 #include "platform/linux/XTimeUtils.h"
 #endif
