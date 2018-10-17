@@ -6988,7 +6988,9 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
             std::string new_url = i->m_url;
             if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
-              GetTranslatedString(mediaId, new_url, "movie", i->m_type);
+              std::string query_type = i->m_type;
+              if (query_type == "poster") query_type = "thumb";
+              GetTranslatedString(mediaId, new_url, "movie", query_type);
             }
             art.insert(make_pair(i->m_type, new_url));
           }
@@ -7025,7 +7027,9 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
             std::string new_url = i->m_url;
             if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
-              GetTranslatedString(mediaId, new_url, "tvshow", i->m_type);
+              std::string query_type = i->m_type;
+              if (query_type == "poster") query_type = "thumb";
+              GetTranslatedString(mediaId, new_url, "tvshow", query_type);
             }
             art.insert(make_pair(i->m_type, new_url));
           }
@@ -7046,7 +7050,9 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
             std::string new_url = i->m_url;
             if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
-              GetTranslatedString(mediaId, new_url, "season", i->m_type);
+              std::string query_type = i->m_type;
+              if (query_type == "poster") query_type = "thumb";
+              GetTranslatedString(mediaId, new_url, "season", query_type);
             }
             art.insert(make_pair(i->m_type, new_url));
           }
@@ -7071,7 +7077,9 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
             std::string new_url = i->m_url;
             if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
-              GetTranslatedString(mediaId, new_url, "episode", i->m_type);
+              std::string query_type = i->m_type;
+              if (query_type == "poster") query_type = "thumb";
+              GetTranslatedString(mediaId, new_url, "episode", query_type);
             }
             art.insert(make_pair(i->m_type, new_url));
           }
@@ -7095,7 +7103,9 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
             std::string new_url = i->m_url;
             if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
-              GetTranslatedString(mediaId, new_url, "collection", i->m_type);
+              std::string query_type = i->m_type;
+              if (query_type == "poster") query_type = "thumb";
+              GetTranslatedString(mediaId, new_url, "collection", query_type);
             }
             art.insert(make_pair(i->m_type, new_url));
           }
