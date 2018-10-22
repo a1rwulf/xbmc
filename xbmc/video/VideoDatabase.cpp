@@ -10702,6 +10702,7 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
 
     typedef odb::query<ODBView_TVShow> query;
     query tvshow_query = optionalQueries;
+    bool hasTags = false;
 
     for (auto option: options)
     {
@@ -10724,7 +10725,10 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
       else if (option.first == "year")
         tvshow_query += query(query::CODBTVShow::premiered.year == option.second.asInteger());
       else if (option.first == "tagid")
+      {
         tvshow_query += query(query::tag::idTag == option.second.asInteger());
+        hasTags = true;
+      }
       else if (option.first == "tag")
         tvshow_query += query(query::tag::name.like(option.second.asString()));
       else if (option.first == "filter" || option.first == "xsp")
@@ -10745,6 +10749,12 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
       }
       CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
     }
+    
+    if (!hasTags)
+    {
+      tvshow_query = tvshow_query && query(query::tag::idTag.is_null());
+    }
+
 
     int total = 0;
     
