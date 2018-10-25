@@ -376,6 +376,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldLastPlayed);
     fields.push_back(FieldInProgress);
     fields.push_back(FieldTag);
+    fields.push_back(FieldTagId);
   }
   else if (type == "episodes")
   {
@@ -2291,6 +2292,9 @@ odb::query<ODBView_TVShow> CSmartPlaylistRuleCombination::GetTVShowWhereClause(c
       tvshow_query = query(tvshow_query && currentRule);
     else
       tvshow_query = query(tvshow_query || currentRule);
+
+    if (!m_hasTagRule && (*it)->HasTagRule())
+      m_hasTagRule = true;
   }
   
   return tvshow_query;

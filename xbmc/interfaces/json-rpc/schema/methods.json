@@ -1197,6 +1197,7 @@
           { "type": "object", "properties": { "actor": { "type": "string", "minLength": 1, "required": true } }, "additionalProperties": false },
           { "type": "object", "properties": { "studio": { "type": "string", "minLength": 1, "required": true } }, "additionalProperties": false },
           { "type": "object", "properties": { "tag": { "type": "string", "minLength": 1, "required": true } }, "additionalProperties": false },
+          { "type": "object", "properties": { "tagid": { "type": "integer", "minimum": 0, "required": true } }, "additionalProperties": false },
           { "$ref": "List.Filter.TVShows" }
         ]
       }

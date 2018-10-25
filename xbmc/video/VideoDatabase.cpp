@@ -10746,6 +10746,9 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
         // remove the filter if it doesn't match the item type
         else
           videoUrl.RemoveOption(option.first);
+
+        if (!hasTags && xspFilter.HasTagFilter())
+          hasTags = true;
       }
       CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
     }
