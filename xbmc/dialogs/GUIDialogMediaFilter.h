@@ -80,6 +80,12 @@ protected:
 
   static void GetStringListOptions(std::shared_ptr<const CSetting> setting, std::vector< std::pair<std::string, std::string> > &list, std::string &current, void *data);
 
+  /*! \brief Utility method to retrieve the tag id from an url path
+   \param strDirectory Path/URL from which to retrieve the tag id
+   \return returns the tag id: Example: video://movies/tags/1/ => 1
+   */
+  static std::string GetTagInfoFromDirectoryPath(const std::string strDirectory);
+
   CDbUrl* m_dbUrl;
   std::string m_mediaType;
   CSmartPlaylist *m_filter;

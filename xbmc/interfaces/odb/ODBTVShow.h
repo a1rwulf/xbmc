@@ -308,6 +308,7 @@ struct ODBView_TVShow_Art
 PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBGenre = genre inner: CODBTVShow::m_genres) \
                 object(CODBPath = path inner: CODBTVShow::m_paths) \
+                object(CODBTag = tag: CODBTVShow::m_tags) \
                 query(distinct))
 struct ODBView_TVShow_Genre
 {
@@ -322,6 +323,7 @@ PRAGMA_DB (column(path::m_path))
 PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBStudio = studio inner: CODBTVShow::m_studios) \
                 object(CODBPath = path inner: CODBTVShow::m_paths) \
+                object(CODBTag = tag: CODBTVShow::m_tags) \
                 query(distinct))
 struct ODBView_TVShow_Studio
 {
@@ -351,6 +353,7 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBPersonLink = person_link inner: CODBTVShow::m_directors) \
                 object(CODBPerson = person inner: person_link::m_person) \
                 object(CODBPath = path inner: CODBTVShow::m_paths) \
+                object(CODBTag = tag: CODBTVShow::m_tags) \
                 query(distinct))
 struct ODBView_TVShow_Director
 {
@@ -364,6 +367,7 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBPerson = person inner: person_link::m_person) \
                 object(CODBPath = path inner: CODBTVShow::m_paths) \
                 object(CODBArt: person::m_art) \
+                object(CODBTag = tag: CODBTVShow::m_tags) \
                 query(distinct))
 struct ODBView_TVShow_Actor
 {

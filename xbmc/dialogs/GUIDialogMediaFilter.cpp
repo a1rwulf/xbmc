@@ -24,6 +24,7 @@
 #include "utils/log.h"
 #include "utils/SortUtils.h"
 #include "utils/StringUtils.h"
+#include "utils/URIUtils.h"
 #include "utils/Variant.h"
 #include "video/VideoDatabase.h"
 #include "video/VideoDbUrl.h"
@@ -641,6 +642,17 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
     }
   }
 
+  // Add taginfo
+  std::string taginfo = GetTagInfoFromDirectoryPath(m_dbUrl->ToString());
+
+  CVideoDbUrl tmpUrl;
+  tmpUrl.FromString(m_dbUrl->ToString());
+  if (!taginfo.empty())
+    tmpUrl.AddOption("tagid", taginfo);
+
+  auto type = m_dbUrl->GetType();
+  auto itemtype = ((CVideoDbUrl*)m_dbUrl)->GetItemType();
+
   if (m_mediaType == "movies" || m_mediaType == "tvshows" || m_mediaType == "episodes" || m_mediaType == "musicvideos")
   {
     CVideoDatabase videodb;
@@ -660,21 +672,21 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
       type = VIDEODB_CONTENT_MUSICVIDEOS;
 
     if (filter.field == FieldGenre)
-      videodb.GetGenresNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+      videodb.GetGenresNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldActor || filter.field == FieldArtist)
-      videodb.GetActorsNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+      videodb.GetActorsNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldDirector)
-      videodb.GetDirectorsNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+      videodb.GetDirectorsNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldStudio)
-      videodb.GetStudiosNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+      videodb.GetStudiosNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldAlbum)
-      videodb.GetMusicVideoAlbumsNav(m_dbUrl->ToString(), selectItems, -1, dbfilter, countOnly);
+      videodb.GetMusicVideoAlbumsNav(tmpUrl.ToString(), selectItems, -1, dbfilter, countOnly);
     else if (filter.field == FieldTag)
-      videodb.GetTagsNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly);
+      videodb.GetTagsNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldStreamAudioLanguage)
-      videodb.GetFileStreamLanguageNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly, "audio");
+      videodb.GetFileStreamLanguageNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly, "audio");
     else if (filter.field == FieldStreamSubtitleLanguage)
-      videodb.GetFileStreamLanguageNav(m_dbUrl->ToString(), selectItems, type, dbfilter, countOnly, "subtitle");
+      videodb.GetFileStreamLanguageNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly, "subtitle");
   }
   else if (m_mediaType == "artists" || m_mediaType == "albums" || m_mediaType == "songs")
   {
@@ -698,7 +710,7 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
       musicdb.GetMusicLabelsNav(m_dbUrl->ToString(), selectItems, dbfilter, countOnly);
 /*
     if (filter.field == FieldSource)
-      musicdb.GetSourcesNav(m_dbUrl->ToString(), selectItems, dbfilter, countOnly);
+      musicdb.GetSourcesNav(tmpUrl.ToString(), selectItems, dbfilter, countOnly);
 */
   }
 
@@ -720,6 +732,25 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
     items.push_back(selectItems.Get(index)->GetLabel());
 
   return items.size();
+}
+
+std::string CGUIDialogMediaFilter::GetTagInfoFromDirectoryPath(const std::string strPath)
+{
+  if (StringUtils::StartsWithNoCase(strPath, "videodb://"))
+  {
+    CURL url(strPath);
+    std::string strDirectory = url.GetFileName();
+    URIUtils::RemoveSlashAtEnd(strDirectory);
+    std::vector<std::string> path = StringUtils::Tokenize(strDirectory, '/');
+
+    for (size_t i = 0; i < path.size(); ++i)
+    {
+      if (path[i] == "tags" && path.size() >= i+1)
+        return path[i+1];
+    }
+  }
+
+  return "";
 }
 
 CSmartPlaylistRule* CGUIDialogMediaFilter::AddRule(Field field, CDatabaseQueryRule::SEARCH_OPERATOR ruleOperator /* = CDatabaseQueryRule::OPERATOR_CONTAINS */)

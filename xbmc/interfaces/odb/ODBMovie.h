@@ -226,6 +226,7 @@ PRAGMA_DB (view \
   object(CODBGenre = genre inner: CODBMovie::m_genres) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
   query(distinct))
 struct ODBView_Movie_Genre
 {
@@ -281,6 +282,7 @@ PRAGMA_DB (view \
   object(CODBPerson = person inner: person_link::m_person) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
   query(distinct))
 struct ODBView_Movie_Director
 {
@@ -298,6 +300,7 @@ PRAGMA_DB (view \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
   object(CODBArt: person::m_art) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
   query(distinct))
 struct ODBView_Movie_Actor
 {
@@ -315,6 +318,7 @@ PRAGMA_DB (view \
   object(CODBStudio = studio inner: CODBMovie::m_studios) \
   object(CODBFile = file inner: CODBMovie::m_file) \
   object(CODBPath = path inner: file::m_path) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
   query(distinct))
 struct ODBView_Movie_Studio
 {
@@ -368,6 +372,7 @@ PRAGMA_DB (view \
   object(CODBFile inner: CODBMovie::m_file) \
   object(CODBFileStream inner: CODBMovie::m_file == CODBFileStream::m_file) \
   object(CODBLanguage inner: CODBFileStream::m_language) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
   query(distinct))
 struct ODBView_MovieFileStreamLanguages
 {

@@ -8644,10 +8644,37 @@ bool CVideoDatabase::GetGenresNav(const std::string& strBaseDir, CFileItemList& 
 
     std::map<int, std::pair<std::string,int> > mapItems;
 
+    // parse the base path to get additional filters
+    CVideoDbUrl videoUrl;
+    Filter extFilter = filter;
+    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+      return false;
+
+    std::string type = videoUrl.GetType();
+    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
+    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+
     //TODO: Implement the filter for odb
     if (idContent == VIDEODB_CONTENT_MOVIES)
     {
-      odb::result<ODBView_Movie_Genre> res(m_cdb.getDB()->query<ODBView_Movie_Genre>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_Movie_Genre> query;
+      query genre_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          genre_query = genre_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        genre_query = genre_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_Movie_Genre> res(m_cdb.getDB()->query<ODBView_Movie_Genre>(genre_query));
       for (odb::result<ODBView_Movie_Genre>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->m_idGenre;
@@ -8670,7 +8697,24 @@ bool CVideoDatabase::GetGenresNav(const std::string& strBaseDir, CFileItemList& 
     }
     else if (idContent == VIDEODB_CONTENT_TVSHOWS)
     {
-      odb::result<ODBView_TVShow_Genre> res(m_cdb.getDB()->query<ODBView_TVShow_Genre>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_TVShow_Genre> query;
+      query genre_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          genre_query = genre_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        genre_query = genre_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_TVShow_Genre> res(m_cdb.getDB()->query<ODBView_TVShow_Genre>(genre_query));
       for (odb::result<ODBView_TVShow_Genre>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->m_idGenre;
@@ -8701,7 +8745,6 @@ bool CVideoDatabase::GetGenresNav(const std::string& strBaseDir, CFileItemList& 
       return true;
     }
 
-    CVideoDbUrl videoUrl;
     videoUrl.Reset();
     videoUrl.FromString(strBaseDir);
 
@@ -8830,10 +8873,38 @@ bool CVideoDatabase::GetStudiosNav(const std::string& strBaseDir, CFileItemList&
 
     std::map<int, std::pair<std::string,int> > mapItems;
 
+    // parse the base path to get additional filters
+    CVideoDbUrl videoUrl;
+    Filter extFilter = filter;
+    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+      return false;
+
+    std::string type = videoUrl.GetType();
+    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
+    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+
+
     //TODO: Implement the filter for odb
     if (idContent == VIDEODB_CONTENT_MOVIES)
     {
-      odb::result<ODBView_Movie_Studio> res(m_cdb.getDB()->query<ODBView_Movie_Studio>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_Movie_Actor> query;
+      query studios_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          studios_query = studios_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        studios_query = studios_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_Movie_Studio> res(m_cdb.getDB()->query<ODBView_Movie_Studio>(studios_query)); //TODO: Just returns all now, filter needs to be added
       for (odb::result<ODBView_Movie_Studio>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->m_idStudio;
@@ -8856,7 +8927,24 @@ bool CVideoDatabase::GetStudiosNav(const std::string& strBaseDir, CFileItemList&
     }
     else if (idContent == VIDEODB_CONTENT_TVSHOWS)
     {
-      odb::result<ODBView_TVShow_Studio> res(m_cdb.getDB()->query<ODBView_TVShow_Studio>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_TVShow_Studio> query;
+      query studios_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          studios_query = studios_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        studios_query = studios_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_TVShow_Studio> res(m_cdb.getDB()->query<ODBView_TVShow_Studio>(studios_query)); //TODO: Just returns all now, filter needs to be added
       for (odb::result<ODBView_TVShow_Studio>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->m_idStudio;
@@ -8888,7 +8976,6 @@ bool CVideoDatabase::GetStudiosNav(const std::string& strBaseDir, CFileItemList&
       return true;
     }
 
-    CVideoDbUrl videoUrl;
     videoUrl.Reset();
     videoUrl.FromString(strBaseDir);
 
@@ -9231,13 +9318,42 @@ bool CVideoDatabase::GetFileStreamLanguageNav(const std::string& strBaseDir, CFi
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     std::map<unsigned long, std::pair<std::string,std::string> > mapItems;
+
+    // parse the base path to get additional filters
+    CVideoDbUrl videoUrl;
+    Filter extFilter = filter;
+    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+      return false;
+
+    std::string type = videoUrl.GetType();
+    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
+    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
     
     //TODO: Implement the filter for odb
     if (idContent == VIDEODB_CONTENT_MOVIES)
     {
       typedef odb::query<ODBView_MovieFileStreamLanguages> query;
-      odb::result<ODBView_MovieFileStreamLanguages> res(m_cdb.getDB()->query<ODBView_MovieFileStreamLanguages>(query::CODBFileStream::type == streamtype)); //TODO: Just returns all now, filter needs to be added
-      for (odb::result<ODBView_MovieFileStreamLanguages>::iterator i = res.begin(); i != res.end(); i++)
+      typedef odb::result<ODBView_MovieFileStreamLanguages> result;
+      query stream_lang_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          stream_lang_query = stream_lang_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        stream_lang_query = stream_lang_query && query(query::tag::idTag.is_null());
+      }
+
+      stream_lang_query = stream_lang_query && query(query::CODBFileStream::type == streamtype);
+
+      result res(m_cdb.getDB()->query<ODBView_MovieFileStreamLanguages>(stream_lang_query)); //TODO: Just returns all now, filter needs to be added
+      for (result::iterator i = res.begin(); i != res.end(); i++)
       {
         // was this already found?
         auto it = mapItems.find(i->language->m_idLanguage);
@@ -9257,8 +9373,7 @@ bool CVideoDatabase::GetFileStreamLanguageNav(const std::string& strBaseDir, CFi
       m_pDS->close();
       return true;
     }
-    
-    CVideoDbUrl videoUrl;
+
     videoUrl.Reset();
     videoUrl.FromString(strBaseDir);
     
@@ -9469,13 +9584,38 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
     std::map<int, std::pair<std::string,int> > mapItems;
 
-    //TODO: Implement the filter for odb
+    // parse the base path to get additional filters
+    CVideoDbUrl videoUrl;
+    Filter extFilter = filter;
+    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+      return false;
+
+    std::string type = videoUrl.GetType();
+    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
+    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+
     if (idContent == VIDEODB_CONTENT_MOVIES)
     {
-      odb::result<ODBView_Movie_Director> res(m_cdb.getDB()->query<ODBView_Movie_Director>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_Movie_Director> query;
+      query director_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          director_query = director_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        director_query = director_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_Movie_Director> res(m_cdb.getDB()->query<ODBView_Movie_Director>(director_query));
       for (odb::result<ODBView_Movie_Director>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->person->m_idPerson;
@@ -9498,7 +9638,24 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
     }
     else if (idContent == VIDEODB_CONTENT_TVSHOWS)
     {
-      odb::result<ODBView_TVShow_Director> res(m_cdb.getDB()->query<ODBView_TVShow_Director>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_TVShow_Director> query;
+      query director_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          director_query = director_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        director_query = director_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_TVShow_Director> res(m_cdb.getDB()->query<ODBView_TVShow_Director>(director_query)); //TODO: Just returns all now, filter needs to be added
       for (odb::result<ODBView_TVShow_Director>::iterator i = res.begin(); i != res.end(); i++)
       {
         int id = i->person->m_idPerson;
@@ -9530,7 +9687,6 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
       return true;
     }
 
-    CVideoDbUrl videoUrl;
     videoUrl.Reset();
     videoUrl.FromString(strBaseDir);
 
@@ -9582,10 +9738,37 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
 
     std::map<int, CActor > mapItems;
 
+    // parse the base path to get additional filters
+    CVideoDbUrl videoUrl;
+    Filter extFilter = filter;
+    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+      return false;
+
+    std::string type = videoUrl.GetType();
+    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
+    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+
     //TODO: Implement the filter for odb
     if (idContent == VIDEODB_CONTENT_MOVIES)
     {
-      odb::result<ODBView_Movie_Actor> res(m_cdb.getDB()->query<ODBView_Movie_Actor>()); //TODO: Just returns all now, filter needs to be added
+      typedef odb::query<ODBView_Movie_Actor> query;
+      query actor_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          actor_query = actor_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        actor_query = actor_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_Movie_Actor> res(m_cdb.getDB()->query<ODBView_Movie_Actor>(actor_query));
       for (odb::result<ODBView_Movie_Actor>::iterator i = res.begin(); i != res.end(); i++)
       {
         int idActor = i->person->m_idPerson;
@@ -9612,7 +9795,25 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
     }
     else if (idContent == VIDEODB_CONTENT_TVSHOWS)
     {
-      odb::result<ODBView_TVShow_Actor> res(m_cdb.getDB()->query<ODBView_TVShow_Actor>()); //TODO: Just returns all now, filter needs to be added
+      //TODO: Implement the filter for odb
+      typedef odb::query<ODBView_TVShow_Actor> query;
+      query actor_query;
+      bool hasTags = false;
+
+      for (auto option: options)
+      {
+        if (option.first == "tagid") {
+          int tagId = option.second.asInteger();
+          actor_query = actor_query && query(query::tag::idTag == tagId);
+          hasTags = true;
+        }
+      }
+
+      if (!hasTags) {
+        actor_query = actor_query && query(query::tag::idTag.is_null());
+      }
+
+      odb::result<ODBView_TVShow_Actor> res(m_cdb.getDB()->query<ODBView_TVShow_Actor>(actor_query));
       for (odb::result<ODBView_TVShow_Actor>::iterator i = res.begin(); i != res.end(); i++)
       {
         int idActor = i->person->m_idPerson;
@@ -9647,7 +9848,6 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
       return true;
     }
 
-    CVideoDbUrl videoUrl;
     videoUrl.Reset();
     videoUrl.FromString(strBaseDir);
 
