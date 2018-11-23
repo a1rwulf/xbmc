@@ -5983,6 +5983,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
     odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record->movie->m_file->m_idFile);
     for (odb::result<CODBFileStream>::iterator i = res.begin(); i != res.end(); i++)
     {
+      m_cdb.getDB()->load(*(i), i->section_foreign);
       if (i->m_language.load())
       {
         if (i->m_type == "audio")
