@@ -423,11 +423,21 @@ bool CVideoGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         break;
       }
       case LISTITEM_AUDIO_LANGUAGE:
-        value = tag->m_streamDetails.GetAudioLanguage();
+      {
+        auto distinctLanguages = tag->m_streamAudioLanguage;
+        auto it = std::unique(distinctLanguages.begin(), distinctLanguages.end());
+        distinctLanguages.resize(std::distance(distinctLanguages.begin(), it));
+        value = StringUtils::Join(distinctLanguages, g_advancedSettings.m_videoItemSeparator);
         return true;
+      }
       case LISTITEM_SUBTITLE_LANGUAGE:
-        value = tag->m_streamDetails.GetSubtitleLanguage();
+      {
+        auto distinctSubtitles = tag->m_streamSubtitleLanguage;
+        auto it = std::unique(distinctSubtitles.begin(), distinctSubtitles.end());
+        distinctSubtitles.resize(std::distance(distinctSubtitles.begin(), it));
+        value = StringUtils::Join(distinctSubtitles, g_advancedSettings.m_videoItemSeparator);
         return true;
+      }
       case LISTITEM_FILENAME:
       case LISTITEM_FILE_EXTENSION:
         if (item->IsVideoDb())
