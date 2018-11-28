@@ -43,6 +43,9 @@ int CHTTPWebinterfaceHandler::ResolveUrl(const std::string &url, std::string &pa
 
 int CHTTPWebinterfaceHandler::ResolveUrl(const std::string &url, std::string &path, ADDON::AddonPtr &addon)
 {
+  // disable the chorus interface
+  return MHD_HTTP_NOT_FOUND;
+
   // determine the addon and addon's path
   if (!ResolveAddon(url, addon, path))
     return MHD_HTTP_NOT_FOUND;
