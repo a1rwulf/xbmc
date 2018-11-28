@@ -93,7 +93,11 @@ void CGUIWindowPVRChannelsBase::UpdateButtons(void)
   }
 
   CGUIWindowPVRBase::UpdateButtons();
-  SET_CONTROL_LABEL(CONTROL_LABEL_HEADER1, m_bShowHiddenChannels ? g_localizeStrings.Get(19022) : GetChannelGroup()->GroupName());
+  const CPVRChannelGroupPtr group = GetChannelGroup();
+  if (group)
+  {
+    SET_CONTROL_LABEL(CONTROL_LABEL_HEADER1, m_bShowHiddenChannels ? g_localizeStrings.Get(19022) : group->GroupName());
+  }
 }
 
 bool CGUIWindowPVRChannelsBase::OnAction(const CAction &action)
