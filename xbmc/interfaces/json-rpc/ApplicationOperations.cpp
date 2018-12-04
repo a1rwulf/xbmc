@@ -9,15 +9,12 @@
 #include "ApplicationOperations.h"
 #include "InputOperations.h"
 #include "Application.h"
-<<<<<<< HEAD
 #include "messaging/ApplicationMessenger.h"
 #include "FileItem.h"
-=======
 #include "CompileInfo.h"
 #include "GUIInfoManager.h"
 #include "InputOperations.h"
 #include "LangInfo.h"
->>>>>>> e6bec1b1ce... [interfaces] Cleanup includes.
 #include "Util.h"
 #include "input/Key.h"
 #include "utils/log.h"
