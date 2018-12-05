@@ -1146,7 +1146,7 @@ bool CGUIWindowVideoBase::ShowPicture(int iItem, bool startSlideShow)
     CFileItemPtr pItem = m_vecItems->Get(i);
     if (!pItem->m_bIsFolder && !(URIUtils::IsRAR(pItem->GetPath()) ||
                                  URIUtils::IsZIP(pItem->GetPath())) && (pItem->IsPicture() || (
-                                                                                               CServiceBroker::GetSettings().GetBool(CSettings::SETTING_PICTURES_SHOWVIDEOS) &&
+                                                                                               CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_PICTURES_SHOWVIDEOS) &&
                                                                                                pItem->IsVideo())))
     {
       pSlideShow->Add(pItem.get());
