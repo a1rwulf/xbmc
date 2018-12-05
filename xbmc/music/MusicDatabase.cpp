@@ -941,7 +941,7 @@ std::shared_ptr<CODBSong> CMusicDatabase::UpdateSong(std::shared_ptr<CODBSong> o
     
     objSong->m_artistDisp = artistDisp;
     objSong->m_artistSort = artistSort;
-    objSong->m_genresString = StringUtils::Join(genres, g_advancedSettings.m_musicItemSeparator);
+    objSong->m_genresString = StringUtils::Join(genres, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
     objSong->m_title = strTitle;
     objSong->m_track = iTrack;
     objSong->m_duration = iDuration;
