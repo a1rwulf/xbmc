@@ -2339,7 +2339,9 @@ bool CVideoDatabase::GetEpisodeBasicInfo(const std::string& strFilenameAndPath, 
 {
   try
   {
-    if (idEpisode < 0)
+    return GetEpisodeInfo(strFilenameAndPath, details, idEpisode);
+    // TODO: Migrate to ODB
+    /*if (idEpisode < 0)
       idEpisode = GetEpisodeId(strFilenameAndPath);
 
     if (idEpisode < 0)
@@ -2349,7 +2351,7 @@ bool CVideoDatabase::GetEpisodeBasicInfo(const std::string& strFilenameAndPath, 
     if (!m_pDS->query(sql))
       return false;
     details = GetBasicDetailsForEpisode(m_pDS);
-    return !details.IsEmpty();
+    return !details.IsEmpty();*/
   }
   catch (...)
   {
@@ -2821,6 +2823,13 @@ int CVideoDatabase::UpdateDetailsForMovie(int idMovie, CVideoInfoTag& details, c
           set->m_overview = details.m_set.overview;
           m_cdb.getDB()->persist(set);
         }
+        
+        SetSetDetailsArtwork(*set, artwork);
+      }
+    }
+
+        
+        
     //TODO: Add show link
     /*if (updatedDetails.find("showlink") != updatedDetails.end())
     {
@@ -6987,7 +6996,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           if (i.load())
           {
             std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
               std::string query_type = i->m_type;
               if (query_type == "poster") query_type = "thumb";
@@ -7026,7 +7035,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           if (i.load())
           {
             std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
               std::string query_type = i->m_type;
               if (query_type == "poster") query_type = "thumb";
@@ -7049,7 +7058,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           if (i.load())
           {
             std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
               std::string query_type = i->m_type;
               if (query_type == "poster") query_type = "thumb";
@@ -7076,7 +7085,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           if (i.load())
           {
             std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
               std::string query_type = i->m_type;
               if (query_type == "poster") query_type = "thumb";
@@ -7102,7 +7111,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
           if (i.load())
           {
             std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
             {
               std::string query_type = i->m_type;
               if (query_type == "poster") query_type = "thumb";
@@ -7209,7 +7218,7 @@ bool CVideoDatabase::RemoveArtForItem(int mediaId, const MediaType &mediaType, c
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
+    
     if (mediaType == MediaTypeMovie)
     {
       CODBMovie odbMovie;
@@ -7266,6 +7275,25 @@ bool CVideoDatabase::RemoveArtForItem(int mediaId, const MediaType &mediaType, c
     {
       CODBSeason objMedia;
       if (m_cdb.getDB()->query_one<CODBSeason>(odb::query<CODBSeason>::idSeason == mediaId, objMedia))
+      {
+        m_cdb.getDB()->load(objMedia, objMedia.section_foreign);
+        for (std::vector<odb::lazy_shared_ptr<CODBArt> >::iterator i = objMedia.m_artwork.begin();
+             i != objMedia.m_artwork.end();)
+        {
+          if ((*i).load())
+          {
+            if ((*i)->m_type == artType)
+            {
+              m_cdb.getDB()->erase<CODBArt>(*(*i));
+              i = objMedia.m_artwork.erase(i);
+            }
+            else
+              i++;
+          }
+          else
+          {
+            i = objMedia.m_artwork.erase(i);
+          }
         }
       }
     }
@@ -7291,11 +7319,12 @@ bool CVideoDatabase::RemoveArtForItem(int mediaId, const MediaType &mediaType, c
           else
           {
             i = objMedia.m_artwork.erase(i);
+          }
         }
       }
     }
     //TODO: Add for MusicMovies
-
+    
     if(odb_transaction)
       odb_transaction->commit();
   }
@@ -7307,7 +7336,7 @@ bool CVideoDatabase::RemoveArtForItem(int mediaId, const MediaType &mediaType, c
   {
     CLog::Log(LOGERROR, "%s(%d) failed", __FUNCTION__, mediaId);
   }
-
+  
   return false;
 }
 
@@ -14643,12 +14672,12 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
 {
   try
   {
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
       return true;
     
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
     {
       // Default Language English is not stored in the translation table, need to get it from the object itself
       CODBMovie movie;
@@ -14684,12 +14713,12 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
 {
   try
   {
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
       return true;
     
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
     {
       // Default Language English is not stored in the translation table, need to get it from the object itself
       CODBSeason season;
@@ -14739,12 +14768,12 @@ bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
 {
   try
   {
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
       return true;
     
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
     {
       // Default Language English is not stored in the translation table, need to get it from the object itself
       CODBTVShow show;
@@ -14780,12 +14809,12 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
 {
   try
   {
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
       return true;
     
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
-    if (CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
+    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
     {
       // Default Language English is not stored in the translation table, need to get it from the object itself
       CODBEpisode episode;
@@ -14821,7 +14850,7 @@ void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std
 {
   typedef odb::query<CODBTranslation> query;
   
-  std::string lang = CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
+  std::string lang = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
   std::string key = key1 + "." + std::to_string(id) + "." + key2;
   
   CODBTranslation objTranslation;
