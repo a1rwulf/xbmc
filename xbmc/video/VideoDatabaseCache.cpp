@@ -25,6 +25,7 @@
 #include "VideoDatabase.h"
 #include "settings/Settings.h"
 #include <ServiceBroker.h>
+#include "settings/SettingsComponent.h"
 
 CVideoDatabaseCache::CVideoDatabaseCache()
 {
@@ -38,15 +39,15 @@ CVideoDatabaseCache::~CVideoDatabaseCache()
 
 void CVideoDatabaseCache::setCurrentLanguage()
 {
-  m_language = CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE);
+  m_language = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE);
 }
 
 void CVideoDatabaseCache::languageChange()
 {
-  if (m_language == CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE))
+  if (m_language == CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE))
     return;
   
-  m_language = CServiceBroker::GetSettings().GetString(CSettings::SETTING_LOCALE_LANGUAGE);
+  m_language = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE);
   CVideoDatabase videodb;
   
   CSingleLock lock(m_mutex);
