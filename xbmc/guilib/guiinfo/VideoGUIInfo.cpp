@@ -427,7 +427,7 @@ bool CVideoGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         auto distinctLanguages = tag->m_streamAudioLanguage;
         auto it = std::unique(distinctLanguages.begin(), distinctLanguages.end());
         distinctLanguages.resize(std::distance(distinctLanguages.begin(), it));
-        value = StringUtils::Join(distinctLanguages, g_advancedSettings.m_videoItemSeparator);
+        value = StringUtils::Join(distinctLanguages, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator);
         return true;
       }
       case LISTITEM_SUBTITLE_LANGUAGE:
@@ -435,7 +435,7 @@ bool CVideoGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         auto distinctSubtitles = tag->m_streamSubtitleLanguage;
         auto it = std::unique(distinctSubtitles.begin(), distinctSubtitles.end());
         distinctSubtitles.resize(std::distance(distinctSubtitles.begin(), it));
-        value = StringUtils::Join(distinctSubtitles, g_advancedSettings.m_videoItemSeparator);
+        value = StringUtils::Join(distinctSubtitles, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator);
         return true;
       }
       case LISTITEM_FILENAME:
