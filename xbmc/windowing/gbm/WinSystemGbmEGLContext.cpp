@@ -119,7 +119,7 @@ bool CWinSystemGbmEGLContext::DestroyWindowSystem()
 {
   CDVDFactoryCodec::ClearHWAccels();
   VIDEOPLAYER::CRendererFactory::ClearRenderer();
-  m_vaapiProxy.reset(GBM::VaapiProxyCreate());
+  m_vaapiProxy.reset();
   m_eglContext.Destroy();
 
   return CWinSystemGbm::DestroyWindowSystem();
