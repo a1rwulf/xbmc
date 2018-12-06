@@ -642,19 +642,16 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
     }
   }
 
-  // Add taginfo
-  std::string taginfo = GetTagInfoFromDirectoryPath(m_dbUrl->ToString());
-
-  CVideoDbUrl tmpUrl;
-  tmpUrl.FromString(m_dbUrl->ToString());
-  if (!taginfo.empty())
-    tmpUrl.AddOption("tagid", taginfo);
-
-  auto type = m_dbUrl->GetType();
-  auto itemtype = ((CVideoDbUrl*)m_dbUrl)->GetItemType();
-
   if (m_mediaType == "movies" || m_mediaType == "tvshows" || m_mediaType == "episodes" || m_mediaType == "musicvideos")
   {
+    // Add taginfo
+    std::string taginfo = GetTagInfoFromDirectoryPath(m_dbUrl->ToString());
+
+    CVideoDbUrl tmpUrl;
+    tmpUrl.FromString(m_dbUrl->ToString());
+    if (!taginfo.empty())
+      tmpUrl.AddOption("tagid", taginfo);
+
     CVideoDatabase videodb;
     if (!videodb.Open())
       return -1;
