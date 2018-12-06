@@ -12,6 +12,13 @@
 #include <string>
 #include <vector>
 
+namespace KODI
+{
+namespace WINDOWING
+{
+namespace GBM
+{
+
 class CWinSystemGbm;
 
 class CHdmiMonitor
@@ -41,3 +48,7 @@ private:
 
   TMonitorData m_data;
 };
+
+}
+}
+}

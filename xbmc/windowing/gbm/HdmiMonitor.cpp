@@ -18,6 +18,7 @@
 #include "windowing/GraphicContext.h"
 
 using namespace KODI::MESSAGING;
+using namespace KODI::WINDOWING::GBM;
 
 CHdmiMonitor::CHdmiMonitor(CWinSystemGbm &winSys) :
   m_fdMonitorId(0),
