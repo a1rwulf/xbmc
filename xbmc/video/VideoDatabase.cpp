@@ -10822,7 +10822,7 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     //Store the query without limits and sorting for the later
     query objQueryWO = movie_query;
 
-    movie_query = movie_query && SortUtils::SortODBMovieQuery<query>(sortDescription);
+    movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
 
     odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(movie_query));
     for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
