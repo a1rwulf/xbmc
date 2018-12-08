@@ -130,6 +130,11 @@ bool CGUIWindowMusicPlayList::OnMessage(CGUIMessage& message)
     }
     break;
 
+  case GUI_MSG_PLAYBACK_ENDED:
+    {
+      CServiceBroker::GetGUI()->GetWindowManager().PreviousWindow();
+    }
+    break;
   case GUI_MSG_CLICKED:
     {
       int iControl = message.GetSenderId();
