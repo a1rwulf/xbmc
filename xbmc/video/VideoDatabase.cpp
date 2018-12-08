@@ -10760,37 +10760,37 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     for (auto option: options)
     {
       if (option.first == "genreid")
-        movie_query += query(query::genre::idGenre == option.second.asInteger());
+        movie_query = movie_query && query(query::genre::idGenre == option.second.asInteger());
       else if (option.first == "genre")
-        movie_query += query(query::genre::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::genre::name.like(option.second.asString()));
       else if (option.first == "countryid")
-        movie_query += query(query::country::idCountry == option.second.asInteger());
+        movie_query = movie_query && query(query::country::idCountry == option.second.asInteger());
       else if (option.first == "country")
-        movie_query += query(query::country::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::country::name.like(option.second.asString()));
       else if (option.first == "studioid")
-        movie_query += query(query::studio::idStudio == option.second.asInteger());
+        movie_query = movie_query && query(query::studio::idStudio == option.second.asInteger());
       else if (option.first == "studio")
-        movie_query += query(query::studio::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::studio::name.like(option.second.asString()));
       else if (option.first == "directorid")
-        movie_query += query(query::director::idPerson == option.second.asInteger());
+        movie_query = movie_query && query(query::director::idPerson == option.second.asInteger());
       else if (option.first == "director")
-        movie_query += query(query::director::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::director::name.like(option.second.asString()));
       else if (option.first == "actorid")
-        movie_query += query(query::actor::idPerson == option.second.asInteger());
+        movie_query = movie_query && query(query::actor::idPerson == option.second.asInteger());
       else if (option.first == "actor")
-        movie_query += query(query::actor::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::actor::name.like(option.second.asString()));
       else if (option.first == "setid")
-        movie_query += query(query::set::idSet == option.second.asInteger());
+        movie_query = movie_query && query(query::set::idSet == option.second.asInteger());
       else if (option.first == "set")
-        movie_query += query(query::set::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::set::name.like(option.second.asString()));
       else if (option.first == "year")
-        movie_query += query(query::CODBMovie::premiered.year == option.second.asInteger());
+        movie_query = movie_query && query(query::CODBMovie::premiered.year == option.second.asInteger());
       else if (option.first == "tagid") {
-        movie_query += query(query::tag::idTag == option.second.asInteger());
+        movie_query = movie_query && query(query::tag::idTag == option.second.asInteger());
         hasTags = true;
       }
       else if (option.first == "tag")
-        movie_query += query(query::tag::name.like(option.second.asString()));
+        movie_query = movie_query && query(query::tag::name.like(option.second.asString()));
       else if (option.first == "filter" || option.first == "xsp")
       {
         CSmartPlaylist xspFilter;
@@ -10801,7 +10801,7 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
         if (xspFilter.GetType() == itemType)
         {
           std::set<std::string> playlists;
-          movie_query += xspFilter.GetMovieWhereClause(playlists);
+          movie_query = movie_query && xspFilter.GetMovieWhereClause(playlists);
         }
         // remove the filter if it doesn't match the item type
         else
@@ -10818,11 +10818,11 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     }
 
     int total = 0;
-    
+
     //Store the query without limits and sorting for the later
     query objQueryWO = movie_query;
 
-    movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
+    movie_query = movie_query && SortUtils::SortODBMovieQuery<query>(sortDescription);
 
     odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(movie_query));
     for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
