@@ -1237,6 +1237,11 @@ bool CApplication::LoadSkin(const std::string& skinID)
 
   }
 
+  // always go back to the home screen for the language change
+  // otherwise we see various crashes in rendering cause skin unload
+  // destroys the font, locale, etc.
+  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME, {}, false, true);
+
   CSingleLock lock(CServiceBroker::GetWinSystem()->GetGfxContext());
 
   // store current active window with its focused control
@@ -1248,11 +1253,6 @@ bool CApplication::LoadSkin(const std::string& skinID)
     if (pWindow)
       currentFocusedControlID = pWindow->GetFocusedControlID();
   }
-
-  // always go back to the home screen for the language change
-  // otherwise we see various crashes in rendering cause skin unload
-  // destroys the font, locale, etc.
-  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME);
 
   UnloadSkin();
 
