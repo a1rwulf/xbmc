@@ -118,7 +118,7 @@ void CHdmiMonitor::FDEventCallback(int id, int fd, short revents, void *data)
 
     std::shared_ptr<CDRMUtils> tmp = hdmiMonitor->GetWinSystem().GetDrm();
     if (dynamic_cast<COffScreenModeSetting*>(tmp.get()) != nullptr)
-      CApplicationMessenger::GetInstance().PostMsg(TMSG_RENDERER_REINIT);
+      system("systemctl restart kodi");
 
     udev_device_unref(device);
   }
