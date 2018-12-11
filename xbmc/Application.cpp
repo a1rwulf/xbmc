@@ -1140,6 +1140,12 @@ void CApplication::ReloadSkin(bool confirm/*=false*/)
 
   const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
   std::string newSkin = settings->GetString(CSettings::SETTING_LOOKANDFEEL_SKIN);
+
+  // always go back to the home screen for the language change
+  // otherwise we see various crashes in rendering cause skin unload
+  // destroys the font, locale, etc.
+  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME, {}, false, true);
+
   if (LoadSkin(newSkin))
   {
     /* The Reset() or SetString() below will cause recursion, so the m_confirmSkinChange boolean is set so as to not prompt the
@@ -1236,11 +1242,6 @@ bool CApplication::LoadSkin(const std::string& skinID)
     }
 
   }
-
-  // always go back to the home screen for the language change
-  // otherwise we see various crashes in rendering cause skin unload
-  // destroys the font, locale, etc.
-  CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME, {}, false, true);
 
   CSingleLock lock(CServiceBroker::GetWinSystem()->GetGfxContext());
 
