@@ -10849,7 +10849,7 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     //TODO: Random sorting needs to be implemented
 
     // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
     {
       ODBView_Movie_Total totals;
       if (m_cdb.getDB()->query_one<ODBView_Movie_Total>(objQueryWO, totals))
