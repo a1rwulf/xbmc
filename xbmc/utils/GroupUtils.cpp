@@ -50,8 +50,9 @@ bool GroupUtils::Group(GroupBy groupBy, const std::string &baseDir, const CFileI
       {
         if (set.id > 0)
         {
-          item->GetVideoInfoTag()->m_set = set;
-          setMap[set.id].insert(item);
+          const CFileItemPtr newItem(static_cast<CFileItem*>(item->Clone()));
+          newItem->GetVideoInfoTag()->m_set = set;
+          setMap[set.id].insert(newItem);
         }
       }
     }
