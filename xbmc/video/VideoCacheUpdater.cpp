@@ -22,9 +22,10 @@ CVideoCacheUpdater::~CVideoCacheUpdater()
 
 bool CVideoCacheUpdater::DoWork()
 {
-  CLog::Log(LOGINFO, "CVideoCacheUpdater starting");
+  CLog::Log(LOGINFO, "CVideoCacheUpdater started");
   CVideoDatabase videodb;
   videodb.getCache().languageChange();
-  
+  CLog::Log(LOGINFO, "CVideoCacheUpdater finished");
+
   return true;
 }
