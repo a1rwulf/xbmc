@@ -1016,12 +1016,55 @@ private:
   static void AnnounceRemove(std::string content, int id, bool scanning = false);
   static void AnnounceUpdate(std::string content, int id);
   
+  /*! \brief Get translation for an item
+   Reads into the database table "translation" with the current
+   item id and the language that is currently set.
+   Looks up the translated text for key: "key1.id.key2" and stores
+   it in the var parameter.
+   \param id DbId of a fileitem
+   \param var string where the translation is stored in
+   \param key1 One of: movie, tvshow, season, episode
+   \param key2 One of: title, plot, 
+   */
   void GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2);
+
+  /*! \brief Get all translations for the current set language
+   Reads into the database table "translation" with the current language.
+   \return a dictionary with the key from the db and the translated value
+   */
+  std::map<std::string, std::string> GetTranslatedStrings();
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
   bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);
   bool GetTVShowTranslation(CVideoInfoTag* details, bool force = false);
   bool GetEpisodeTranslation(CVideoInfoTag* details, bool force = false);
+
+  /*! \brief Translate VideoInfoTag items
+   Translates all items stored in movieCacheMap into the current
+   chosen language.
+   If the current langauge is the default language and force is not set,
+   nothing happens.
+   \param movieChacheMap A reference to the map that should be updated
+   \param force true = forcefully update languages, false = do nothing when default language is chosen
+   \return true when successful, false otherwise
+   */
+  bool GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, bool force = false);
+
+  /*! \brief Translate VideoInfoTag items
+   Translates all items stored in movieCacheMap into the current
+   chosen language.
+   If the current langauge is the default language and force is not set,
+   nothing happens.
+   Note that this method handles tvshows, seasons and episodes.
+   This design saves a lot of database hits.
+   \param tvshowCacheMap A reference to the tvshow map that should be updated
+   \param seasonCacheMap A reference to the season map that should be updated
+   \param episodeCacheMap A reference to the episode map that should be updated
+   \param force true = forcefully update languages, false = do nothing when default language is chosen
+   \return true when successful, false otherwise
+   */
+  bool GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tFileItemCacheMap& seasonCacheMap, tFileItemCacheMap& episodeCacheMap, bool force = false);
+
   CVideoDatabaseCache& getCache();
   
   std::string GetMACAddress();
