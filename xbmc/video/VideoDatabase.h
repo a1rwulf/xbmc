@@ -437,7 +437,7 @@ public:
   int AddMovie(const std::string& strFilenameAndPath); //ODB DONE
   int AddEpisode(int idShow, const std::string& strFilenameAndPath);
   
-  int GetPlayerPlayCount(const CODBFile& file);
+  int GetPlayerPlayCount(unsigned long fileId);
   void SetPlayerPlayCount(const CODBFile& file, int playcount);
 
   // editing functions
@@ -937,7 +937,13 @@ protected:
   int GetMatchingTvShow(const CVideoInfoTag &show);
 
   void DeleteStreamDetails(int idFile);
-  CVideoInfoTag GetDetailsForMovie(const odb::result<ODBView_Movie>::iterator record, int getDetails = VideoDbDetailsNone);
+
+  template <class T>
+  CVideoInfoTag GetDetailsForMovie(const T record, int getDetails = VideoDbDetailsNone);
+
+  //template <>
+  //CVideoInfoTag GetDetailsForMovie<ODBView_Movie>(const odb::result<ODBView_Movie>::iterator record, int getDetails = VideoDbDetailsNone);
+
   CVideoInfoTag GetDetailsForTvShow(const odb::result<ODBView_TVShow>::iterator record, int getDetails = VideoDbDetailsNone, CFileItem* item = NULL);
   CVideoInfoTag GetDetailsForEpisode(const odb::result<ODBView_Episode>::iterator record, int getDetails = VideoDbDetailsNone);
   CVideoInfoTag GetDetailsForMusicVideo(std::unique_ptr<dbiplus::Dataset> &pDS, int getDetails = VideoDbDetailsNone);
@@ -1033,6 +1039,9 @@ private:
    \return a dictionary with the key from the db and the translated value
    */
   std::map<std::string, std::string> GetTranslatedStrings();
+ 
+  void AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_query, CVideoDbUrl& videoDbUrl);
+
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
   bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);

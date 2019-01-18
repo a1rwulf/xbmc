@@ -2575,7 +2575,7 @@ CSong CMusicDatabase::GetSongFromODBObject(std::shared_ptr<CODBSong> objSong)
     song.dateAdded.SetFromULongLong(objSong->m_file->m_dateAdded.m_ulong_date);
     
     // Get filename with full path
-    if (objSong->m_file->m_path.load())
+    if (objSong->m_file->m_path)
     {
       song.strFileName = URIUtils::AddFileToFolder(objSong->m_file->m_path->m_path, objSong->m_file->m_filename);
     }
@@ -2687,7 +2687,7 @@ void CMusicDatabase::GetFileItemFromODBObject(std::shared_ptr<CODBSong> objSong,
     item->GetMusicInfoTag()->SetLoaded(true);
   }
   
-  if (objSong->m_file.load() && objSong->m_file->m_path.load())
+  if (objSong->m_file.load() && objSong->m_file->m_path)
   {
     item->GetMusicInfoTag()->SetPlayCount(objSong->m_file->m_playCount);
     item->GetMusicInfoTag()->SetLastPlayed(objSong->m_file->m_lastPlayed.m_date);
@@ -3685,7 +3685,7 @@ bool CMusicDatabase::CleanupSongs(CGUIDialogProgress* progressDialog /*= nullptr
         if (!objSong.section_foreign.loaded())
           m_cdb.getDB()->load(objSong, objSong.section_foreign);
         
-        if (!objSong.m_file.load() || !objSong.m_file->m_path.load())
+        if (!objSong.m_file.load() || !objSong.m_file->m_path)
         {
           m_cdb.getDB()->erase(objSong);
           continue;

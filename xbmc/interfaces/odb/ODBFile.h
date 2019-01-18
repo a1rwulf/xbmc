@@ -23,6 +23,7 @@
 
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
+#include <odb/session.hxx>
 
 #include <string>
 
@@ -32,7 +33,8 @@
 PRAGMA_DB (model version(1, 1, open))
 
 PRAGMA_DB (object pointer(std::shared_ptr) \
-                  table("file"))
+                  table("file") \
+                  session)
 class CODBFile
 {
 public:

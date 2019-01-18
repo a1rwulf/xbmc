@@ -31,7 +31,8 @@
 PRAGMA_DB (model version(1, 1, open))
 
 PRAGMA_DB (object pointer(std::shared_ptr) \
-                  table("bookmark"))
+                  table("bookmark")
+                  session)
 class CODBBookmark
 {
 public:
@@ -48,7 +49,7 @@ public:
   
 PRAGMA_DB (id auto)
   unsigned long m_idBookmark;
-  odb::lazy_shared_ptr<CODBFile> m_file;
+  std::shared_ptr<CODBFile> m_file;
   double m_timeInSeconds;
   double m_totalTimeInSeconds;
   std::string m_thumbNailImage;
