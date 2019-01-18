@@ -5949,6 +5949,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
   if(record->movie->m_basePath.load())
     details->SetBasePath(record->movie->m_basePath->m_path);
+
+  if (record->movie->m_basePath->m_parentPath.load())
+    details->m_parentPathID = record->movie->m_basePath->m_parentPath->m_idPath;
+
   if(record->movie->m_parentPath.load())
     details->m_parentPathID = record->movie->m_parentPath->m_idPath;
   
