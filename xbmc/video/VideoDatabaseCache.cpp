@@ -49,43 +49,32 @@ void CVideoDatabaseCache::languageChange()
   
   m_language = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE);
   CVideoDatabase videodb;
-  
   CSingleLock lock(m_mutex);
-  
+
+  // Clear cached art because we can have different covers per language
   m_ArtCacheMap.clear();
-  
-  for (tVideoInfoTagCacheMap::iterator iter = m_MovieCacheMap.begin(); iter != m_MovieCacheMap.end(); ++iter)
-  {
-    videodb.GetMovieTranslation(iter->second.m_item.get(), true);
-  }
-  
+
+  // Now update movie and tvshow translations
+  // Note that tvshow translations, update tvshows, seasons and episodes
+  videodb.GetMovieTranslations(m_MovieCacheMap, true);
+  videodb.GetTVShowTranslations(m_TVShowCacheMap, m_SeasonCacheMap, m_EpisodeCacheMap, true);
+
+  //Set the item label again after translation
   for (tFileItemCacheMap::iterator iter = m_TVShowCacheMap.begin(); iter != m_TVShowCacheMap.end(); ++iter)
   {
-    videodb.GetTVShowTranslation(iter->second.m_item->GetVideoInfoTag(), true);
-    
-    //Set the item label again after translation
     iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    
     iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
-  
+
   for (tFileItemCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end(); ++iter)
   {
-    videodb.GetSeasonTranslation(iter->second.m_item->GetVideoInfoTag(), true);
-    
-    //Set the item label again after translation
     iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    
     iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
-  
+
   for (tFileItemCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end(); ++iter)
   {
-    videodb.GetEpisodeTranslation(iter->second.m_item->GetVideoInfoTag(), true);
-    
-    //Set the item label again after translation
     iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    
     iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
   }
 }

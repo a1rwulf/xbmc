@@ -629,7 +629,7 @@ std::string CLangInfo::GetEnglishLanguageName(const std::string& locale /* = "" 
 bool CLangInfo::SetLanguage(std::string language /* = "" */, bool reloadServices /* = true */)
 {
   CVideoCacheUpdater* updateJob = new CVideoCacheUpdater();
-  CJobManager::GetInstance().AddJob(updateJob, NULL);
+  CJobManager::GetInstance().AddJob(updateJob, NULL, CJob::PRIORITY::PRIORITY_DEDICATED);
 
   if (language.empty())
     language = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE);
