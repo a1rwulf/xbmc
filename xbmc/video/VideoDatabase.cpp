@@ -6956,7 +6956,7 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
       art = *cached;
       return true;
     }
-    
+
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     if (mediaType == MediaTypeMovie)

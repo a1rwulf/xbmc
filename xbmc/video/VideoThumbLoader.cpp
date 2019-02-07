@@ -312,8 +312,11 @@ bool CVideoThumbLoader::LoadItemCached(CFileItem* pItem)
     if ((pItem->HasVideoInfoTag() && pItem->GetVideoInfoTag()->m_iFileId >= 0) // file (or maybe folder) is in the database
     || (!pItem->m_bIsFolder && pItem->IsVideo())) // Some other video file for which we haven't yet got any database details
     {
-      if (m_videoDatabase->GetStreamDetails(*pItem))
-        pItem->SetInvalid();
+      //! @todo preload-speed
+      //! Streamdetails are not filled in my database
+      //! Why would we try to load them for thousands of items!?
+      // if (m_videoDatabase->GetStreamDetails(*pItem))
+      //   pItem->SetInvalid();
     }
   }
 
@@ -684,6 +687,11 @@ void CVideoThumbLoader::DetectAndAddMissingItemData(CFileItem &item)
     }
   }
 
+  //! @todo preload-speed
+  //! Check if we can load stereo details on first movieload so
+  //! that this does not hit the database anymore
+
+  /*
   const CStereoscopicsManager &stereoscopicsManager = CServiceBroker::GetGUI()->GetStereoscopicsManager();
 
   std::string stereoMode;
@@ -715,6 +723,8 @@ void CVideoThumbLoader::DetectAndAddMissingItemData(CFileItem &item)
 
   if (!stereoMode.empty())
     item.SetProperty("stereomode", CStereoscopicsManager::NormalizeStereoMode(stereoMode));
+
+  */
 }
 
 const ArtMap& CVideoThumbLoader::GetArtFromCache(const std::string &mediaType, const int id)
