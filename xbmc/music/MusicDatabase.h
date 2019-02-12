@@ -39,6 +39,7 @@ class CODBPath;
 class CODBPersonLink;
 class ODBView_Album;
 class ODBView_Music_Genres;
+class ODBPlaylist;
 
 namespace dbiplus
 {
@@ -528,7 +529,17 @@ public:
   bool GetRandomSong(CFileItem* item, int& idSong, odb::query<ODBView_Song> objQuery);
   int GetSongsCount(odb::query<ODBView_Song_Count> query = odb::query<ODBView_Song_Count>());
   unsigned int GetSongIDs(odb::query<ODBView_Song>& query, std::vector<std::pair<int,int> > &songIDs);
-  
+  bool GetPlaylistsNav(const std::string& strBaseDir,
+                       CFileItemList& items,
+                       const Filter &filter = Filter(),
+                       const SortDescription &sortDescription = SortDescription(),
+                       bool countOnly = false);
+  bool GetPlaylistsByWhere(const std::string &baseDir,
+                           const Filter &filter,
+                           CFileItemList &items,
+                           const SortDescription &sortDescription,
+                           bool countOnly);
+
   template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterAlbums(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);

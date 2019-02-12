@@ -64,6 +64,8 @@
 #include <odb/odb_gen/ODBArtistDiscography_odb.h>
 #include <odb/odb_gen/ODBVersionTagScan.h>
 #include <odb/odb_gen/ODBVersionTagScan_odb.h>
+#include <odb/odb_gen/ODBPlaylist.h>
+#include <odb/odb_gen/ODBPlaylist_odb.h>
 
 #include "MusicDatabaseCache.h"
 
@@ -5260,6 +5262,80 @@ bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& i
 
   Filter filter;
   return GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
+}
+
+bool CMusicDatabase::GetPlaylistsNav(const std::string& strBaseDir,
+                     CFileItemList& items,
+                     const Filter &filter,
+                     const SortDescription &sortDescription,
+                     bool countOnly)
+{
+  CMusicDbUrl musicUrl;
+  if (!musicUrl.FromString(strBaseDir))
+    return false;
+
+  return GetPlaylistsByWhere(musicUrl.ToString(), filter, items, sortDescription, countOnly);
+}
+
+bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
+                         const Filter &filter,
+                         CFileItemList &items,
+                         const SortDescription &sortDescription,
+                         bool countOnly)
+{
+  try
+  {
+    int total = 0;
+    CMusicDbUrl musicUrl;
+    if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
+      return false;
+
+    std::shared_ptr<odb::transaction> odb_transaction(m_cdb.getTransaction());
+    typedef odb::query<CODBPlaylist> query;
+    query objQuery;
+
+    for (auto playlist : m_cdb.getDB()->query<CODBPlaylist>(objQuery))
+    {
+      CMusicInfoTag musicInfoTag;
+      musicInfoTag.SetTitle(playlist.m_name);
+      CFileItemPtr pItem(new CFileItem(musicInfoTag));
+      pItem->SetLabel(playlist.m_name);
+      items.Add(pItem);
+    }
+
+    // If Limits are set, we need to query the total amount of items again
+    // TODO playlists
+    // implement the count query
+
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    {
+      if (false /* Add the query here */)
+      {
+        //items.SetProperty("total", totals.total);
+      }
+      else
+      {
+        // Fallback to set total by amount of items in the list
+        items.SetProperty("total", total);
+      }
+    }
+    else
+    {
+      // Store the total number of songs as a property based on the list length
+      items.SetProperty("total", total);
+    }
+
+    return true;
+  }
+  catch (std::exception &e)
+  {
+    CLog::Log(LOGERROR, "%s (%s) exception - %s", __FUNCTION__, filter.where.c_str(), e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
+  }
+  return false;
 }
 
 void CMusicDatabase::UpdateTables(int version)
