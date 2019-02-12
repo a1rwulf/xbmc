@@ -22,6 +22,7 @@ set(OdbCMake_ODB_HEADERS
         ODBEpisode.h
         ODBSetting.h
         ODBStacktime.h
+        ODBPlaylist.h
         ODBAlbum.h
         ODBSong.h
         ODBArtistDetail.h
