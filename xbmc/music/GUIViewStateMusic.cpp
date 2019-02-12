@@ -288,6 +288,18 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       SetSortOrder(SortOrderNone);
     }
     break;
+  case NODE_TYPE_PLAYLIST:
+  {
+    // TODO playlists
+    // Add our sort methods here!
+    AddSortMethod(SortByTitle, sortAttribute, 556, LABEL_MASKS("%T - %A", "%D"));  // Title, Artist, Duration| empty, empty
+
+    const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavplaylists");
+    SetSortMethod(viewState->m_sortDescription);
+    SetViewAsControl(viewState->m_viewMode);
+    SetSortOrder(viewState->m_sortDescription.sortOrder);
+  }
+  break;
   default:
     break;
   }
@@ -315,6 +327,9 @@ void CGUIViewStateMusicDatabase::SaveViewState()
     case NODE_TYPE_SONG:
     case NODE_TYPE_YEAR_SONG:
       SaveViewToDb(m_items.GetPath(), WINDOW_MUSIC_NAV, CViewStateSettings::GetInstance().Get("musicnavsongs"));
+      break;
+  case NODE_TYPE_PLAYLIST:
+      SaveViewToDb(m_items.GetPath(), WINDOW_MUSIC_NAV, CViewStateSettings::GetInstance().Get("musicnavplaylists"));
       break;
     default:
       SaveViewToDb(m_items.GetPath(), WINDOW_MUSIC_NAV);

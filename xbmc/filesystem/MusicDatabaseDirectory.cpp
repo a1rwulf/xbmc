@@ -209,6 +209,9 @@ bool CMusicDatabaseDirectory::GetLabel(const std::string& strDirectory, std::str
     case NODE_TYPE_OVERVIEW:
       strLabel = "";
       break;
+    case NODE_TYPE_PLAYLIST:
+      strLabel = g_localizeStrings.Get(136);
+      break;
     default:
       return false;
     }
@@ -291,6 +294,8 @@ std::string CMusicDatabaseDirectory::GetIcon(const std::string &strDirectory)
     return "DefaultMusicYears.png";
   case NODE_TYPE_ALBUM_COMPILATIONS:
     return "DefaultMusicCompilations.png";
+  case NODE_TYPE_PLAYLIST:
+    return "DefaultPlaylist.png";
   default:
     break;
   }

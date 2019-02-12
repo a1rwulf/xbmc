@@ -56,6 +56,8 @@ bool CMusicDbUrl::parse()
     case NODE_TYPE_SINGLES:
       m_type = "songs";
       break;
+    case NODE_TYPE_PLAYLIST:
+      m_type = "playlists";
 
     default:
       break;
@@ -108,6 +110,10 @@ bool CMusicDbUrl::parse()
 
     case NODE_TYPE_TOP100:
       m_type = "top100";
+      break;
+
+    case NODE_TYPE_PLAYLIST:
+      m_type = "playlists";
       break;
 
     case NODE_TYPE_ROOT:

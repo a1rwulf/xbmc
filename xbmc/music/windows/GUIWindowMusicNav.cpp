@@ -238,6 +238,8 @@ std::string CGUIWindowMusicNav::GetQuickpathName(const std::string& strPath) con
     return "Years";
   else if (path == "musicdb://singles/")
     return "Singles";
+  else if (path == "musicdb://playlists/")
+    return "Playlists";
   else if (path == "special://musicplaylists/")
     return "Playlists";
   else
@@ -470,6 +472,8 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
       items.SetContent("roles");
     else if (node == NODE_TYPE_YEAR)
       items.SetContent("years");
+    else if (node == NODE_TYPE_PLAYLIST)
+      items.SetContent("playlists");
     else
       items.SetContent("");
   }
