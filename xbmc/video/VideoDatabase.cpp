@@ -11251,6 +11251,10 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
     odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>(episode_query));
     for (odb::result<ODBView_Episode>::iterator i = res.begin(); i != res.end(); i++)
     {
+      // This happens if you have a season with no episode
+      // Make sure we don't crash
+      if (!i->episode)
+        continue;
       std::shared_ptr<CFileItem> cached = gVideoDatabaseCache.getEpisode(i->episode->m_idEpisode, i->episode->m_updatedAt);
       if (cached)
       {
