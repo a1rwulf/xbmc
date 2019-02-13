@@ -9,7 +9,8 @@ set(SOURCES Album.cpp
             MusicThumbLoader.cpp
             MusicUtils.cpp
             Song.cpp
-            MusicDatabaseCache.cpp)
+            MusicDatabaseCache.cpp
+            MusicPlaylist.cpp)
 
 set(HEADERS Album.h
             Artist.h
@@ -22,6 +23,7 @@ set(HEADERS Album.h
             MusicThumbLoader.h
             MusicUtils.h
             Song.h
-            MusicDatabaseCache.h)
+            MusicDatabaseCache.h
+            MusicPlaylist.h)
 
 core_add_library(music)

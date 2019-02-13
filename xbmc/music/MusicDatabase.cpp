@@ -68,6 +68,7 @@
 #include <odb/odb_gen/ODBPlaylist_odb.h>
 
 #include "MusicDatabaseCache.h"
+#include "MusicPlaylist.h"
 
 using namespace XFILE;
 using namespace MUSICDATABASEDIRECTORY;
@@ -5245,7 +5246,7 @@ bool CMusicDatabase::GetSongsByYear(const std::string& baseDir, CFileItemList& i
   return GetSongsFullByWhere(baseDir, filter, items, SortDescription(), true);
 }
 
-bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist, int idAlbum, const SortDescription &sortDescription /* = SortDescription() */)
+bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist, int idAlbum, int idPlaylist, const SortDescription &sortDescription /* = SortDescription() */)
 {
   CMusicDbUrl musicUrl;
   if (!musicUrl.FromString(strBaseDir))
@@ -5259,6 +5260,9 @@ bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& i
 
   if (idArtist > 0)
     musicUrl.AddOption("artistid", idArtist);
+
+  if (idPlaylist > 0)
+    musicUrl.AddOption("playlistid", idPlaylist);
 
   Filter filter;
   return GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
@@ -5296,10 +5300,20 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
     for (auto playlist : m_cdb.getDB()->query<CODBPlaylist>(objQuery))
     {
+      CMusicPlaylist pl;
       CMusicInfoTag musicInfoTag;
-      musicInfoTag.SetTitle(playlist.m_name);
-      CFileItemPtr pItem(new CFileItem(musicInfoTag));
-      pItem->SetLabel(playlist.m_name);
+
+      pl.idPlaylist =  playlist.m_idPlaylist;
+      pl.strPlaylist = playlist.m_name;
+      pl.strThumb = playlist.m_thumbUrl;
+
+      CMusicDbUrl itemUrl = musicUrl;
+      std::string path = StringUtils::Format("{}/", pl.idPlaylist);
+      itemUrl.AppendPath(path);
+
+      CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
+      pItem->SetIconImage("DefaultMusicPlaylists.png");
+
       items.Add(pItem);
     }
 
@@ -9659,7 +9673,7 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
   T objRoleQuery; //Role < 0 means all roles, otherwise filter by role
   if(idRole > 0) objRoleQuery = T::CODBRole::idRole == idRole;
   
-  int idArtist = -1, idGenre = -1, idAlbum = -1, idSong = -1;
+  int idArtist = -1, idGenre = -1, idAlbum = -1, idSong = -1, idPlaylist = -1;
   bool albumArtistsOnly = false;
   std::string artistname;
   
@@ -9706,7 +9720,22 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
       }
     }
   }
-  
+
+  // Process playlist option
+  option = options.find("playlistid");
+  if (option != options.end())
+    idPlaylist = static_cast<int>(option->second.asInteger());
+  else
+  {
+    //! @todo playlists
+    //! Add option to retrieve playlist by name
+    /*
+    option = options.find("playlist");
+    if (option != options.end())
+      idPlaylist = GetPlaylistByName(option->second.asString());
+    */
+  }
+
   if (type == "songs" || type == "singles")
   {
     option = options.find("singles");
@@ -9738,6 +9767,9 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
     
     if (idGenre > 0)
       objQuery = objQuery && T::CODBGenre::idGenre == idGenre;
+
+    if (idPlaylist > 0)
+      objQuery = objQuery && T::CODBPlaylist::idPlaylist == idPlaylist;
     
     T songArtistClause;
     T albumArtistClause = T::CODBPerson::idPerson == T::albumArist::idPerson;

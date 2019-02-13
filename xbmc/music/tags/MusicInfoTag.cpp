@@ -570,6 +570,16 @@ void CMusicInfoTag::SetType(const MediaType mediaType)
   m_type = mediaType;
 }
 
+void CMusicInfoTag::SetPlaylist(const std::string& strPlaylist)
+{
+  m_strPlaylist = Trim(strPlaylist);
+}
+
+void CMusicInfoTag::SetPlaylistId(const int iPlaylistId)
+{
+  m_iPlaylistId = iPlaylistId;
+}
+
 void CMusicInfoTag::SetArtist(const CArtist& artist)
 {
   SetArtist(artist.strArtist);
@@ -671,6 +681,19 @@ void CMusicInfoTag::SetSong(const CSong& song)
   if (song.replayGain.Get(ReplayGain::ALBUM).Valid())
     m_replayGain.Set(ReplayGain::ALBUM, song.replayGain.Get(ReplayGain::ALBUM));
 
+  SetLoaded();
+}
+
+void CMusicInfoTag::SetPlaylist(const CMusicPlaylist& playlist)
+{
+  Clear();
+  SetAlbumId(playlist.idPlaylist);
+  SetAlbum(playlist.strPlaylist);
+  SetTitle(playlist.strPlaylist);
+  SetDateAdded(playlist.dateAdded);
+  SetPlayCount(playlist.iTimesPlayed);
+  SetDatabaseId(playlist.idPlaylist, MediaTypePlaylist);
+  SetLastPlayed(playlist.lastPlayed);
   SetLoaded();
 }
 
@@ -1032,4 +1055,9 @@ std::string CMusicInfoTag::Trim(const std::string &value) const
   StringUtils::TrimLeft(trimmedValue, " ");
   StringUtils::TrimRight(trimmedValue, " \n\r");
   return trimmedValue;
+}
+
+std::string CMusicInfoTag::GetPlaylist() const
+{
+  return m_strPlaylist;
 }
