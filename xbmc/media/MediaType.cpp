@@ -21,6 +21,7 @@ static std::map<std::string, CMediaTypes::MediaTypeInfo> fillDefaultMediaTypes()
   mediaTypes.insert(std::make_pair(MediaTypeArtist,           CMediaTypes::MediaTypeInfo(MediaTypeArtist,          MediaTypeArtist "s",          true,  36916, 36917,   557,   133)));
   mediaTypes.insert(std::make_pair(MediaTypeAlbum,            CMediaTypes::MediaTypeInfo(MediaTypeAlbum,           MediaTypeAlbum "s",           true,  36918, 36919,   558,   132)));
   mediaTypes.insert(std::make_pair(MediaTypeSong,             CMediaTypes::MediaTypeInfo(MediaTypeSong,            MediaTypeSong "s",            false, 36920, 36921,   172,   134)));
+  mediaTypes.insert(std::make_pair(MediaTypePlaylist,         CMediaTypes::MediaTypeInfo(MediaTypePlaylist,        MediaTypePlaylist "s",        true,    559,   136,   559,   136)));
   mediaTypes.insert(std::make_pair(MediaTypeVideo,            CMediaTypes::MediaTypeInfo(MediaTypeVideo,           MediaTypeVideo "s",           true,  36912, 36913,   291,     3)));
   mediaTypes.insert(std::make_pair(MediaTypeVideoCollection,  CMediaTypes::MediaTypeInfo(MediaTypeVideoCollection, MediaTypeVideoCollection "s", true,  36910, 36911, 20141, 20434)));
   mediaTypes.insert(std::make_pair(MediaTypeMusicVideo,       CMediaTypes::MediaTypeInfo(MediaTypeMusicVideo,      MediaTypeMusicVideo "s",      false, 36908, 36909, 20391, 20389)));

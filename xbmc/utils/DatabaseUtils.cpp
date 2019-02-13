@@ -69,6 +69,16 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
     else if (field == FieldPlaycount) return "albumview.iTimesPlayed";
     else if (field == FieldLastPlayed) return "albumview.lastPlayed";
   }
+  else if (mediaType == MediaTypePlaylist)
+  {
+    if (field == FieldId) return "playlistview.idPlaylist";
+    else if (field == FieldRating) return "playlistview.fRating";
+    else if (field == FieldVotes) return "playlistview.iVotes";
+    else if (field == FieldUserRating) return "playlistview.iUserrating";
+    else if (field == FieldDateAdded) return "playlistview.dateAdded";
+    else if (field == FieldPlaycount) return "playlistview.iTimesPlayed";
+    else if (field == FieldLastPlayed) return "playlistview.lastPlayed";
+  }
   else if (mediaType == MediaTypeSong)
   {
     if (field == FieldId) return "songview.idSong";

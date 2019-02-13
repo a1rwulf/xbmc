@@ -38,4 +38,9 @@ struct CSongInfo : CMusicInfo
   CSongInfo() : CMusicInfo(MediaTypeSong) {}
 };
 
+struct CPlaylistInfo : CMusicInfo
+{
+  CPlaylistInfo() : CMusicInfo(MediaTypePlaylist) {}
+};
+
 }
