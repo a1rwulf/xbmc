@@ -5305,7 +5305,7 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
       pl.idPlaylist =  playlist.m_idPlaylist;
       pl.strPlaylist = playlist.m_name;
-      pl.strThumb = playlist.m_thumbUrl;
+      pl.m_updatedAt.SetFromULongLong(playlist.m_updatedAt);
 
       CMusicDbUrl itemUrl = musicUrl;
       std::string path = StringUtils::Format("{}/", pl.idPlaylist);

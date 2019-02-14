@@ -690,10 +690,8 @@ void CMusicInfoTag::SetPlaylist(const CMusicPlaylist& playlist)
   SetAlbumId(playlist.idPlaylist);
   SetAlbum(playlist.strPlaylist);
   SetTitle(playlist.strPlaylist);
-  SetDateAdded(playlist.dateAdded);
-  SetPlayCount(playlist.iTimesPlayed);
+  SetDateAdded(playlist.m_updatedAt);
   SetDatabaseId(playlist.idPlaylist, MediaTypePlaylist);
-  SetLastPlayed(playlist.lastPlayed);
   SetLoaded();
 }
 

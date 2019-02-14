@@ -35,18 +35,14 @@ public:
     idPlaylist = -1;
     strPlaylist.clear();
     strThumb.clear();
-    iTimesPlayed = 0;
-    dateAdded.Reset();
-    lastPlayed.Reset();
+    m_updatedAt.Reset();
     songs.clear();
   }
 
   long idPlaylist = -1;
   std::string strPlaylist;
   std::string strThumb;
-  int iTimesPlayed = 0;
-  CDateTime dateAdded;
-  CDateTime lastPlayed;
+  CDateTime m_updatedAt;
   VECSONGS songs;
 };
 

@@ -29,7 +29,7 @@ PRAGMA_DB (id auto)
 
     std::string m_name;
     std::string m_description;
-    std::string m_thumbUrl;
+    unsigned long m_updatedAt;
 
     std::vector< std::shared_ptr<CODBSong> > m_songs;
 
