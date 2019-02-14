@@ -26,9 +26,7 @@ CMusicPlaylist::CMusicPlaylist(const CFileItem& item)
   Reset();
   const CMusicInfoTag& tag = *item.GetMusicInfoTag();
   strPlaylist = tag.GetPlaylist();
-  iTimesPlayed = 0;
-  dateAdded.Reset();
-  lastPlayed.Reset();
+  m_updatedAt.Reset();
 }
 
 bool CMusicPlaylist::operator<(const CMusicPlaylist &p) const

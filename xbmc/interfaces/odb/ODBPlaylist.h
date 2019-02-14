@@ -11,9 +11,10 @@
 
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
-
 #include <string>
 #include <vector>
+
+#include "ODBArt.h"
 
 class CODBSong;
 
@@ -32,6 +33,7 @@ PRAGMA_DB (id auto)
     unsigned long m_updatedAt;
 
     std::vector< std::shared_ptr<CODBSong> > m_songs;
+    std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
 
 //Members not stored in the db, used for sync ...
 PRAGMA_DB (transient)

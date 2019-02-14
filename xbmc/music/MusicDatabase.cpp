@@ -8933,13 +8933,13 @@ void CMusicDatabase::SetArtForItem(int mediaId, const std::string &mediaType, co
   }
 }
 
-bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
+bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
 {
   try
   {
-    if (songId <= 0 && albumId <= 0 && artistId <= 0) return false;
+    if (songId <= 0 && albumId <= 0 && artistId <= 0 && playlistId <= 0) return false;
 
-    std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, bPrimaryArtist);
+    std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, playlistId, bPrimaryArtist);
     if (cached)
     {
       art = *cached;
@@ -9087,7 +9087,29 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool b
       }
     }
 
-    gMusicDatabaseCache.addArtThumbLoader(songId, albumId, artistId, bPrimaryArtist, art);
+    if (playlistId >= 0)
+    {
+      typedef odb::query<CODBPlaylist> query;
+      CODBPlaylist objPlaylist;
+      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == playlistId, objPlaylist))
+      {
+        for (auto& i: objPlaylist.m_artwork)
+        {
+          if (i.load())
+          {
+            ArtForThumbLoader artitem;
+            artitem.artType = i->m_type;
+            artitem.mediaType = MediaTypePlaylist;
+            artitem.prefix = "";
+            artitem.url = i->m_url;
+
+            art.emplace_back(artitem);
+          }
+        }
+      }
+    }
+
+    gMusicDatabaseCache.addArtThumbLoader(songId, albumId, artistId, playlistId, bPrimaryArtist, art);
 
     return !art.empty();
   }
@@ -9157,6 +9179,21 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
       {
         if (objPerson.m_art.load())
           art.insert(make_pair(objPerson.m_art->m_type, objPerson.m_art->m_url));
+      }
+    }
+    else if (mediaType == MediaTypePlaylist)
+    {
+      typedef odb::query<CODBPlaylist> query;
+      CODBPlaylist objPlaylist;
+      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == mediaId, objPlaylist))
+      {
+        for (auto& i: objPlaylist.m_artwork)
+        {
+          if (i.load())
+          {
+            art.insert(make_pair(i->m_type, i->m_url));
+          }
+        }
       }
     }
     else

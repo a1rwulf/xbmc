@@ -929,11 +929,11 @@ bool CGUIWindowMusicBase::GetDirectory(const std::string &strDirectory, CFileIte
     std::vector<ArtForThumbLoader> art;
     if (params.GetAlbumId() > 0)
     { // Get album and related artist(s) art
-      artfound = m_musicdatabase.GetArtForItem(-1, params.GetAlbumId(), -1, false, art);
+      artfound = m_musicdatabase.GetArtForItem(-1, params.GetAlbumId(), -1, -1, false, art);
     }
     else if (params.GetArtistId() > 0)
     { // get artist art
-      artfound = m_musicdatabase.GetArtForItem(-1, -1, params.GetArtistId(), true, art);
+      artfound = m_musicdatabase.GetArtForItem(-1, -1, params.GetArtistId(), -1, true, art);
     }
     if (artfound)
     {

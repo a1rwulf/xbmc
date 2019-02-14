@@ -618,7 +618,7 @@ public:
   \return true if art is retrieved, false if no art is found.
   \sa SetArtForItem
   */
-  bool GetArtForItem(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
+  bool GetArtForItem(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
 
   /*! \brief Fetch art for a database item.
    Fetches multiple pieces of art for a database item.

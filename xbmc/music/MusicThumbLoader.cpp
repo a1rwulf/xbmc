@@ -160,11 +160,13 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
     // Item in music library, fetch the art
     m_musicDatabase->Open();
     if (tag.GetType() == MediaTypeSong)
-      artfound = m_musicDatabase->GetArtForItem(tag.GetDatabaseId(), tag.GetAlbumId(), -1, false, art);
+      artfound = m_musicDatabase->GetArtForItem(tag.GetDatabaseId(), tag.GetAlbumId(), -1, -1,  false, art);
     else if (tag.GetType() == MediaTypeAlbum)
-      artfound = m_musicDatabase->GetArtForItem(-1, tag.GetDatabaseId(), -1, false, art);
-    else //Artist
-      artfound = m_musicDatabase->GetArtForItem(-1, -1, tag.GetDatabaseId(), true, art);
+      artfound = m_musicDatabase->GetArtForItem(-1, tag.GetDatabaseId(), -1, -1, false, art);
+    else if (tag.GetType() == MediaTypeArtist)
+      artfound = m_musicDatabase->GetArtForItem(-1, -1, tag.GetDatabaseId(), -1, true, art);
+    else if (tag.GetType() == MediaTypePlaylist)
+      artfound = m_musicDatabase->GetArtForItem(-1, -1, -1, tag.GetDatabaseId(), true, art);
 
     m_musicDatabase->Close();
   }
@@ -189,7 +191,7 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
       if (idArtist > 0)
       {
         std::vector<ArtForThumbLoader> artistart;
-        if (m_musicDatabase->GetArtForItem(-1, -1, idArtist, true, artistart))
+        if (m_musicDatabase->GetArtForItem(-1, -1, idArtist, -1,  true, artistart))
         {
           for (auto& artitem : artistart)
           {
@@ -220,7 +222,7 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
         if (idArtist > 0)
         {
           std::vector<ArtForThumbLoader> artistart;
-          if (m_musicDatabase->GetArtForItem(-1, -1, idArtist, true, artistart))
+          if (m_musicDatabase->GetArtForItem(-1, -1, idArtist, -1, true, artistart))
           {
             for (auto& artitem : artistart)
             {

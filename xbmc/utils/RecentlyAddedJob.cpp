@@ -264,7 +264,7 @@ bool CRecentlyAddedJob::UpdateMusic()
       bool artfound = false;
       std::vector<ArtForThumbLoader> art;
       // Get album thumb and fanart for first album artist
-      artfound = musicdatabase.GetArtForItem(-1, album.idAlbum, -1, true, art);
+      artfound = musicdatabase.GetArtForItem(-1, album.idAlbum, -1, -1, true, art);
       if (artfound)
       {
         for (auto artitem : art)
