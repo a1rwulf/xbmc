@@ -290,9 +290,11 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
     break;
   case NODE_TYPE_PLAYLIST:
   {
-    // TODO playlists
-    // Add our sort methods here!
+    AddSortMethod(SortByDateAdded, sortAttribute, 570, LABEL_MASKS("%F", "", "", "%a"));  // Filename, empty | Userdefined, dateAdded
     AddSortMethod(SortByTitle, sortAttribute, 556, LABEL_MASKS("%T - %A", "%D"));  // Title, Artist, Duration| empty, empty
+
+    // TODO playlists
+    // Add sort by playlist size
 
     const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavplaylists");
     SetSortMethod(viewState->m_sortDescription);
