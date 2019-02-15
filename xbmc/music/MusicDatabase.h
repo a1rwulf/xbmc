@@ -539,6 +539,7 @@ public:
                            CFileItemList &items,
                            const SortDescription &sortDescription,
                            bool countOnly);
+  bool GetPlaylistById(int id, CODBPlaylist& objPlaylist);
 
   template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);

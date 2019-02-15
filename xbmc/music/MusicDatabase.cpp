@@ -5089,6 +5089,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
       
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(objSong, item.get(), musicUrl);
+
       items.Add(item);
       
       for (auto artist : objSong->m_artists)
@@ -5265,7 +5266,20 @@ bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& i
     musicUrl.AddOption("playlistid", idPlaylist);
 
   Filter filter;
-  return GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
+  bool ret = GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
+
+  // We browse by playlist, add playlist metadata to items
+  if (idPlaylist > 0)
+  {
+    CODBPlaylist objPlaylist;
+    if (GetPlaylistById(idPlaylist, objPlaylist))
+    {
+      for (auto &item : items)
+        item->SetProperty("PlaylistName", objPlaylist.m_name);
+    }
+  }
+
+  return ret;
 }
 
 bool CMusicDatabase::GetPlaylistsNav(const std::string& strBaseDir,
@@ -5279,6 +5293,27 @@ bool CMusicDatabase::GetPlaylistsNav(const std::string& strBaseDir,
     return false;
 
   return GetPlaylistsByWhere(musicUrl.ToString(), filter, items, sortDescription, countOnly);
+}
+
+bool CMusicDatabase::GetPlaylistById(int id, CODBPlaylist& objPlaylist)
+{
+  try
+  {
+    typedef odb::query<CODBPlaylist> query;
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    odb::session s;
+    return m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == id, objPlaylist);
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+
+  return false;
 }
 
 bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
