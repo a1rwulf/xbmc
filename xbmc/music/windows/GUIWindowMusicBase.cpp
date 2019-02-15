@@ -1005,7 +1005,8 @@ bool CGUIWindowMusicBase::CheckFilterAdvanced(CFileItemList &items) const
   if ((items.IsMusicDb() || CanContainFilter(m_strFilterPath)) &&
       (StringUtils::EqualsNoCase(content, "artists") ||
        StringUtils::EqualsNoCase(content, "albums")  ||
-       StringUtils::EqualsNoCase(content, "songs")))
+       StringUtils::EqualsNoCase(content, "songs")   ||
+       StringUtils::EqualsNoCase(content, "playlists")))
     return true;
 
   return false;

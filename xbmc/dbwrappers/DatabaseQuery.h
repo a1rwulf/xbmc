@@ -18,6 +18,8 @@
 #include <odb/odb_gen/ODBMovie_odb.h>
 #include <odb/odb_gen/ODBSong.h>
 #include <odb/odb_gen/ODBSong_odb.h>
+#include <odb/odb_gen/ODBPlaylist.h>
+#include <odb/odb_gen/ODBPlaylist_odb.h>
 
 #define DATABASEQUERY_RULE_VALUE_SEPARATOR  " / "
 
@@ -80,6 +82,7 @@ public:
   virtual odb::query<ODBView_Song_Artists> GetArtistWhereClause(const std::string& strType);
   virtual odb::query<ODBView_Album> GetAlbumWhereClause(const std::string& strType);
   virtual odb::query<ODBView_Song> GetSongWhereClause(const std::string& strType);
+  virtual odb::query<ODBView_Playlist> GetPlaylistWhereClause(const std::string& strType);
 
   int                         m_field;
   SEARCH_OPERATOR             m_operator;
@@ -152,7 +155,11 @@ protected:
                                                                 const std::string &param1,
                                                                 const std::string &param2,
                                                                 const std::string &strType) const;
-  
+  virtual odb::query<ODBView_Playlist> FormatPlaylistWhereClause(const bool &negate,
+                                                             const SEARCH_OPERATOR &oper,
+                                                             const std::string &param,
+                                                             const std::string &strType) const;
+
   virtual SEARCH_OPERATOR     GetOperator(const std::string &type) const { return m_operator; };
   virtual std::string         GetOperatorString(SEARCH_OPERATOR op) const;
   virtual std::string         GetBooleanQuery(const std::string &negate, const std::string &strType) const { return ""; }

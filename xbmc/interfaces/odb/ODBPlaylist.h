@@ -25,6 +25,7 @@ PRAGMA_DB (object pointer(std::shared_ptr) \
                   session)
 class CODBPlaylist {
 public:
+  CODBPlaylist() = default;
 PRAGMA_DB (id auto)
     unsigned long m_idPlaylist;
 
@@ -46,5 +47,13 @@ private:
 #ifdef ODB_COMPILER
 #include "ODBSong.h"
 #endif
+
+PRAGMA_DB (view object(CODBPlaylist) \
+           object(CODBArt inner: CODBPlaylist::m_artwork)
+               query(distinct))
+struct ODBView_Playlist
+{
+  std::shared_ptr<CODBPlaylist> playlist;
+};
 
 #endif //ODBPLAYLIST_H

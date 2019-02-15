@@ -1973,6 +1973,28 @@ odb::query<ODBView_Song> CSmartPlaylistRule::FormatSongWhereClause( const bool &
     return where_query;
 }
 
+odb::query<ODBView_Playlist> CSmartPlaylistRule::FormatPlaylistWhereClause( const bool &negate,
+                                                                        const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                                        const std::string &param,
+                                                                        const std::string &strType) const
+{
+  typedef odb::query<ODBView_Playlist> query;
+  query where_query;
+
+  CLog::Log(LOGDEBUG, "%s - param: %s - type: %s - operator: %i", __FUNCTION__, param.c_str(), strType.c_str(), oper);
+
+  if (m_field == FieldTitle)
+  {
+    std::string prepared_string = FormatODBString(oper, param);
+    where_query = FormatODBParam<query, query::CODBPlaylist::name_type_, std::string>(query::CODBPlaylist::name, oper, prepared_string);
+  }
+
+  if (negate)
+    return !where_query;
+  else
+    return where_query;
+}
+
 std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, const std::string &oper, const std::string &param,
                                                  const CDatabase &db, const std::string &strType) const
 {
@@ -2578,6 +2600,73 @@ odb::query<ODBView_Song> CSmartPlaylistRuleCombination::GetSongWhereClause(const
   return song_query;
 }
 
+odb::query<ODBView_Playlist> CSmartPlaylistRuleCombination::GetPlaylistWhereClause(const std::string& strType, std::set<std::string> &referencedPlaylists)
+{
+  typedef odb::query<ODBView_Playlist> query;
+  query playlist_query;
+
+  // translate the combinations into SQL
+  for (CDatabaseQueryRuleCombinations::const_iterator it = m_combinations.begin(); it != m_combinations.end(); ++it)
+  {
+    std::shared_ptr<CSmartPlaylistRuleCombination> combo = std::static_pointer_cast<CSmartPlaylistRuleCombination>(*it);
+    if (combo)
+    {
+      if (it != m_combinations.begin())
+      {
+        if (m_type == CombinationAnd)
+          playlist_query = query(playlist_query && (combo->GetPlaylistWhereClause(strType, referencedPlaylists)));
+        else
+          playlist_query = query(playlist_query || (combo->GetPlaylistWhereClause(strType, referencedPlaylists)));
+      }
+    }
+  }
+
+  for (CDatabaseQueryRules::const_iterator it = m_rules.begin(); it != m_rules.end(); ++it)
+  {
+    // don't include playlists that are meant to be displayed
+    // as a virtual folders in the SQL WHERE clause
+    if ((*it)->m_field == FieldVirtualFolder)
+      continue;
+
+    query currentRule;
+    if ((*it)->m_field == FieldPlaylist)
+    {
+      std::string playlistFile = CSmartPlaylistDirectory::GetPlaylistByName((*it)->m_parameter.at(0), strType);
+      if (!playlistFile.empty() && referencedPlaylists.find(playlistFile) == referencedPlaylists.end())
+      {
+        referencedPlaylists.insert(playlistFile);
+        CSmartPlaylist playlist;
+        if (playlist.Load(playlistFile))
+        {
+          query playlistQuery;
+          // only playlists of same type will be part of the query
+          if (playlist.GetType() == strType || (playlist.GetType() == "mixed" && (strType == "songs" || strType == "musicvideos")) || playlist.GetType().empty())
+          {
+            playlist.SetType(strType);
+            playlistQuery = playlist.GetPlaylistWhereClause(referencedPlaylists);
+          }
+          if (playlist.GetType() == strType)
+          {
+            if ((*it)->m_operator == CDatabaseQueryRule::OPERATOR_DOES_NOT_EQUAL)
+              currentRule = query(" NOT ("+playlistQuery+") ");
+            else
+              currentRule = playlistQuery;
+          }
+        }
+      }
+    }
+    else
+      currentRule = (*it)->GetPlaylistWhereClause(strType);
+
+    if (m_type == CombinationAnd)
+      playlist_query = query(playlist_query && currentRule);
+    else
+      playlist_query = query(playlist_query || currentRule);
+  }
+
+  return playlist_query;
+}
+
 std::string CSmartPlaylistRuleCombination::GetWhereClause(const CDatabase &db, const std::string& strType, std::set<std::string> &referencedPlaylists) const
 {
   std::string rule;
@@ -3041,7 +3130,7 @@ bool CSmartPlaylist::IsVideoType(const std::string &type)
 bool CSmartPlaylist::IsMusicType(const std::string &type)
 {
   return type == "artists" || type == "albums" ||
-         type == "songs" || type == "mixed";
+         type == "songs" || type == "mixed" || type == "playlists";
 }
 
 bool CSmartPlaylist::HasTagFilter()
@@ -3077,6 +3166,11 @@ odb::query<ODBView_Album> CSmartPlaylist::GetAlbumWhereClause(std::set<std::stri
 odb::query<ODBView_Song> CSmartPlaylist::GetSongWhereClause(std::set<std::string> &referencedPlaylists)
 {
   return m_ruleCombination.GetSongWhereClause(GetType(), referencedPlaylists);
+}
+
+odb::query<ODBView_Playlist> CSmartPlaylist::GetPlaylistWhereClause(std::set<std::string> &referencedPlaylists)
+{
+  return m_ruleCombination.GetPlaylistWhereClause(GetType(), referencedPlaylists);
 }
 
 std::string CSmartPlaylist::GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists) const

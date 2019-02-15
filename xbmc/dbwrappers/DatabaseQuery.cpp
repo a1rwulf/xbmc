@@ -678,6 +678,50 @@ odb::query<ODBView_Song> CDatabaseQueryRule::GetSongWhereClause(const std::strin
   return wholeQuery;
 }
 
+odb::query<ODBView_Playlist> CDatabaseQueryRule::GetPlaylistWhereClause(const std::string &strType)
+{
+  SEARCH_OPERATOR op = GetOperator(strType);
+
+  typedef odb::query<ODBView_Playlist> query;
+
+  bool negate = false;
+  if (op == OPERATOR_DOES_NOT_CONTAIN || op == OPERATOR_FALSE ||
+      (op == OPERATOR_DOES_NOT_EQUAL && GetFieldType(m_field) != REAL_FIELD && GetFieldType(m_field) != NUMERIC_FIELD &&
+          GetFieldType(m_field) != SECONDS_FIELD))
+    negate = true;
+  //! @todo playlists
+  // boolean operators don't have any values in m_parameter, they work on the operator
+//  if (m_operator == OPERATOR_FALSE || m_operator == OPERATOR_TRUE)
+//  {
+//    return GetPlaylistBooleanQuery(negate, strType);
+//  }
+
+  // The BETWEEN operator is handled special
+//  if (op == OPERATOR_BETWEEN)
+//  {
+//    if (m_parameter.size() != 2)
+//      return query();
+//
+//    return FormatPlaylistWhereBetweenClause(negate, op, m_parameter[0], m_parameter[1], strType);
+//  }
+
+  // now the query parameter
+  query wholeQuery;
+  for (std::vector<std::string>::const_iterator it = m_parameter.begin(); it != m_parameter.end(); ++it)
+  {
+    query query = FormatPlaylistWhereClause(negate, op, *it, strType);
+    if(!query.empty())
+    {
+      if (negate)
+        wholeQuery = wholeQuery && query;
+      else
+        wholeQuery = wholeQuery || query; //TODO: Verify if || is correct here
+    }
+  }
+
+  return wholeQuery;
+}
+
 odb::query<ODBView_Episode> CDatabaseQueryRule::FormatEpisodeWhereBetweenClause(const bool &negate,
                                                                               const SEARCH_OPERATOR &oper,
                                                                               const std::string &param1,
@@ -751,6 +795,15 @@ odb::query<ODBView_Song> CDatabaseQueryRule::FormatSongWhereClause(const bool &n
                                                                    const std::string &strType) const
 {
   odb::query<ODBView_Song> query;
+  return query;
+}
+
+odb::query<ODBView_Playlist> CDatabaseQueryRule::FormatPlaylistWhereClause(const bool &negate,
+                                                                     const SEARCH_OPERATOR &oper,
+                                                                     const std::string &param,
+                                                                     const std::string &strType) const
+{
+  odb::query<ODBView_Playlist> query;
   return query;
 }
 

@@ -5333,6 +5333,25 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
     typedef odb::query<CODBPlaylist> query;
     query objQuery;
 
+    const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+    auto option = options.find("filter");
+    if (option != options.end())
+    {
+      CSmartPlaylist xspFilter;
+      if (xspFilter.LoadFromJson(option->second.asString()))
+      {
+        // check if the filter playlist matches the item type
+        if (xspFilter.GetType() == "playlists")
+        {
+          std::set<std::string> playlists;
+          objQuery = xspFilter.GetPlaylistWhereClause(playlists);
+        }
+          // remove the filter if it doesn't match the item type
+        else
+          musicUrl.RemoveOption("filter");
+      }
+    }
+
     for (auto playlist : m_cdb.getDB()->query<CODBPlaylist>(objQuery))
     {
       CMusicPlaylist pl;
@@ -8310,6 +8329,8 @@ bool CMusicDatabase::GetItems(const std::string &strBaseDir, const std::string &
     return GetAlbumsByWhere(strBaseDir, filter, items, sortDescription);
   else if (StringUtils::EqualsNoCase(itemType, "songs"))
     return GetSongsFullByWhere(strBaseDir, filter, items, sortDescription, true);
+  else if (StringUtils::EqualsNoCase(itemType, "playlists"))
+    return GetPlaylistsByWhere(strBaseDir, filter, items, sortDescription, false);
 
   return false;
 }

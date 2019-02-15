@@ -91,7 +91,11 @@ protected:
                                                            const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
                                                            const std::string &param,
                                                            const std::string &strType) const;
-  
+
+  virtual odb::query<ODBView_Playlist> FormatPlaylistWhereClause(const bool &negate,
+                                                           const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
+                                                           const std::string &param,
+                                                           const std::string &strType) const;
   
   virtual odb::query<ODBView_Movie> FormatMovieWhereBetweenClause(const bool &negate,
                                                                               const CDatabaseQueryRule::SEARCH_OPERATOR &oper,
@@ -182,6 +186,8 @@ public:
                                                 std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Song> GetSongWhereClause(const std::string& strType,
                                               std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_Playlist> GetPlaylistWhereClause(const std::string& strType,
+                                              std::set<std::string> &referencedPlaylists);
 private:
   bool m_hasTagRule;
 };
@@ -249,6 +255,7 @@ public:
   odb::query<ODBView_Song_Artists> GetArtistWhereClause(std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Album> GetAlbumWhereClause(std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Song> GetSongWhereClause(std::set<std::string> &referencedPlaylists);
+  odb::query<ODBView_Playlist> GetPlaylistWhereClause(std::set<std::string> &referencedPlaylists);
   void GetVirtualFolders(std::vector<std::string> &virtualFolders) const;
 
   std::string GetSaveLocation() const;
