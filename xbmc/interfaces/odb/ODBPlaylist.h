@@ -33,7 +33,7 @@ PRAGMA_DB (id auto)
     std::string m_description;
     unsigned long m_updatedAt;
 
-    std::vector< std::shared_ptr<CODBSong> > m_songs;
+    std::vector< odb::lazy_ptr<CODBSong> > m_songs;
     std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
 
 //Members not stored in the db, used for sync ...
