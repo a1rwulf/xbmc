@@ -5406,6 +5406,85 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
   return false;
 }
 
+bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filter &filter, VECPLAYLISTS& playlists, int& total, const SortDescription &sortDescription /* = SortDescription() */, bool countOnly /* = false */)
+{
+  playlists.erase(playlists.begin(), playlists.end());
+
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    typedef odb::query<CODBPlaylist> query;
+    query objQuery;
+    total = 0;
+    Filter extFilter = filter;
+    SortDescription sorting = sortDescription;
+    CMusicDbUrl musicUrl;
+
+    if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
+      return false;
+
+    const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+    auto option = options.find("filter");
+
+    if (option != options.end())
+    {
+      CSmartPlaylist xspFilter;
+      if (xspFilter.LoadFromJson(option->second.asString()))
+      {
+        // check if the filter playlist matches the item type
+        if (xspFilter.GetType() == "playlists")
+        {
+          std::set<std::string> playlists;
+          objQuery = xspFilter.GetPlaylistWhereClause(playlists);
+        }
+          // remove the filter if it doesn't match the item type
+        else
+          musicUrl.RemoveOption("filter");
+      }
+    }
+
+    //Store the query without limits and sorting for the later
+    query objQueryWO = objQuery;
+    //objQuery = objQuery + SortUtils::SortODBAlbumQuery<query>(sortDescription);
+
+    for (auto playlist : m_cdb.getDB()->query<CODBPlaylist>(objQuery))
+    {
+      CMusicPlaylist pl;
+      CMusicInfoTag musicInfoTag;
+
+      pl.idPlaylist =  playlist.m_idPlaylist;
+      pl.strPlaylist = playlist.m_name;
+      pl.m_updatedAt.SetFromULongLong(playlist.m_updatedAt);
+
+      playlists.emplace_back(pl);
+      total++;
+    }
+
+    // If Limits are set, we need to query the total amount of items again
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
+    {
+      /*
+      ODBView_Album_Total totals;
+      if (m_cdb.getDB()->query_one<ODBView_Album_Total>(objQueryWO, totals))
+      {
+        total = totals.total;
+      }
+      */
+    }
+
+    return true;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s (%s) exception - %s", __FUNCTION__, filter.where.c_str(), e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
+  }
+  return false;
+}
+
 void CMusicDatabase::UpdateTables(int version)
 {
   CLog::Log(LOGINFO, "%s - updating tables", __FUNCTION__);

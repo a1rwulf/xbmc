@@ -492,6 +492,13 @@
                 "sortartist", "art"]
     }
   },
+  "Audio.Fields.Playlist": {
+    "extends": "Item.Fields.Base",
+    "items": { "type": "string",
+      "description": "The playlist from our database",
+      "enum": [ "description" ]
+    }
+  },
   "Audio.Album.ReleaseType": {
     "type": "string",
     "enum": [ "album", "single" ],
@@ -623,6 +630,13 @@
       "displayorchestra": { "type": "string"},
       "displaylyricist": { "type": "string"},
       "genreid": { "$ref": "Array.Integer"}
+    }
+  },
+  "Audio.Details.Playlist": {
+    "extends": "Audio.Details.Media",
+    "properties": {
+      "playlistid": { "$ref": "Library.Id", "required": true },
+      "description": { "type": "string" }
     }
   },
   "Audio.Property.Name": {

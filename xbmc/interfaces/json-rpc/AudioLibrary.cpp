@@ -319,6 +319,10 @@ JSONRPC_STATUS CAudioLibrary::GetSongs(const std::string &method, ITransportLaye
     musicUrl.AddOption("albumid", (int)filter["albumid"].asInteger());
   else if (filter.isMember("album"))
     musicUrl.AddOption("album", filter["album"].asString());
+  else if (filter.isMember("playlistid"))
+    musicUrl.AddOption("playlistid", (int)filter["playlistid"].asInteger());
+  else if (filter.isMember("playlist"))
+    musicUrl.AddOption("playlist", filter["playlist"].asString());
   else if (filter.isObject())
   {
     std::string xsp;
@@ -346,6 +350,14 @@ JSONRPC_STATUS CAudioLibrary::GetSongs(const std::string &method, ITransportLaye
   checkProperties.insert("displaylyricist");
   std::set<std::string> additionalProperties;
   bool artistData = CheckForAdditionalProperties(parameterObject["properties"], checkProperties, additionalProperties);
+
+  // If filter by playlist, sorting needs to be exactly the way how
+  // the playlist is defined
+  if (filter.isMember("playlistid") || filter.isMember("playlist"))
+  {
+    sorting.sortBy = SortByPlaylistOrder;
+    sorting.sortOrder = SortOrderAscending;
+  }
 
   CFileItemList items;
   if (!musicdatabase.GetSongsFullByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting, artistData))
@@ -921,10 +933,11 @@ bool CAudioLibrary::FillFileItemList(const CVariant &parameterObject, CFileItemL
     // we sort by artist (and implicitly by album and track number)
     else if (genreID != -1)
       list.Sort(SortByArtist, SortOrderAscending, CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_FILELISTS_IGNORETHEWHENSORTING) ? SortAttributeIgnoreArticle : SortAttributeNone);
-    // otherwise we sort by track number
-    else
+    // if we do not retrieve by playlistid we sort by track number
+    // in case of playlists we do not want to sort at all as we already
+    // get the songs sorted by playlist order from the db system
+    else if (playlistID == -1)
       list.Sort(SortByTrackNumber, SortOrderAscending);
-
   }
 
   return success;
@@ -946,6 +959,11 @@ void CAudioLibrary::FillAlbumItem(const CAlbum &album, const std::string &path, 
   // Add album artistIds as separate property as not part of CMusicInfoTag
   std::vector<int> artistids = album.GetArtistIDArray();
   FillItemArtistIDs(artistids, item);
+}
+
+void CAudioLibrary::FillPlaylistItem(const CMusicPlaylist &playlist, const std::string &path, CFileItemPtr &item)
+{
+  item = CFileItemPtr(new CFileItem(path, playlist));
 }
 
 JSONRPC_STATUS CAudioLibrary::GetAdditionalDetails(const CVariant &parameterObject, CFileItemList &items)
@@ -1092,4 +1110,56 @@ bool CAudioLibrary::CheckForAdditionalProperties(const CVariant &properties, con
   }
 
   return !foundProperties.empty();
+}
+
+
+JSONRPC_STATUS CAudioLibrary::GetPlaylists(const std::string &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+  CMusicDatabase musicdatabase;
+  if (!musicdatabase.Open())
+    return InternalError;
+
+  CMusicDbUrl musicUrl;
+  if (!musicUrl.FromString("musicdb://playlists/"))
+    return InternalError;
+
+  const CVariant &filter = parameterObject["filter"];
+  if (filter.isObject())
+  {
+    std::string xsp;
+    if (!GetXspFiltering("playlists", filter, xsp))
+      return InvalidParams;
+
+    musicUrl.AddOption("xsp", xsp);
+  }
+
+  SortDescription sorting;
+  ParseLimits(parameterObject, sorting.limitStart, sorting.limitEnd);
+  if (!ParseSorting(parameterObject, sorting.sortBy, sorting.sortOrder, sorting.sortAttributes))
+    return InvalidParams;
+
+  int total;
+  VECPLAYLISTS playlists;
+  if (!musicdatabase.GetPlaylistsByWhere(musicUrl.ToString(), CDatabase::Filter(), playlists, total, sorting))
+    return InternalError;
+
+  CFileItemList items;
+  items.Reserve(playlists.size());
+  for (unsigned int index = 0; index < playlists.size(); index++)
+  {
+    CMusicDbUrl itemUrl = musicUrl;
+    std::string path = StringUtils::Format("%li/", playlists[index].idPlaylist);
+    itemUrl.AppendPath(path);
+
+    CFileItemPtr pItem;
+    FillPlaylistItem(playlists[index], itemUrl.ToString(), pItem);
+    items.Add(pItem);
+  }
+
+  int size = items.Size();
+  if (total > size)
+    size = total;
+  HandleFileItemList("playlistid", false, "playlists", items, parameterObject, result, size, false);
+
+  return OK;
 }

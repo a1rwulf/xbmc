@@ -19,8 +19,9 @@
 #include "addons/Scraper.h"
 #include "Album.h"
 #include "dbwrappers/Database.h"
-#include "MusicDbUrl.h"
 #include "MediaSource.h"
+#include "MusicDbUrl.h"
+#include "MusicPlaylist.h"
 #include "settings/LibExportSettings.h"
 #include "utils/SortUtils.h"
 #include "dbwrappers/CommonDatabase.h"
@@ -539,6 +540,13 @@ public:
                            CFileItemList &items,
                            const SortDescription &sortDescription,
                            bool countOnly);
+  bool GetPlaylistsByWhere(const std::string &baseDir,
+                           const Filter &filter,
+                           VECPLAYLISTS& playlists,
+                           int& total,
+                           const SortDescription &sortDescription = SortDescription(),
+                           bool countOnly = false);
+
   bool GetPlaylistById(int id, CODBPlaylist& objPlaylist);
 
   template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);

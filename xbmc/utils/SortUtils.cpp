@@ -1466,6 +1466,10 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBGenre::name + order;
   }
+  else if (sortDescription.sortBy == SortByPlaylistOrder)
+  {
+    sortQuery += (orderBy + " `playlist_songs`." + "`index`");
+  }
   else
   {
     //For all other unsupported cases just add the limit
