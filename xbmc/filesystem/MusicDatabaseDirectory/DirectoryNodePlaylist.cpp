@@ -40,14 +40,17 @@ bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
   return bSuccess;
 }
 
-// TODO playlists
-// Copied from Albums
 std::string CDirectoryNodePlaylist::GetLocalizedName() const
 {
   if (GetID() == -1)
-    return g_localizeStrings.Get(15102); // All Albums
+    return g_localizeStrings.Get(31543); // All playlists
   CMusicDatabase db;
   if (db.Open())
-    return db.GetAlbumById(GetID());
+  {
+    CODBPlaylist playlist;
+    if (db.GetPlaylistById(GetID(), playlist))
+      return playlist.m_name;
+  }
+
   return "";
 }

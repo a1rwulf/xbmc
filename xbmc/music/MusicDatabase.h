@@ -548,6 +548,7 @@ public:
                            bool countOnly = false);
 
   bool GetPlaylistById(int id, CODBPlaylist& objPlaylist);
+  int GetPlaylistByName(const std::string& strPlaylistName);
 
   template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);

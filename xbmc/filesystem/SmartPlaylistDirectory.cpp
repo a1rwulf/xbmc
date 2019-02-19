@@ -161,8 +161,8 @@ namespace XFILE
               baseDir += "albums";
             else if (mediaType == MediaTypeSong)
               baseDir += "songs";
-            //! @todo playlists
-            //! Check if we need to add the new MediaTypePlaylist here
+            else if (mediaType == MediaTypePlaylist)
+              baseDir += "playlists";
             else
               return false;
           }

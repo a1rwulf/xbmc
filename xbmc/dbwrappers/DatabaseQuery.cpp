@@ -689,23 +689,7 @@ odb::query<ODBView_Playlist> CDatabaseQueryRule::GetPlaylistWhereClause(const st
       (op == OPERATOR_DOES_NOT_EQUAL && GetFieldType(m_field) != REAL_FIELD && GetFieldType(m_field) != NUMERIC_FIELD &&
           GetFieldType(m_field) != SECONDS_FIELD))
     negate = true;
-  //! @todo playlists
-  // boolean operators don't have any values in m_parameter, they work on the operator
-//  if (m_operator == OPERATOR_FALSE || m_operator == OPERATOR_TRUE)
-//  {
-//    return GetPlaylistBooleanQuery(negate, strType);
-//  }
 
-  // The BETWEEN operator is handled special
-//  if (op == OPERATOR_BETWEEN)
-//  {
-//    if (m_parameter.size() != 2)
-//      return query();
-//
-//    return FormatPlaylistWhereBetweenClause(negate, op, m_parameter[0], m_parameter[1], strType);
-//  }
-
-  // now the query parameter
   query wholeQuery;
   for (std::vector<std::string>::const_iterator it = m_parameter.begin(); it != m_parameter.end(); ++it)
   {

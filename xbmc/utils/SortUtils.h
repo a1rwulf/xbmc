@@ -204,6 +204,7 @@ public:
   template<typename T> static T SortODBArtistsQuery(const SortDescription &sortDescription);
   template<typename T> static T SortODBAlbumQuery(const SortDescription &sortDescription);
   template<typename T> static T SortODBSongQuery(const SortDescription &sortDescription);
+  template<typename T> static T SortODBPlaylistQuery(const SortDescription &sortDescription);
   
   static const Fields& GetFieldsForSorting(SortBy sortBy);
   static std::string RemoveArticles(const std::string &label);

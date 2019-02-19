@@ -49,11 +49,20 @@ private:
 #endif
 
 PRAGMA_DB (view object(CODBPlaylist) \
-           object(CODBArt inner: CODBPlaylist::m_artwork)
-               query(distinct))
+           object(CODBArt: CODBPlaylist::m_artwork)
+           query(distinct))
 struct ODBView_Playlist
 {
   std::shared_ptr<CODBPlaylist> playlist;
+};
+
+PRAGMA_DB (view object(CODBPlaylist) \
+           object(CODBArt: CODBPlaylist::m_artwork)
+           query(distinct))
+struct ODBView_Playlist_Total
+{
+  PRAGMA_DB (column("COUNT(DISTINCT(" + CODBPlaylist::m_idPlaylist + "))"))
+  unsigned int total;
 };
 
 #endif //ODBPLAYLIST_H
