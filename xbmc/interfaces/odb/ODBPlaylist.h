@@ -11,9 +11,9 @@
 
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
+#include <odb/section.hxx>
 #include <string>
 #include <vector>
-
 #include "ODBArt.h"
 
 class CODBSong;
@@ -33,8 +33,15 @@ PRAGMA_DB (id auto)
     std::string m_description;
     unsigned long m_updatedAt;
 
+PRAGMA_DB (section(playlist_songs))
     std::vector< odb::lazy_ptr<CODBSong> > m_songs;
+PRAGMA_DB (section(playlist_art))
     std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
+
+PRAGMA_DB (load(lazy) update(change))
+    odb::section playlist_songs;
+PRAGMA_DB (load(lazy) update(change))
+    odb::section playlist_art;
 
 //Members not stored in the db, used for sync ...
 PRAGMA_DB (transient)
@@ -43,10 +50,6 @@ PRAGMA_DB (transient)
 private:
     friend class odb::access;
 };
-
-#ifdef ODB_COMPILER
-#include "ODBSong.h"
-#endif
 
 PRAGMA_DB (view object(CODBPlaylist) \
            object(CODBArt: CODBPlaylist::m_artwork)
@@ -64,5 +67,9 @@ struct ODBView_Playlist_Total
   PRAGMA_DB (column("COUNT(DISTINCT(" + CODBPlaylist::m_idPlaylist + "))"))
   unsigned int total;
 };
+
+#ifdef ODB_COMPILER
+#include "ODBSong.h"
+#endif
 
 #endif //ODBPLAYLIST_H

@@ -5068,7 +5068,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     //Store the query without limits and sorting for the later
     query objQueryWO = objQuery;
     
-    objQuery = objQuery + SortUtils::SortODBSongQuery<query>(sortDescription);
+    objQuery = objQuery + SortUtils::SortODBSongQuery<query>(sorting);
     
     odb::result<ODBView_Song> res(m_cdb.getDB()->query<ODBView_Song>(objQuery));
     if (res.begin() == res.end())
@@ -5110,7 +5110,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     }
     
     // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
     {
       ODBView_Song_Total totals;
       if (m_cdb.getDB()->query_one<ODBView_Song_Total>(objQueryWO, totals))
@@ -9253,6 +9253,9 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int pl
       CODBPlaylist objPlaylist;
       if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == playlistId, objPlaylist))
       {
+        if (!objPlaylist.playlist_art.loaded())
+          m_cdb.getDB()->load(objPlaylist, objPlaylist.playlist_art);
+
         for (auto& i: objPlaylist.m_artwork)
         {
           if (i.load())
@@ -9927,6 +9930,14 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
     option = options.find("playlist");
     if (option != options.end())
       idPlaylist = GetPlaylistByName(option->second.asString());
+  }
+
+  // In case we have a playlist filter we also want to sort
+  // in playlist order
+  if (idPlaylist != -1)
+  {
+    sorting.sortBy = SortByPlaylistOrder;
+    sorting.sortOrder = SortOrderAscending;
   }
 
   if (type == "songs" || type == "singles")
