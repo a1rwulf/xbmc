@@ -5380,26 +5380,26 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
     for (auto playlist : m_cdb.getDB()->query<ODBView_Playlist>(objQuery))
     {
-      CMusicPlaylist pl;
-      CMusicInfoTag musicInfoTag;
+      if (!playlist.playlist->m_songs.empty())
+      {
+        CMusicPlaylist pl;
+        CMusicInfoTag musicInfoTag;
 
-      pl.idPlaylist =  playlist.playlist->m_idPlaylist;
-      pl.strPlaylist = playlist.playlist->m_name;
-      pl.m_updatedAt.SetFromULongLong(playlist.playlist->m_updatedAt);
+        pl.idPlaylist =  playlist.playlist->m_idPlaylist;
+        pl.strPlaylist = playlist.playlist->m_name;
+        pl.m_updatedAt.SetFromULongLong(playlist.playlist->m_updatedAt);
 
-      CMusicDbUrl itemUrl = musicUrl;
-      std::string path = StringUtils::Format("{}/", pl.idPlaylist);
-      itemUrl.AppendPath(path);
+        CMusicDbUrl itemUrl = musicUrl;
+        std::string path = StringUtils::Format("{}/", pl.idPlaylist);
+        itemUrl.AppendPath(path);
 
-      CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
-      pItem->SetIconImage("DefaultMusicPlaylists.png");
+        CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
+        pItem->SetIconImage("DefaultMusicPlaylists.png");
 
-      items.Add(pItem);
+        items.Add(pItem);
+        total++;
+      }
     }
-
-    // If Limits are set, we need to query the total amount of items again
-    // TODO playlists
-    // implement the count query
 
     if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
     {
