@@ -5380,8 +5380,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
     for (auto playlist : m_cdb.getDB()->query<ODBView_Playlist>(objQuery))
     {
-      if (!playlist.playlist->m_songs.empty())
-      {
         CMusicPlaylist pl;
         CMusicInfoTag musicInfoTag;
 
@@ -5398,7 +5396,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
         items.Add(pItem);
         total++;
-      }
     }
 
     if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
@@ -5476,8 +5473,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filte
 
     for (auto playlist : m_cdb.getDB()->query<ODBView_Playlist>(objQuery))
     {
-      if (!playlist.playlist->m_songs.empty())
-      {
         CMusicPlaylist pl;
         CMusicInfoTag musicInfoTag;
 
@@ -5487,7 +5482,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filte
 
         playlists.emplace_back(pl);
         total++;
-      }
     }
 
     // If Limits are set, we need to query the total amount of items again

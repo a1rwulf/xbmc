@@ -33,10 +33,13 @@ PRAGMA_DB (id auto)
     std::string m_description;
     unsigned long m_updatedAt;
 
+PRAGMA_DB (section(playlist_songs))
     std::vector< odb::lazy_ptr<CODBSong> > m_songs;
 PRAGMA_DB (section(playlist_art))
     std::vector< odb::lazy_shared_ptr<CODBArt> > m_artwork;
 
+PRAGMA_DB (load(lazy) update(change))
+    odb::section playlist_songs;
 PRAGMA_DB (load(lazy) update(change))
     odb::section playlist_art;
 
@@ -50,6 +53,7 @@ private:
 
 PRAGMA_DB (view object(CODBPlaylist) \
            object(CODBArt: CODBPlaylist::m_artwork)
+           table("playlist_songs" = "ps" inner: "ps.object_id = " + CODBPlaylist::m_idPlaylist)
            query(distinct))
 struct ODBView_Playlist
 {

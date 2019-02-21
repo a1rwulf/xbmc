@@ -107,33 +107,31 @@ CCommonDatabase::CCommonDatabase()
 #if defined(HAS_MYSQL) || defined(HAS_MARIADB) 
   if (settings.type == "mysql")
   {
-    std::auto_ptr<odb::mysql::connection_factory> mysql_pool(new odb::mysql::connection_pool_factory(20));
+    std::unique_ptr<odb::mysql::connection_factory> mysql_pool(new odb::mysql::connection_pool_factory(20));
     m_db = std::shared_ptr<odb::core::database>( new odb::mysql::database(settings.user,
                                                                           settings.pass,
-                                                                          "common",
+                                                                          settings.name,
                                                                           settings.host,
                                                                           std::stoi(settings.port),
                                                                           0,
                                                                           "utf8",
                                                                           0,
-                                                                          mysql_pool));
-    
-    
+                                                                          std::move(mysql_pool)));
   }
-
   //use sqlite3 per default
   else
 #endif
   {
     std::string dbfolder = CSpecialProtocol::TranslatePath("special://database/");
-    std::auto_ptr<odb::sqlite::connection_factory> sqlite_pool(new odb::sqlite::connection_pool_factory(20));
+    std::unique_ptr<odb::sqlite::connection_factory> sqlite_pool(new odb::sqlite::connection_pool_factory(20));    
+
     m_db = std::shared_ptr<odb::core::database>( new odb::sqlite::database(dbfolder + "/common.db",
                                                                            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
                                                                            true,
                                                                            "",
-                                                                           sqlite_pool));
+                                                                           std::move(sqlite_pool)));
   }
-  
+
   if (settings.tracer)
     m_db->tracer(odb_tracer);
 
