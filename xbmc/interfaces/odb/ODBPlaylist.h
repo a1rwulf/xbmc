@@ -52,8 +52,8 @@ private:
 };
 
 PRAGMA_DB (view object(CODBPlaylist) \
-           object(CODBArt: CODBPlaylist::m_artwork)
-           table("playlist_songs" = "ps" inner: "ps.object_id = " + CODBPlaylist::m_idPlaylist)
+           object(CODBArt: CODBPlaylist::m_artwork) \
+           table("playlist_songs" = "ps" inner: "ps.object_id = " + CODBPlaylist::m_idPlaylist) \
            query(distinct))
 struct ODBView_Playlist
 {
@@ -61,7 +61,8 @@ struct ODBView_Playlist
 };
 
 PRAGMA_DB (view object(CODBPlaylist) \
-           object(CODBArt: CODBPlaylist::m_artwork)
+           object(CODBArt: CODBPlaylist::m_artwork) \
+           table("playlist_songs" = "ps" inner: "ps.object_id = " + CODBPlaylist::m_idPlaylist) \
            query(distinct))
 struct ODBView_Playlist_Total
 {
