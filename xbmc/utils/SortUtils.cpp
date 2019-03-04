@@ -1504,9 +1504,6 @@ T SortUtils::SortODBPlaylistQuery(const SortDescription &sortDescription)
   else if (sortDescription.limitEnd > 0)
     limitQuery = " LIMIT " + std::to_string(sortDescription.limitEnd);
 
-  if (sortDescription.sortBy == SortByNone)
-    return sortQuery + limitQuery;
-
   std::string order("ASC");
   if(sortDescription.sortOrder == SortOrderDescending)
     order = "DESC";
@@ -1516,15 +1513,8 @@ T SortUtils::SortODBPlaylistQuery(const SortDescription &sortDescription)
 
   std::string orderBy("ORDER BY");
 
-  if (sortDescription.sortBy == SortByTitle)
-  {
-    sortQuery = orderBy + query::CODBPlaylist::name + order;
-  }
-  else
-  {
-    //For all other unsupported cases just add the limit
-    sortQuery += limitQuery;
-  }
+  // LIMIT needs ORDER BY to work reliable, so always sort by title
+  sortQuery = orderBy + query::CODBPlaylist::name + order;
 
   return sortQuery;
 }
