@@ -5385,13 +5385,14 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
 
         pl.idPlaylist =  playlist.playlist->m_idPlaylist;
         pl.strPlaylist = playlist.playlist->m_name;
-        pl.m_updatedAt.SetFromULongLong(playlist.playlist->m_updatedAt);
+        pl.m_updatedAt.SetFromUTCDateTime(playlist.playlist->m_updatedAt);
 
         CMusicDbUrl itemUrl = musicUrl;
         std::string path = StringUtils::Format("{}/", pl.idPlaylist);
         itemUrl.AppendPath(path);
 
         CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
+        pItem->m_dwSize = playlist.size;
         pItem->SetIconImage("DefaultMusicPlaylists.png");
 
         items.Add(pItem);

@@ -1690,6 +1690,7 @@ void CFileItem::SetFromPlaylist(const CMusicPlaylist &playlist)
   m_bIsFolder = true;
   m_bIsPlaylist = true;
   GetMusicInfoTag()->SetPlaylist(playlist);
+  GetMusicInfoTag()->SetDateAdded(playlist.m_updatedAt);
   if (!playlist.strThumb.empty())
     SetArt("thumb", playlist.strThumb);
 

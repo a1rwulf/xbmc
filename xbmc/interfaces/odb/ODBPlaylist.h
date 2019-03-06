@@ -58,6 +58,8 @@ PRAGMA_DB (view object(CODBPlaylist) \
 struct ODBView_Playlist
 {
   std::shared_ptr<CODBPlaylist> playlist;
+  PRAGMA_DB(column("(SELECT COUNT(object_id) FROM playlist_songs WHERE playlist_songs.object_id=" + CODBPlaylist::m_idPlaylist + ")"))
+  unsigned int size;
 };
 
 PRAGMA_DB (view object(CODBPlaylist) \
