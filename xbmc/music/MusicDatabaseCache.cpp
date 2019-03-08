@@ -201,15 +201,15 @@ std::shared_ptr<CFileItem> CMusicDatabaseCache::getArtist(long id)
   return nullptr;
 }
 
-void CMusicDatabaseCache::addArtThumbLoader(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
+void CMusicDatabaseCache::addArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
 {
   CSingleLock lock(m_mutex);
   std::shared_ptr<std::vector<ArtForThumbLoader> > art_ptr(new std::vector<ArtForThumbLoader>());
   *art_ptr = art;
-  m_ArtThumbLoaderCacheMap[songId][albumId][artistId][bPrimaryArtist] = art_ptr;
+  m_ArtThumbLoaderCacheMap[songId][albumId][artistId][bPrimaryArtist][playlistId] = art_ptr;
 }
 
-std::shared_ptr<std::vector<ArtForThumbLoader> > CMusicDatabaseCache::getArtThumbLoader(int songId, int albumId, int artistId, bool bPrimaryArtist)
+std::shared_ptr<std::vector<ArtForThumbLoader> > CMusicDatabaseCache::getArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist)
 {
   CSingleLock lock(m_mutex);
 
@@ -217,17 +217,21 @@ std::shared_ptr<std::vector<ArtForThumbLoader> > CMusicDatabaseCache::getArtThum
   if (it1 == m_ArtThumbLoaderCacheMap.end())
     return nullptr;
 
-  tArtThumbLoaderType_b::iterator it2 = it1->second.find(albumId);
+  tArtThumbLoaderType_c::iterator it2 = it1->second.find(albumId);
   if (it2 == it1->second.end())
     return nullptr;
 
-  tArtThumbLoaderType_a::iterator it3 = it2->second.find(artistId);
+  tArtThumbLoaderType_b::iterator it3 = it2->second.find(artistId);
   if (it3 == it2->second.end())
     return nullptr;
 
-  tArtThumbLoaderType::iterator it4 = it3->second.find(bPrimaryArtist);
+  tArtThumbLoaderType_a::iterator it4 = it3->second.find(bPrimaryArtist);
   if (it4 == it3->second.end())
     return nullptr;
 
-  return it4->second;
+  tArtThumbLoaderType::iterator it5 = it4->second.find(playlistId);
+  if (it5 == it4->second.end())
+    return nullptr;
+
+  return it5->second;
 }

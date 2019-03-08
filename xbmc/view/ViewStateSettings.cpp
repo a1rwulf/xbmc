@@ -34,6 +34,7 @@ CViewStateSettings::CViewStateSettings()
   AddViewState("musicnavalbums");
   AddViewState("musicnavsongs", DEFAULT_VIEW_LIST, SortByTrackNumber);
   AddViewState("musiclastfm");
+  AddViewState("musicnavplaylists");
   AddViewState("videonavactors");
   AddViewState("videonavyears");
   AddViewState("videonavgenres");

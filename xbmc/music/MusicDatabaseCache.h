@@ -51,10 +51,11 @@ typedef std::pair<std::string, std::string> tArtistArtTypeCacheType;
 typedef std::map<long, CMusicDatabaseCacheItem<tArtistArtTypeCacheType> > tArtistArtCacheMap;
 typedef std::map<std::string, tArtistArtCacheMap> tArtistArtTypeCacheMap;
 
-typedef std::map<bool, std::shared_ptr<std::vector<ArtForThumbLoader> > > tArtThumbLoaderType;
-typedef std::map<int, tArtThumbLoaderType> tArtThumbLoaderType_a;
+typedef std::map<int, std::shared_ptr<std::vector<ArtForThumbLoader> > > tArtThumbLoaderType;
+typedef std::map<bool,tArtThumbLoaderType>   tArtThumbLoaderType_a;
 typedef std::map<int, tArtThumbLoaderType_a> tArtThumbLoaderType_b;
-typedef std::map<int, tArtThumbLoaderType_b> tArtThumbLoaderTypeMap;
+typedef std::map<int, tArtThumbLoaderType_b> tArtThumbLoaderType_c;
+typedef std::map<int, tArtThumbLoaderType_c> tArtThumbLoaderTypeMap;
 
 class CMusicDatabaseCache
 {
@@ -80,8 +81,8 @@ public:
   void addArtist(long id, std::shared_ptr<CFileItem>& item);
   std::shared_ptr<CFileItem> getArtist(long id);
 
-  void addArtThumbLoader(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
-  std::shared_ptr<std::vector<ArtForThumbLoader> > getArtThumbLoader(int songId, int albumId, int artistId, bool bPrimaryArtist);
+  void addArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
+  std::shared_ptr<std::vector<ArtForThumbLoader> > getArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist);
 private:
   tFileItemCacheMap m_fileItemCacheMap;
   tFileItemCacheMap m_albumCacheMap;

@@ -11,6 +11,7 @@
 class CSong;
 class CArtist;
 class CVariant;
+class CPlaylist;
 
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ class CVariant;
 #include "ReplayGain.h"
 #include "XBDateTime.h"
 #include "music/Album.h"
+#include "music/MusicPlaylist.h"
 #include "utils/IArchivable.h"
 #include "utils/ISerializable.h"
 #include "utils/ISortable.h"
@@ -77,6 +79,7 @@ public:
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
   CAlbum::ReleaseType GetAlbumReleaseType() const;
+  std::string GetPlaylist() const;
 
   void SetURL(const std::string& strURL);
   void SetTitle(const std::string& strTitle);
@@ -104,6 +107,7 @@ public:
   void SetArtist(const CArtist& artist);
   void SetAlbum(const CAlbum& album);
   void SetSong(const CSong& song);
+  void SetPlaylist(const CMusicPlaylist& playlist);
   void SetMusicBrainzTrackID(const std::string& strTrackID);
   void SetMusicBrainzArtistID(const std::vector<std::string>& musicBrainzArtistId);
   void SetMusicBrainzArtistHints(const std::vector<std::string>& musicBrainzArtistHints);
@@ -131,6 +135,8 @@ public:
   void SetReplayGain(const ReplayGain& aGain);
   void SetAlbumReleaseType(CAlbum::ReleaseType releaseType);
   void SetType(const MediaType mediaType);
+  void SetPlaylist(const std::string& strPlaylist);
+  void SetPlaylistId(const int iPlaylistId);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -180,6 +186,7 @@ protected:
   std::string m_strArtistDesc;
   std::string m_strComposerSort;
   std::string m_strAlbum;
+  std::string m_strPlaylist;
   std::vector<std::string> m_albumArtist;
   std::string m_strAlbumArtistDesc;
   std::string m_strAlbumArtistSort;
@@ -212,6 +219,7 @@ protected:
   int m_listeners;
   int m_iTimesPlayed;
   int m_iAlbumId;
+  int m_iPlaylistId;
   SYSTEMTIME m_dwReleaseDate;
   CAlbum::ReleaseType m_albumReleaseType;
 

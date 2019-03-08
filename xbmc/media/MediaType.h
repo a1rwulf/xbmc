@@ -28,6 +28,7 @@ using MediaType = std::string;
 #define MediaTypeEpisode          "episode"
 #define MediaTypeActor            "actor"
 #define MediaTypeDirector         "director"
+#define MediaTypePlaylist         "playlist"
 
 class CMediaTypes
 {

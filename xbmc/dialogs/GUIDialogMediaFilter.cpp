@@ -125,7 +125,9 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "songs",        FieldYear,          562,    SettingType::Integer, "range",  "integer",  CDatabaseQueryRule::OPERATOR_BETWEEN },
   { "songs",        FieldGenre,         515,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   { "songs",        FieldPlaycount,     567,    SettingType::Integer, "range",  "integer",  CDatabaseQueryRule::OPERATOR_BETWEEN },
-  { "songs",        FieldSource,      39030,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS }
+  { "songs",        FieldSource,      39030,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
+
+  { "playlists",    FieldTitle,         556,    SettingType::String,  "edit",   "string",   CDatabaseQueryRule::OPERATOR_CONTAINS }
 };
 
 CGUIDialogMediaFilter::CGUIDialogMediaFilter()
@@ -561,7 +563,7 @@ bool CGUIDialogMediaFilter::SetPath(const std::string &path)
 
   if (!m_dbUrl->FromString(path) ||
      (video && m_dbUrl->GetType() != "movies" && m_dbUrl->GetType() != "tvshows" && m_dbUrl->GetType() != "episodes" && m_dbUrl->GetType() != "musicvideos") ||
-     (!video && m_dbUrl->GetType() != "artists" && m_dbUrl->GetType() != "albums" && m_dbUrl->GetType() != "songs"))
+     (!video && m_dbUrl->GetType() != "artists" && m_dbUrl->GetType() != "albums" && m_dbUrl->GetType() != "songs" && m_dbUrl->GetType() != "playlists"))
   {
     CLog::Log(LOGWARNING, "CGUIDialogMediaFilter::SetPath(%s): invalid media type", path.c_str());
     return false;
@@ -685,7 +687,7 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
     else if (filter.field == FieldStreamSubtitleLanguage)
       videodb.GetFileStreamLanguageNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly, "subtitle");
   }
-  else if (m_mediaType == "artists" || m_mediaType == "albums" || m_mediaType == "songs")
+  else if (m_mediaType == "artists" || m_mediaType == "albums" || m_mediaType == "songs" || m_mediaType == "playlists")
   {
     CMusicDatabase musicdb;
     if (!musicdb.Open())

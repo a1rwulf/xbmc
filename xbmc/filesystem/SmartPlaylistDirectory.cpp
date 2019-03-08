@@ -161,6 +161,8 @@ namespace XFILE
               baseDir += "albums";
             else if (mediaType == MediaTypeSong)
               baseDir += "songs";
+            else if (mediaType == MediaTypePlaylist)
+              baseDir += "playlists";
             else
               return false;
           }

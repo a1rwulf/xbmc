@@ -19,8 +19,9 @@
 #include "addons/Scraper.h"
 #include "Album.h"
 #include "dbwrappers/Database.h"
-#include "MusicDbUrl.h"
 #include "MediaSource.h"
+#include "MusicDbUrl.h"
+#include "MusicPlaylist.h"
 #include "settings/LibExportSettings.h"
 #include "utils/SortUtils.h"
 #include "dbwrappers/CommonDatabase.h"
@@ -39,6 +40,7 @@ class CODBPath;
 class CODBPersonLink;
 class ODBView_Album;
 class ODBView_Music_Genres;
+class ODBPlaylist;
 
 namespace dbiplus
 {
@@ -518,7 +520,7 @@ public:
   bool GetMusicLabelsNav(const std::string &strBaseDir, CFileItemList &items, const Filter &filter = Filter(), bool countOnly = false);
   bool GetAlbumsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre = -1, int idArtist = -1, const Filter &filter = Filter(), const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetAlbumsByYear(const std::string &strBaseDir, CFileItemList& items, int year);
-  bool GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist,int idAlbum, const SortDescription &sortDescription = SortDescription());
+  bool GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist,int idAlbum, int idPlaylist, const SortDescription &sortDescription = SortDescription());
   bool GetSongsByYear(const std::string& baseDir, CFileItemList& items, int year);
   bool GetSongsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription());
   bool GetSongsFullByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool artistData = false);
@@ -528,7 +530,26 @@ public:
   bool GetRandomSong(CFileItem* item, int& idSong, odb::query<ODBView_Song> objQuery);
   int GetSongsCount(odb::query<ODBView_Song_Count> query = odb::query<ODBView_Song_Count>());
   unsigned int GetSongIDs(odb::query<ODBView_Song>& query, std::vector<std::pair<int,int> > &songIDs);
-  
+  bool GetPlaylistsNav(const std::string& strBaseDir,
+                       CFileItemList& items,
+                       const Filter &filter = Filter(),
+                       const SortDescription &sortDescription = SortDescription(),
+                       bool countOnly = false);
+  bool GetPlaylistsByWhere(const std::string &baseDir,
+                           const Filter &filter,
+                           CFileItemList &items,
+                           const SortDescription &sortDescription,
+                           bool countOnly);
+  bool GetPlaylistsByWhere(const std::string &baseDir,
+                           const Filter &filter,
+                           VECPLAYLISTS& playlists,
+                           int& total,
+                           const SortDescription &sortDescription = SortDescription(),
+                           bool countOnly = false);
+
+  bool GetPlaylistById(int id, CODBPlaylist& objPlaylist);
+  int GetPlaylistByName(const std::string& strPlaylistName);
+
   template <typename T> T GetODBFilterGenres(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterAlbums(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
@@ -607,7 +628,7 @@ public:
   \return true if art is retrieved, false if no art is found.
   \sa SetArtForItem
   */
-  bool GetArtForItem(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
+  bool GetArtForItem(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
 
   /*! \brief Fetch art for a database item.
    Fetches multiple pieces of art for a database item.

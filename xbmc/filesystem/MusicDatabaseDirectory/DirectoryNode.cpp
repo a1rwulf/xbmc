@@ -28,6 +28,7 @@
 #include "DirectoryNodeYearAlbum.h"
 #include "DirectoryNodeYearSong.h"
 #include "DirectoryNodeSingles.h"
+#include "DirectoryNodePlaylist.h"
 #include "URL.h"
 #include "FileItem.h"
 #include "utils/StringUtils.h"
@@ -133,6 +134,8 @@ CDirectoryNode* CDirectoryNode::CreateNode(NODE_TYPE Type, const std::string& st
     return new CDirectoryNodeYearAlbum(strName, pParent);
   case NODE_TYPE_YEAR_SONG:
     return new CDirectoryNodeYearSong(strName, pParent);
+  case NODE_TYPE_PLAYLIST:
+    return new CDirectoryNodePlaylist(strName, pParent);
   default:
     break;
   }

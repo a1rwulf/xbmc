@@ -711,6 +711,7 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, double &freeBufferTime)
     if (!si->m_isSlaved)
       si->m_stream->Resume();
     si->m_stream->FadeVolume(0.0f, 1.0f, m_upcomingCrossfadeMS);
+    CDataCacheCore::GetInstance().SetPlayTimes(0, 0, 0, m_playerGUIData.m_totalTime);
     if (m_signalStarted)
       m_callback.OnPlayBackStarted(si->m_fileItem);
     m_signalStarted = true;

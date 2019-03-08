@@ -43,6 +43,7 @@
 #include "pictures/PictureInfoTag.h"
 #include "music/Artist.h"
 #include "music/Album.h"
+#include "music/MusicPlaylist.h"
 #include "URL.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/Settings.h"
@@ -93,6 +94,24 @@ CFileItem::CFileItem(const std::string &path, const CAlbum& album)
   m_strPath = path;
   URIUtils::AddSlashAtEnd(m_strPath);
   SetFromAlbum(album);
+}
+
+CFileItem::CFileItem(const CURL &url, const CMusicPlaylist& playlist)
+{
+  Initialize();
+
+  m_strPath = url.Get();
+  URIUtils::AddSlashAtEnd(m_strPath);
+  SetFromPlaylist(playlist);
+}
+
+CFileItem::CFileItem(const std::string &path, const CMusicPlaylist& playlist)
+{
+  Initialize();
+
+  m_strPath = path;
+  URIUtils::AddSlashAtEnd(m_strPath);
+  SetFromPlaylist(playlist);
 }
 
 CFileItem::CFileItem(const CMusicInfoTag& music)
@@ -1660,6 +1679,21 @@ void CFileItem::SetFromAlbum(const CAlbum &album)
   SetArt(album.art);
   m_bIsAlbum = true;
   CMusicDatabase::SetPropertiesFromAlbum(*this,album);
+  FillInMimeType(false);
+}
+
+void CFileItem::SetFromPlaylist(const CMusicPlaylist &playlist)
+{
+  if (!playlist.strPlaylist.empty())
+    SetLabel(playlist.strPlaylist);
+
+  m_bIsFolder = true;
+  m_bIsPlaylist = true;
+  GetMusicInfoTag()->SetPlaylist(playlist);
+  GetMusicInfoTag()->SetDateAdded(playlist.m_updatedAt);
+  if (!playlist.strThumb.empty())
+    SetArt("thumb", playlist.strThumb);
+
   FillInMimeType(false);
 }
 

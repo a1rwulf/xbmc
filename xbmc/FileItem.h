@@ -49,6 +49,7 @@ class CAlbum;
 class CArtist;
 class CSong;
 class CGenre;
+class CMusicPlaylist;
 
 class CURL;
 class CVariant;
@@ -99,6 +100,8 @@ public:
   CFileItem(const CSong& song, const MUSIC_INFO::CMusicInfoTag& music);
   CFileItem(const CURL &path, const CAlbum& album);
   CFileItem(const std::string &path, const CAlbum& album);
+  CFileItem(const CURL &url, const CMusicPlaylist& playlist);
+  CFileItem(const std::string &path, const CMusicPlaylist& playlist);
   explicit CFileItem(const CArtist& artist);
   explicit CFileItem(const CGenre& genre);
   explicit CFileItem(const MUSIC_INFO::CMusicInfoTag& music);
@@ -512,6 +515,12 @@ public:
    \param song song details to use and set
    */
   void SetFromSong(const CSong &song);
+  /*! \brief Sets details using the information from the CPlaylist object
+   Sets the song in the music info tag and uses its information to set the
+   label, playlist-specific properties and artwork.
+   \param playlist playlist details to use and set
+   */
+  void SetFromPlaylist(const CMusicPlaylist &playlist);
 
   bool m_bIsShareOrDrive;    ///< is this a root share/drive
   int m_iDriveType;     ///< If \e m_bIsShareOrDrive is \e true, use to get the share type. Types see: CMediaSource::m_iDriveType
@@ -572,6 +581,7 @@ private:
   KODI::GAME::CGameInfoTag* m_gameInfoTag;
   EventPtr m_eventLogEntry;
   bool m_bIsAlbum;
+  bool m_bIsPlaylist;
 
   CCueDocumentPtr m_cueDocument;
 };

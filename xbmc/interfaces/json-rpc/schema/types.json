@@ -159,7 +159,8 @@
       { "type": "object", "properties": { "artistid": { "$ref": "Library.Id", "required": true } }, "additionalProperties": false },
       { "type": "object", "properties": { "albumid": { "$ref": "Library.Id", "required": true } }, "additionalProperties": false },
       { "type": "object", "properties": { "songid": { "$ref": "Library.Id", "required": true } }, "additionalProperties": false },
-      { "type": "object", "properties": { "genreid": { "$ref": "Library.Id", "required": true, "description": "Identification of a genre from the AudioLibrary" } }, "additionalProperties": false }
+      { "type": "object", "properties": { "genreid": { "$ref": "Library.Id", "required": true, "description": "Identification of a genre from the AudioLibrary" } }, "additionalProperties": false },
+      { "type": "object", "properties": { "playlistid": { "$ref": "Library.Id", "required": true, "description": "Identification of a playlist from the AudioLibrary" } }, "additionalProperties": false }
     ]
   },
   "Player.Id": {
@@ -492,6 +493,13 @@
                 "sortartist", "art"]
     }
   },
+  "Audio.Fields.Playlist": {
+    "extends": "Item.Fields.Base",
+    "items": { "type": "string",
+      "description": "The playlist from our database",
+      "enum": [ "thumbnail" ]
+    }
+  },
   "Audio.Album.ReleaseType": {
     "type": "string",
     "enum": [ "album", "single" ],
@@ -623,6 +631,13 @@
       "displayorchestra": { "type": "string"},
       "displaylyricist": { "type": "string"},
       "genreid": { "$ref": "Array.Integer"}
+    }
+  },
+  "Audio.Details.Playlist": {
+    "extends": "Audio.Details.Media",
+    "properties": {
+      "playlistid": { "$ref": "Library.Id", "required": true },
+      "description": { "type": "string" }
     }
   },
   "Audio.Property.Name": {

@@ -1466,6 +1466,10 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBGenre::name + order;
   }
+  else if (sortDescription.sortBy == SortByPlaylistOrder)
+  {
+    sortQuery += (orderBy + " `playlist_songs`." + "`index`");
+  }
   else
   {
     //For all other unsupported cases just add the limit
@@ -1476,6 +1480,47 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
 }
 
 template odb::query<ODBView_Song> SortUtils::SortODBSongQuery< odb::query<ODBView_Song> >(const SortDescription&);
+
+
+template<typename T>
+T SortUtils::SortODBPlaylistQuery(const SortDescription &sortDescription)
+{
+  typedef T query;
+  query sortQuery;
+  std::string limitQuery;
+
+  if (sortDescription.limitStart > 0)
+  {
+    int end = sortDescription.limitEnd;
+    if (end > 0)
+    {
+      end = end - sortDescription.limitStart;
+      if (end < 0)
+        end = 0;
+    }
+
+    limitQuery = " LIMIT " + std::to_string(sortDescription.limitStart) + "," + std::to_string(end);
+  }
+  else if (sortDescription.limitEnd > 0)
+    limitQuery = " LIMIT " + std::to_string(sortDescription.limitEnd);
+
+  std::string order("ASC");
+  if(sortDescription.sortOrder == SortOrderDescending)
+    order = "DESC";
+
+  //Need to be pre-build in order to allow correct concatenation by odb
+  order += limitQuery;
+
+  std::string orderBy("ORDER BY");
+
+  // LIMIT needs ORDER BY to work reliable, so always sort by title
+  sortQuery = orderBy + query::CODBPlaylist::name + order;
+
+  return sortQuery;
+}
+
+template odb::query<ODBView_Playlist> SortUtils::SortODBPlaylistQuery< odb::query<ODBView_Playlist> >(const SortDescription&);
+
 
 const SortUtils::SortPreparator& SortUtils::getPreparator(SortBy sortBy)
 {

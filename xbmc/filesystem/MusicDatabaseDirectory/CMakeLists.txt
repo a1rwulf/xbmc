@@ -18,6 +18,7 @@ set(SOURCES DirectoryNodeAlbumCompilations.cpp
             DirectoryNodeTop100.cpp
             DirectoryNodeYearAlbum.cpp
             DirectoryNodeYearSong.cpp
+            DirectoryNodePlaylist.cpp
             QueryParams.cpp)
 
 set(HEADERS DirectoryNode.h
@@ -40,6 +41,7 @@ set(HEADERS DirectoryNode.h
             DirectoryNodeTop100.h
             DirectoryNodeYearAlbum.h
             DirectoryNodeYearSong.h
+            DirectoryNodePlaylist.h
             QueryParams.h)
 
 core_add_library(musicdatabasedirectory)

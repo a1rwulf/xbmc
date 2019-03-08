@@ -29,13 +29,15 @@
 #include "ODBFile.h"
 #include "ODBDate.h"
 #include "ODBArtistDetail.h"
+#include "ODBPlaylist.h"
 
 #include <string>
 
 PRAGMA_DB (model version(1, 1, open))
 
 PRAGMA_DB (object pointer(std::shared_ptr) \
-                  table("song"))
+                  table("song")
+                  session)
 class CODBSong
 {
 public:
@@ -106,6 +108,7 @@ PRAGMA_DB (view object(CODBSong) \
                 object(CODBGenre: CODBAlbum::m_genres) \
                 object(CODBFile: CODBSong::m_file) \
                 object(CODBPath: CODBFile::m_path) \
+                object(CODBPlaylist: CODBPlaylist::m_songs) \
                 query(distinct))
 struct ODBView_Song
 {
@@ -122,7 +125,8 @@ PRAGMA_DB (view object(CODBSong) \
            object(CODBRole = albumArtistRole: albumArtistLink::m_role) \
            object(CODBGenre: CODBAlbum::m_genres) \
            object(CODBFile: CODBSong::m_file) \
-           object(CODBPath: CODBFile::m_path))
+           object(CODBPath: CODBFile::m_path) \
+           object(CODBPlaylist: CODBPlaylist::m_songs))
 struct ODBView_Song_Total
 {
   PRAGMA_DB (column("COUNT(DISTINCT(" + CODBSong::m_idSong + "))"))

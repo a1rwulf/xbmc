@@ -64,8 +64,11 @@
 #include <odb/odb_gen/ODBArtistDiscography_odb.h>
 #include <odb/odb_gen/ODBVersionTagScan.h>
 #include <odb/odb_gen/ODBVersionTagScan_odb.h>
+#include <odb/odb_gen/ODBPlaylist.h>
+#include <odb/odb_gen/ODBPlaylist_odb.h>
 
 #include "MusicDatabaseCache.h"
+#include "MusicPlaylist.h"
 
 using namespace XFILE;
 using namespace MUSICDATABASEDIRECTORY;
@@ -5065,7 +5068,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     //Store the query without limits and sorting for the later
     query objQueryWO = objQuery;
     
-    objQuery = objQuery + SortUtils::SortODBSongQuery<query>(sortDescription);
+    objQuery = objQuery + SortUtils::SortODBSongQuery<query>(sorting);
     
     odb::result<ODBView_Song> res(m_cdb.getDB()->query<ODBView_Song>(objQuery));
     if (res.begin() == res.end())
@@ -5086,6 +5089,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
       
       CFileItemPtr item(new CFileItem);
       GetFileItemFromODBObject(objSong, item.get(), musicUrl);
+
       items.Add(item);
       
       for (auto artist : objSong->m_artists)
@@ -5106,7 +5110,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     }
     
     // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
     {
       ODBView_Song_Total totals;
       if (m_cdb.getDB()->query_one<ODBView_Song_Total>(objQueryWO, totals))
@@ -5243,7 +5247,7 @@ bool CMusicDatabase::GetSongsByYear(const std::string& baseDir, CFileItemList& i
   return GetSongsFullByWhere(baseDir, filter, items, SortDescription(), true);
 }
 
-bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist, int idAlbum, const SortDescription &sortDescription /* = SortDescription() */)
+bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist, int idAlbum, int idPlaylist, const SortDescription &sortDescription /* = SortDescription() */)
 {
   CMusicDbUrl musicUrl;
   if (!musicUrl.FromString(strBaseDir))
@@ -5258,8 +5262,250 @@ bool CMusicDatabase::GetSongsNav(const std::string& strBaseDir, CFileItemList& i
   if (idArtist > 0)
     musicUrl.AddOption("artistid", idArtist);
 
+  if (idPlaylist > 0)
+    musicUrl.AddOption("playlistid", idPlaylist);
+
   Filter filter;
-  return GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
+  bool ret = GetSongsFullByWhere(musicUrl.ToString(), filter, items, sortDescription, true);
+
+  // We browse by playlist, add playlist metadata to items
+  if (idPlaylist > 0)
+  {
+    CODBPlaylist objPlaylist;
+    if (GetPlaylistById(idPlaylist, objPlaylist))
+    {
+      for (auto &item : items)
+        item->SetProperty("PlaylistName", objPlaylist.m_name);
+    }
+  }
+
+  return ret;
+}
+
+bool CMusicDatabase::GetPlaylistsNav(const std::string& strBaseDir,
+                     CFileItemList& items,
+                     const Filter &filter,
+                     const SortDescription &sortDescription,
+                     bool countOnly)
+{
+  CMusicDbUrl musicUrl;
+  if (!musicUrl.FromString(strBaseDir))
+    return false;
+
+  return GetPlaylistsByWhere(musicUrl.ToString(), filter, items, sortDescription, countOnly);
+}
+
+bool CMusicDatabase::GetPlaylistById(int id, CODBPlaylist& objPlaylist)
+{
+  try
+  {
+    typedef odb::query<CODBPlaylist> query;
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    odb::session s;
+    return m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == id, objPlaylist);
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+
+  return false;
+}
+
+int CMusicDatabase::GetPlaylistByName(const std::string& strPlaylistName)
+{
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    odb::result<CODBPlaylist> res(m_cdb.getDB()->query<CODBPlaylist>(odb::query<CODBPlaylist>::name == strPlaylistName));
+
+    if (res.begin() == res.end())
+      return -1;
+
+    return res.begin()->m_idPlaylist;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+
+  return -1;
+}
+
+bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
+                         const Filter &filter,
+                         CFileItemList &items,
+                         const SortDescription &sortDescription,
+                         bool countOnly)
+{
+  try
+  {
+    int total = 0;
+    CMusicDbUrl musicUrl;
+    if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
+      return false;
+
+    std::shared_ptr<odb::transaction> odb_transaction(m_cdb.getTransaction());
+    typedef odb::query<ODBView_Playlist> query;
+    query objQuery;
+
+    const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+    auto option = options.find("filter");
+    if (option != options.end())
+    {
+      CSmartPlaylist xspFilter;
+      if (xspFilter.LoadFromJson(option->second.asString()))
+      {
+        // check if the filter playlist matches the item type
+        if (xspFilter.GetType() == "playlists")
+        {
+          std::set<std::string> playlists;
+          objQuery = xspFilter.GetPlaylistWhereClause(playlists);
+        }
+          // remove the filter if it doesn't match the item type
+        else
+          musicUrl.RemoveOption("filter");
+      }
+    }
+
+    query objQueryWO = objQuery;
+
+    for (auto playlist : m_cdb.getDB()->query<ODBView_Playlist>(objQuery))
+    {
+        CMusicPlaylist pl;
+        CMusicInfoTag musicInfoTag;
+
+        pl.idPlaylist =  playlist.playlist->m_idPlaylist;
+        pl.strPlaylist = playlist.playlist->m_name;
+        pl.m_updatedAt.SetFromUTCDateTime(playlist.playlist->m_updatedAt);
+
+        CMusicDbUrl itemUrl = musicUrl;
+        std::string path = StringUtils::Format("{}/", pl.idPlaylist);
+        itemUrl.AppendPath(path);
+
+        CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
+        pItem->m_dwSize = playlist.size;
+        pItem->SetIconImage("DefaultMusicPlaylists.png");
+
+        items.Add(pItem);
+        total++;
+    }
+
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    {
+      ODBView_Playlist_Total totals;
+      if (m_cdb.getDB()->query_one<ODBView_Playlist_Total>(objQueryWO, totals))
+      {
+        items.SetProperty("total", totals.total);
+      }
+      else
+      {
+        // Fallback to set total by amount of items in the list
+        items.SetProperty("total", total);
+      }
+    }
+    else
+    {
+      // Store the total number of songs as a property based on the list length
+      items.SetProperty("total", total);
+    }
+
+    return true;
+  }
+  catch (std::exception &e)
+  {
+    CLog::Log(LOGERROR, "%s (%s) exception - %s", __FUNCTION__, filter.where.c_str(), e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
+  }
+  return false;
+}
+
+bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filter &filter, VECPLAYLISTS& playlists, int& total, const SortDescription &sortDescription /* = SortDescription() */, bool countOnly /* = false */)
+{
+  playlists.erase(playlists.begin(), playlists.end());
+
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    typedef odb::query<ODBView_Playlist> query;
+    query objQuery;
+    total = 0;
+    Filter extFilter = filter;
+    SortDescription sorting = sortDescription;
+    CMusicDbUrl musicUrl;
+
+    if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
+      return false;
+
+    const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+    auto option = options.find("filter");
+
+    if (option != options.end())
+    {
+      CSmartPlaylist xspFilter;
+      if (xspFilter.LoadFromJson(option->second.asString()))
+      {
+        // check if the filter playlist matches the item type
+        if (xspFilter.GetType() == "playlists")
+        {
+          std::set<std::string> playlists;
+          objQuery = xspFilter.GetPlaylistWhereClause(playlists);
+        }
+          // remove the filter if it doesn't match the item type
+        else
+          musicUrl.RemoveOption("filter");
+      }
+    }
+
+    //Store the query without limits and sorting for the later
+    query objQueryWO = objQuery;
+    objQuery = objQuery + SortUtils::SortODBPlaylistQuery<query>(sortDescription);
+
+    for (auto playlist : m_cdb.getDB()->query<ODBView_Playlist>(objQuery))
+    {
+        CMusicPlaylist pl;
+        CMusicInfoTag musicInfoTag;
+
+        pl.idPlaylist = playlist.playlist->m_idPlaylist;
+        pl.strPlaylist = playlist.playlist->m_name;
+        pl.m_updatedAt.SetFromULongLong(playlist.playlist->m_updatedAt);
+
+        playlists.emplace_back(pl);
+        total++;
+    }
+
+    // If Limits are set, we need to query the total amount of items again
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
+    {
+      ODBView_Playlist_Total totals;
+      if (m_cdb.getDB()->query_one<ODBView_Playlist_Total>(objQueryWO, totals))
+      {
+        total = totals.total;
+      }
+    }
+
+    return true;
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s (%s) exception - %s", __FUNCTION__, filter.where.c_str(), e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
+  }
+  return false;
 }
 
 void CMusicDatabase::UpdateTables(int version)
@@ -8185,6 +8431,8 @@ bool CMusicDatabase::GetItems(const std::string &strBaseDir, const std::string &
     return GetAlbumsByWhere(strBaseDir, filter, items, sortDescription);
   else if (StringUtils::EqualsNoCase(itemType, "songs"))
     return GetSongsFullByWhere(strBaseDir, filter, items, sortDescription, true);
+  else if (StringUtils::EqualsNoCase(itemType, "playlists"))
+    return GetPlaylistsByWhere(strBaseDir, filter, items, sortDescription, false);
 
   return false;
 }
@@ -8843,13 +9091,13 @@ void CMusicDatabase::SetArtForItem(int mediaId, const std::string &mediaType, co
   }
 }
 
-bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
+bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art)
 {
   try
   {
-    if (songId <= 0 && albumId <= 0 && artistId <= 0) return false;
+    if (songId <= 0 && albumId <= 0 && artistId <= 0 && playlistId <= 0) return false;
 
-    std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, bPrimaryArtist);
+    std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, playlistId, bPrimaryArtist);
     if (cached)
     {
       art = *cached;
@@ -8997,7 +9245,32 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, bool b
       }
     }
 
-    gMusicDatabaseCache.addArtThumbLoader(songId, albumId, artistId, bPrimaryArtist, art);
+    if (playlistId >= 0)
+    {
+      typedef odb::query<CODBPlaylist> query;
+      CODBPlaylist objPlaylist;
+      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == playlistId, objPlaylist))
+      {
+        if (!objPlaylist.playlist_art.loaded())
+          m_cdb.getDB()->load(objPlaylist, objPlaylist.playlist_art);
+
+        for (auto& i: objPlaylist.m_artwork)
+        {
+          if (i.load())
+          {
+            ArtForThumbLoader artitem;
+            artitem.artType = i->m_type;
+            artitem.mediaType = MediaTypePlaylist;
+            artitem.prefix = "";
+            artitem.url = i->m_url;
+
+            art.emplace_back(artitem);
+          }
+        }
+      }
+    }
+
+    gMusicDatabaseCache.addArtThumbLoader(songId, albumId, artistId, playlistId, bPrimaryArtist, art);
 
     return !art.empty();
   }
@@ -9067,6 +9340,21 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
       {
         if (objPerson.m_art.load())
           art.insert(make_pair(objPerson.m_art->m_type, objPerson.m_art->m_url));
+      }
+    }
+    else if (mediaType == MediaTypePlaylist)
+    {
+      typedef odb::query<CODBPlaylist> query;
+      CODBPlaylist objPlaylist;
+      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == mediaId, objPlaylist))
+      {
+        for (auto& i: objPlaylist.m_artwork)
+        {
+          if (i.load())
+          {
+            art.insert(make_pair(i->m_type, i->m_url));
+          }
+        }
       }
     }
     else
@@ -9583,7 +9871,7 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
   T objRoleQuery; //Role < 0 means all roles, otherwise filter by role
   if(idRole > 0) objRoleQuery = T::CODBRole::idRole == idRole;
   
-  int idArtist = -1, idGenre = -1, idAlbum = -1, idSong = -1;
+  int idArtist = -1, idGenre = -1, idAlbum = -1, idSong = -1, idPlaylist = -1;
   bool albumArtistsOnly = false;
   std::string artistname;
   
@@ -9630,7 +9918,26 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
       }
     }
   }
-  
+
+  // Process playlist option
+  option = options.find("playlistid");
+  if (option != options.end())
+    idPlaylist = static_cast<int>(option->second.asInteger());
+  else
+  {
+    option = options.find("playlist");
+    if (option != options.end())
+      idPlaylist = GetPlaylistByName(option->second.asString());
+  }
+
+  // In case we have a playlist filter we also want to sort
+  // in playlist order
+  if (idPlaylist != -1)
+  {
+    sorting.sortBy = SortByPlaylistOrder;
+    sorting.sortOrder = SortOrderAscending;
+  }
+
   if (type == "songs" || type == "singles")
   {
     option = options.find("singles");
@@ -9662,6 +9969,9 @@ T CMusicDatabase::GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescri
     
     if (idGenre > 0)
       objQuery = objQuery && T::CODBGenre::idGenre == idGenre;
+
+    if (idPlaylist > 0)
+      objQuery = objQuery && T::CODBPlaylist::idPlaylist == idPlaylist;
     
     T songArtistClause;
     T albumArtistClause = T::CODBPerson::idPerson == T::albumArist::idPerson;

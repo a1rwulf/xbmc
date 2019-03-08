@@ -93,6 +93,8 @@ bool CMediaLibraryEvent::Execute() const
         path = "musicdb://albums/";
       else if (m_mediaType == MediaTypeSong)
         path = "musicdb://songs/";
+      else if (m_mediaType == MediaTypePlaylist)
+        path = "musicdb://playlists/";
     }
     else
     {

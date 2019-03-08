@@ -74,6 +74,7 @@
 #define CONTROL_BTNSORTBYALBUM         65
 #define CONTROL_BTNSORTBYCHANNELNUMBER 66
 #define CONTROL_BTNSORTBYCHANNELNAME   67
+#define CONTROL_BTNSORTBYSIZE          68
 
 #define CONTROL_LABELFILES          12
 
@@ -405,6 +406,16 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (m_guiState.get())
         {
           m_guiState->SetCurrentSortMethod(SortBy::SortByLabel);
+          m_guiState->SetNextSortOrder();
+          UpdateFileList();
+        }
+        return true;
+      }
+      else if (iControl == CONTROL_BTNSORTBYSIZE)
+      {
+        if (m_guiState.get())
+        {
+          m_guiState->SetCurrentSortMethod(SortBy::SortBySize);
           m_guiState->SetNextSortOrder();
           UpdateFileList();
         }

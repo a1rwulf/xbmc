@@ -51,6 +51,8 @@ void CQueryParams::SetQueryParam(NODE_TYPE NodeType, const std::string& strNodeN
   case NODE_TYPE_SONG:
   case NODE_TYPE_SONG_TOP100:
     m_idSong=idDb;
+  case NODE_TYPE_PLAYLIST:
+    m_idPlaylist = idDb;
   default:
     break;
   }

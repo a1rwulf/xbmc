@@ -929,11 +929,11 @@ bool CGUIWindowMusicBase::GetDirectory(const std::string &strDirectory, CFileIte
     std::vector<ArtForThumbLoader> art;
     if (params.GetAlbumId() > 0)
     { // Get album and related artist(s) art
-      artfound = m_musicdatabase.GetArtForItem(-1, params.GetAlbumId(), -1, false, art);
+      artfound = m_musicdatabase.GetArtForItem(-1, params.GetAlbumId(), -1, -1, false, art);
     }
     else if (params.GetArtistId() > 0)
     { // get artist art
-      artfound = m_musicdatabase.GetArtForItem(-1, -1, params.GetArtistId(), true, art);
+      artfound = m_musicdatabase.GetArtForItem(-1, -1, params.GetArtistId(), -1, true, art);
     }
     if (artfound)
     {
@@ -1005,7 +1005,8 @@ bool CGUIWindowMusicBase::CheckFilterAdvanced(CFileItemList &items) const
   if ((items.IsMusicDb() || CanContainFilter(m_strFilterPath)) &&
       (StringUtils::EqualsNoCase(content, "artists") ||
        StringUtils::EqualsNoCase(content, "albums")  ||
-       StringUtils::EqualsNoCase(content, "songs")))
+       StringUtils::EqualsNoCase(content, "songs")   ||
+       StringUtils::EqualsNoCase(content, "playlists")))
     return true;
 
   return false;
