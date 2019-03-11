@@ -23,6 +23,8 @@ public:
   void RemovePlayListItem(int iItem);
   void MoveItem(int iStart, int iDest);
 
+  bool CanFilterBasic() override { return false; }
+
 protected:
   bool GoParentFolder() override { return false; };
   void UpdateButtons() override;

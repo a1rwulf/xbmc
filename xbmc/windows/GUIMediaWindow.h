@@ -47,6 +47,7 @@ public:
   CFileItemPtr GetCurrentListItem(int offset = 0) override;
 
   // custom methods
+  virtual bool CanFilterBasic() { return true; }
   virtual bool CanFilterAdvanced() { return m_canFilterAdvanced; }
   virtual bool IsFiltered();
   virtual bool IsSameStartFolder(const std::string &dir);
