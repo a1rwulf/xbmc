@@ -30,6 +30,8 @@ namespace PVR
     void GetChannelNumbers(std::vector<std::string>& channelNumbers) override;
     void OnInputDone() override;
 
+    bool CanFilterBasic() override { return false; }
+
   private:
     bool OnContextButtonManage(const CFileItemPtr &item, CONTEXT_BUTTON button);
 

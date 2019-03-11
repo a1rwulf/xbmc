@@ -45,6 +45,8 @@ namespace PVR
     void GetChannelNumbers(std::vector<std::string>& channelNumbers) override;
     void OnInputDone() override;
 
+    bool CanFilterBasic() override { return false; }
+
   protected:
     void UpdateSelectedItemPath() override;
     std::string GetDirectoryPath(void) override { return ""; }
