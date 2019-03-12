@@ -2237,30 +2237,34 @@ bool CGUIMediaWindow::Filter(bool advanced /* = true */)
   // basic filtering
   if (!m_canFilterAdvanced || !advanced)
   {
-    const CGUIControl *btnFilter = GetControl(CONTROL_BTN_FILTER);
-    if (btnFilter && btnFilter->GetControlType() == CGUIControl::GUICONTROL_EDIT)
-    { // filter updated
-      CGUIMessage selected(GUI_MSG_ITEM_SELECTED, GetID(), CONTROL_BTN_FILTER);
-      OnMessage(selected);
-      OnFilterItems(selected.GetLabel());
-      UpdateButtons();
-      return true;
-    }
-    if (GetProperty("filter").empty())
+    // can we even do basic filtering?
+    if (CanFilterBasic())
     {
-      std::string filter = GetProperty("filter").asString();
-      CGUIKeyboardFactory::ShowAndGetFilter(filter, false);
-      SetProperty("filter", filter);
-    }
-    else
-    {
-      OnFilterItems("");
-      UpdateButtons();
+      const CGUIControl *btnFilter = GetControl(CONTROL_BTN_FILTER);
+      if (btnFilter && btnFilter->GetControlType() == CGUIControl::GUICONTROL_EDIT)
+      { // filter updated
+        CGUIMessage selected(GUI_MSG_ITEM_SELECTED, GetID(), CONTROL_BTN_FILTER);
+        OnMessage(selected);
+        OnFilterItems(selected.GetLabel());
+        UpdateButtons();
+        return true;
+      }
+      if (GetProperty("filter").empty())
+      {
+        std::string filter = GetProperty("filter").asString();
+        CGUIKeyboardFactory::ShowAndGetFilter(filter, false);
+        SetProperty("filter", filter);
+      }
+      else
+      {
+        OnFilterItems("");
+        UpdateButtons();
+      }
     }
   }
   // advanced filtering
   else
-    CGUIDialogMediaFilter::ShowAndEditMediaFilter(m_strFilterPath, m_filter);
+      CGUIDialogMediaFilter::ShowAndEditMediaFilter(m_strFilterPath, m_filter);
 
   return true;
 }
