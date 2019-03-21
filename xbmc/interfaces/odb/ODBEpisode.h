@@ -50,6 +50,7 @@ public:
   {
     m_idEpisode = 0;
     m_title = "";
+    m_titleSearch = "";
     m_plot = "";
     m_thumbUrl = "";
     m_thumbUrl_spoofed = "";
@@ -69,6 +70,8 @@ PRAGMA_DB (id auto)
   unsigned long m_idEpisode;
 PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_title;
+PRAGMA_DB (type("VARCHAR(255)"))
+  std::string m_titleSearch;
   std::string m_plot;
   CODBDate m_aired;
   std::string m_thumbUrl;
@@ -125,6 +128,7 @@ private:
   friend class odb::access;
   
 PRAGMA_DB (index member(m_title))
+PRAGMA_DB (index member(m_titleSearch))
 PRAGMA_DB (index member(m_sortSeason))
 PRAGMA_DB (index member(m_sortEpisode))
 PRAGMA_DB (index member(m_identId))

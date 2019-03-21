@@ -1421,7 +1421,7 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   if (m_field == FieldTitle)
   {
     std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBTVShow::title_type_, std::string>(query::CODBTVShow::title, oper, prepared_string);
+    where_query = FormatODBParam<query, query::CODBTVShow::titleSearch_type_, std::string>(query::CODBTVShow::titleSearch, oper, prepared_string);
   }
   else if (m_field == FieldGenre)
   {
@@ -1552,7 +1552,7 @@ odb::query<ODBView_Episode> CSmartPlaylistRule::FormatEpisodeWhereClause(const b
   if (m_field == FieldTitle)
   {
     std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBEpisode::title_type_, std::string>(query::CODBEpisode::title, oper, prepared_string);
+    where_query = FormatODBParam<query, query::CODBEpisode::titleSearch_type_, std::string>(query::CODBEpisode::titleSearch, oper, prepared_string);
   }
   else if (m_field == FieldTvShowTitle)
   {

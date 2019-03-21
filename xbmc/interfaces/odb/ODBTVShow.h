@@ -53,6 +53,7 @@ public:
   {
     m_idTVShow = 0;
     m_title = "";
+    m_titleSearch = "";
     m_plot = "";
     m_status = "";
     m_thumbUrl = "";
@@ -73,6 +74,8 @@ PRAGMA_DB (id auto)
   unsigned long m_idTVShow;
 PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_title;
+PRAGMA_DB (type("VARCHAR(255)"))
+  std::string m_titleSearch;
   std::string m_plot;
   std::string m_status;
   CODBDate m_premiered;
@@ -126,6 +129,7 @@ private:
   friend class odb::access;
   
 PRAGMA_DB (index member(m_title))
+PRAGMA_DB (index member(m_titleSearch))
 PRAGMA_DB (index member(m_originalTitle))
 PRAGMA_DB (index member(m_sortTitle))
 PRAGMA_DB (index member(m_userrating))
