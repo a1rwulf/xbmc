@@ -1040,6 +1040,7 @@ private:
   std::map<std::string, std::string> GetTranslatedStrings();
  
   void AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_query, CVideoDbUrl& videoDbUrl);
+  void AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVideoDbUrl& videoDbUrl);
 
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);

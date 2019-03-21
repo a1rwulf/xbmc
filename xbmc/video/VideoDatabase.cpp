@@ -10158,10 +10158,14 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
         if (it == mapItems.end())
         {
           // check path
-          if (g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_file->m_path->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
+          if (i->m_file->m_path.load())
           {
-            continue;
+            if (g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_file->m_path->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
+            {
+              continue;
+            }
           }
+
           mapItems.insert(std::pair<int, std::pair<std::string,int> >(lYear, std::pair<std::string, int>(std::to_string(lYear), playCount)));
         }
         else
@@ -10688,105 +10692,71 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
 {
   try
   {
+    int total = 0;
+
     // parse the base path to get additional filters
     CVideoDbUrl videoUrl;
     if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
       return false;
 
-    GetMACAddress();
-    int total = 0;
-    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
-
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     odb::session s;
 
-    if (!options.empty())
+    typedef odb::query<ODBView_Movie_NoFilter> query;
+    query movie_query;
+
+    std::string queryStr;
+    AdjustQueryFromUrlOptions(queryStr, videoUrl);
+    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(queryStr));
+    for (odb::result<ODBView_Movie_NoFilter>::iterator i = res.begin(); i != res.end(); i++)
     {
-      typedef odb::query<ODBView_Movie> query;
-      query movie_query = optionalQueries;
-
-      AdjustQueryFromUrlOptions(movie_query, videoUrl);
-      odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(movie_query));
-      for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
+      CVideoInfoTag movie = GetDetailsForMovie<odb::result<ODBView_Movie_NoFilter>::iterator>(i, getDetails);
+      if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
+          g_passwordManager.bMasterUser ||
+          g_passwordManager.IsDatabasePathUnlocked(movie.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
       {
-        CVideoInfoTag movie = GetDetailsForMovie<odb::result<ODBView_Movie>::iterator>(i, getDetails);
-        if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-            g_passwordManager.bMasterUser ||
-            g_passwordManager.IsDatabasePathUnlocked(movie.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          CFileItemPtr pItem(new CFileItem(movie));
+        CFileItemPtr pItem(new CFileItem(movie));
 
-          CVideoDbUrl itemUrl = videoUrl;
-          std::string path = StringUtils::Format("%i", movie.m_iDbId);
-          itemUrl.AppendPath(path);
-          pItem->SetPath(itemUrl.ToString());
+        CVideoDbUrl itemUrl = videoUrl;
+        std::string path = StringUtils::Format("%i", movie.m_iDbId);
+        itemUrl.AppendPath(path);
+        pItem->SetPath(itemUrl.ToString());
 
-          pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED,movie.GetPlayCount() > 0);
-          items.Add(pItem);
+        pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED,movie.GetPlayCount() > 0);
+        items.Add(pItem);
 
-          ++total;
-        }
+        ++total;
       }
+    }
 
-      //Store the query without limits and sorting for the later
-      query objQueryWO = movie_query;
-      movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
+    //Store the query without limits and sorting for the later
+    query objQueryWO = movie_query;
+    //movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
 
-      //TODO: Random sorting needs to be implemented
+    //TODO: Random sorting needs to be implemented
 
-      // If Limits are set, we need to query the total amount of items again
-      if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    // If Limits are set, we need to query the total amount of items again
+    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    {
+      ODBView_Movie_NoFilter_Total totals;
+      if (m_cdb.getDB()->query_one<ODBView_Movie_NoFilter_Total>(objQueryWO, totals))
       {
-        ODBView_Movie_Total totals;
-        if (m_cdb.getDB()->query_one<ODBView_Movie_Total>(objQueryWO, totals))
-        {
-          items.SetProperty("total", totals.total);
-        }
-        else
-        {
-          // Fallback to set total by amount of items in the list
-          items.SetProperty("total", total);
-        }
+        items.SetProperty("total", totals.total);
       }
       else
       {
-        // Store the total number of songs as a property based on the list length
+        // Fallback to set total by amount of items in the list
         items.SetProperty("total", total);
       }
     }
     else
     {
-      typedef odb::query<ODBView_Movie_NoFilter> query;
-      query movie_query = query(query::tag::idTag.is_null());
-
-      odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(movie_query));
-      for (odb::result<ODBView_Movie_NoFilter>::iterator i = res.begin(); i != res.end(); i++)
-      {
-        CVideoInfoTag movie = GetDetailsForMovie<odb::result<ODBView_Movie_NoFilter>::iterator>(i, getDetails);
-        if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-            g_passwordManager.bMasterUser ||
-            g_passwordManager.IsDatabasePathUnlocked(movie.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          CFileItemPtr pItem(new CFileItem(movie));
-
-          CVideoDbUrl itemUrl = videoUrl;
-          std::string path = StringUtils::Format("%i", movie.m_iDbId);
-          itemUrl.AppendPath(path);
-          pItem->SetPath(itemUrl.ToString());
-
-          pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED,movie.GetPlayCount() > 0);
-          items.Add(pItem);
-
-          ++total;
-        }
-      }
-
       // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
     }
 
     // cleanup
-    if(odb_transaction)
+    if (odb_transaction)
       odb_transaction->commit();
 
     return true;
@@ -10868,6 +10838,79 @@ void CVideoDatabase::AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_
   if (!hasTags) {
     movie_query = movie_query && query(query::tag::idTag.is_null());
   }
+}
+
+void CVideoDatabase::AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVideoDbUrl& videoDbUrl)
+{
+  bool hasTags = false;
+  const CUrlOptions::UrlOptions& options = videoDbUrl.GetOptions();
+  std::string whereClause = "1=1 ";
+  std::string spq;
+
+  for (auto option: options)
+  {
+    if (option.first == "genreid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"genreid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "genre")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"genre\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "countryid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"countryid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "country")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"country\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "studioid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"studioid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "studio")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"studio\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "directorid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"directorid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "director")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"director\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "actorid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"actorid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "actor")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"actor\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "setid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"setid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "set")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"set\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "year")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"year\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "tagid") {
+        spq = "{\"rules\":{\"and\":[{\"field\":\"tagid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+      hasTags = true;
+    }
+    else if (option.first == "tag")
+        spq = "{\"rules\":{\"and\":[{\"field\":\"tag\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"movies\"}";
+    else if (option.first == "filter" || option.first == "xsp")
+      spq = option.second.asString();
+
+    CSmartPlaylist xspFilter;
+    if (xspFilter.LoadFromJson(spq))
+    {
+      // check if the filter playlist matches the item type
+      if (xspFilter.GetType() == ((const CVideoDbUrl &)videoDbUrl).GetItemType())
+      {
+        std::set<std::string> playlists;
+        whereClause += "AND ";
+        whereClause += xspFilter.GetWhereClause(*this, playlists);
+      }
+      // remove the filter if it doesn't match the item type
+      else
+        videoDbUrl.RemoveOption(option.first);
+
+      if (!hasTags && xspFilter.HasTagFilter())
+        hasTags = true;
+    }
+
+    CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
+  }
+
+  if (!hasTags) {
+    whereClause += " AND idTag IS NULL;";
+  }
+
+  //strMovieQuery = baseQuery + whereClause;
+  strMovieQuery = whereClause;
 }
 
 bool CVideoDatabase::GetTvShowsNav(const std::string& strBaseDir, CFileItemList& items,

@@ -154,7 +154,26 @@ protected:
 private:
   std::string GetVideoResolutionQuery(const std::string &parameter) const;
   odb::query<ODBView_Movie> GetODBVideoResolutionQuery(const std::string &parameter) const;
-  static std::string FormatLinkQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter);
+  static std::string FormatLinkQuery(const char *field,
+                                     const char *table,
+                                     const MediaType& mediaType,
+                                     const std::string& mediaField,
+                                     const std::string& parameter,
+                                     const std::string& keyField);
+
+  static std::string FormatLinkPersonQuery(const char *field,
+                                           const char *table,
+                                           const MediaType& mediaType,
+                                           const std::string& mediaField,
+                                           const std::string& parameter, 
+                                           const std::string& keyField);
+
+  static std::string FormatLinkStreamQuery(const char *field,
+                                           const char *table,
+                                           const MediaType& mediaType,
+                                           const std::string& mediaField,
+                                           const std::string& parameter,
+                                           const std::string& keyField);
   bool m_hasTagRule;
 };
 
