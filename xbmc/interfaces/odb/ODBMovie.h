@@ -309,35 +309,21 @@ PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_directors) \
   object(CODBPerson = person inner: person_link::m_person) \
-  object(CODBFile = file inner: CODBMovie::m_file) \
-  object(CODBPath = path inner: file::m_path) \
-  object(CODBTag = tag: CODBMovie::m_tags) \
-  query(distinct))
+  object(CODBTag = tag: CODBMovie::m_tags))
 struct ODBView_Movie_Director
 {
   std::shared_ptr<CODBPerson> person;
-PRAGMA_DB (column(file::m_playCount))
-  unsigned int m_playCount;
-PRAGMA_DB (column(path::m_path))
-  std::string m_path;
 };
 
 PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_actors) \
   object(CODBPerson = person inner: person_link::m_person) \
-  object(CODBFile = file inner: CODBMovie::m_file) \
-  object(CODBPath = path inner: file::m_path) \
   object(CODBArt: person::m_art) \
-  object(CODBTag = tag: CODBMovie::m_tags) \
-  query(distinct))
+  object(CODBTag = tag: CODBMovie::m_tags))
 struct ODBView_Movie_Actor
 {
   std::shared_ptr<CODBPerson> person;
-PRAGMA_DB (column(file::m_playCount))
-  unsigned int m_playCount;
-PRAGMA_DB (column(path::m_path))
-  std::string m_path;
 PRAGMA_DB (column(CODBArt::m_url))
   std::string m_art_url;
 };

@@ -6333,7 +6333,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Epi
     if (record->episode->m_file.load())
     {
       details.m_iFileId = record->episode->m_file->m_idFile;
-      if(record->episode->m_file->m_path)
+      if(record->episode->m_file->m_path.load())
       {
         details.m_strPath = record->episode->m_file->m_path->m_path;
 
@@ -9589,7 +9589,7 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    std::map<int, std::pair<std::string,int> > mapItems;
+    std::map<int, std::string> mapItems;
 
     // parse the base path to get additional filters
     CVideoDbUrl videoUrl;
@@ -9625,19 +9625,12 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
       {
         int id = i->person->m_idPerson;
         std::string str = i->person->m_name;
-        int playCount = i->m_playCount; //TODO: Figure out where / why this is needed and if this value is correct
 
         // was this already found?
         auto it = mapItems.find(id);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
-          mapItems.insert(std::pair<int, std::pair<std::string,int> >(id, std::pair<std::string, int>(str,playCount)));
+          mapItems.insert(std::pair<int, std::string>(id, str));
         }
       }
     }
@@ -9665,19 +9658,12 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
       {
         int id = i->person->m_idPerson;
         std::string str = i->person->m_name;
-        int playCount = 0; //TODO: Figure out where / why this is needed
 
         // was this already found?
         auto it = mapItems.find(id);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
-          mapItems.insert(std::pair<int, std::pair<std::string,int> >(id, std::pair<std::string, int>(str,playCount)));
+          mapItems.insert(std::pair<int, std::string>(id, str));
         }
       }
     }
@@ -9697,7 +9683,7 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
 
     for (const auto &i : mapItems)
     {
-      CFileItemPtr pItem(new CFileItem(i.second.first));
+      CFileItemPtr pItem(new CFileItem(i.second));
       pItem->GetVideoInfoTag()->m_iDbId = i.first;
       pItem->GetVideoInfoTag()->m_type = "director";
 
@@ -9712,8 +9698,6 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
         pItem->SetIconImage("DefaultActor.png");
 
       pItem->m_bIsFolder = true;
-      if (idContent == VIDEODB_CONTENT_MOVIES || idContent == VIDEODB_CONTENT_MUSICVIDEOS)
-        pItem->GetVideoInfoTag()->SetPlayCount(i.second.second);
       pItem->SetLabelPreformatted(true);
       items.Add(pItem);
     }
@@ -9781,19 +9765,12 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
         actor.name = i->person->m_name;
         actor.thumb = i->m_art_url;
 
-        actor.playcount = i->m_playCount;
         actor.appearances = 1; //TODO: Need to be added
 
         // was this already found?
         auto it = mapItems.find(idActor);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
           mapItems.insert(std::pair<int, CActor>(idActor, actor));
         }
       }
@@ -9873,8 +9850,6 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
       pItem->SetPath(itemUrl.ToString());
 
       pItem->m_bIsFolder=true;
-      pItem->GetVideoInfoTag()->SetPlayCount(i.second.playcount);
-      
       pItem->GetVideoInfoTag()->m_strPictureURL.ParseString("<thumb>"+i.second.thumb+"</thumb>");
       
       /*ODBView_Person_Art objArt;
@@ -10071,7 +10046,6 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
         actor.thumb = m_pDS->fv(2).get_asString();
         if (idContent != VIDEODB_CONTENT_TVSHOWS)
         {
-          actor.playcount = m_pDS->fv(3).get_asInt();
           actor.appearances = 1;
         }
         else actor.appearances = m_pDS->fv(4).get_asInt();
@@ -10099,7 +10073,6 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
         pItem->SetPath(itemUrl.ToString());
 
         pItem->m_bIsFolder=true;
-        pItem->GetVideoInfoTag()->SetPlayCount(i.second.playcount);
         pItem->GetVideoInfoTag()->m_strPictureURL.ParseString(i.second.thumb);
         pItem->GetVideoInfoTag()->m_iDbId = i.first;
         pItem->GetVideoInfoTag()->m_type = type;
@@ -12776,16 +12749,6 @@ void CVideoDatabase::GetMovieDirectorsByName(const std::string& strSearch, CFile
     odb::result<ODBView_Movie_Director> res(m_cdb.getDB()->query<ODBView_Movie_Director>(odb::query<ODBView_Movie_Director>::person::name.like(strModSearch)));
     for (odb::result<ODBView_Movie_Director>::iterator i = res.begin(); i != res.end(); i++)
     {
-      
-      if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
-      {
-        if (!g_passwordManager.IsDatabasePathUnlocked(i->m_path,
-                                                      *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          continue;
-        }
-      }
-
       std::string strDir = StringUtils::Format("%i/", static_cast<int>(i->person->m_idPerson));
       CFileItemPtr pItem(new CFileItem(i->person->m_name));
 

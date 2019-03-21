@@ -403,7 +403,6 @@ public:
   public:
     std::string name;
     std::string thumb;
-    int playcount;
     int appearances;
   };
 
