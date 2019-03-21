@@ -212,8 +212,6 @@ void CGUIDialogMediaFilter::OnWindowLoaded()
 void CGUIDialogMediaFilter::OnInitWindow()
 {
   CGUIDialogSettingsManualBase::OnInitWindow();
-
-  UpdateControls();
 }
 
 void CGUIDialogMediaFilter::OnSettingChanged(std::shared_ptr<const CSetting> setting)
