@@ -2575,7 +2575,7 @@ CSong CMusicDatabase::GetSongFromODBObject(std::shared_ptr<CODBSong> objSong)
     song.dateAdded.SetFromULongLong(objSong->m_file->m_dateAdded.m_ulong_date);
     
     // Get filename with full path
-    if (objSong->m_file->m_path)
+    if (objSong->m_file->m_path.load())
     {
       song.strFileName = URIUtils::AddFileToFolder(objSong->m_file->m_path->m_path, objSong->m_file->m_filename);
     }
@@ -2687,7 +2687,7 @@ void CMusicDatabase::GetFileItemFromODBObject(std::shared_ptr<CODBSong> objSong,
     item->GetMusicInfoTag()->SetLoaded(true);
   }
   
-  if (objSong->m_file.load() && objSong->m_file->m_path)
+  if (objSong->m_file.load() && objSong->m_file->m_path.load())
   {
     item->GetMusicInfoTag()->SetPlayCount(objSong->m_file->m_playCount);
     item->GetMusicInfoTag()->SetLastPlayed(objSong->m_file->m_lastPlayed.m_date);
@@ -5442,7 +5442,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filte
     query objQuery;
     total = 0;
     Filter extFilter = filter;
-    SortDescription sorting = sortDescription;
     CMusicDbUrl musicUrl;
 
     if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
@@ -6357,7 +6356,6 @@ bool CMusicDatabase::GetAlbumPaths(int idAlbum, std::vector<std::pair<std::strin
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    typedef odb::query<ODBView_GetAlbumPath> query;
 
     odb::result<ODBView_GetAlbumPath> res(m_cdb.getDB()->query<ODBView_GetAlbumPath>("SELECT DISTINCT "+odb::query<CODBPath>::path+", "+odb::query<CODBPath>::idPath+" FROM path" +
       " JOIN file" + " ON " + odb::query<CODBFile>::path + " = " + odb::query<CODBPath>::idPath +
