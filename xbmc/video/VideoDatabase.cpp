@@ -15038,6 +15038,12 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
         details->SetTitle(episode.m_title);
         details->SetPlot(episode.m_plot);
       }
+      
+      CODBTVShow tvshow;
+      if (m_cdb.getDB()->query_one<CODBTVShow>(odb::query<CODBTVShow>::idTVShow == details->m_iIdShow, tvshow))
+      {
+        details->m_strShowTitle = tvshow.m_title;
+      }
     }
     else
     {
@@ -15048,6 +15054,7 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
        */
       GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title");
       GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot");
+      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title");
     }
   }
   catch (std::exception& e)
