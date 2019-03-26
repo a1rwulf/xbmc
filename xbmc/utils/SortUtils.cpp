@@ -895,14 +895,6 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBMovie::runtime + order;
   }
-  else if (sortDescription.sortBy == SortByFile)
-  {
-    sortQuery = orderBy + query::fileView::filename + order;
-  }
-  else if (sortDescription.sortBy == SortByPath)
-  {
-    sortQuery = orderBy + query::pathView::path + order;
-  }
   else if (sortDescription.sortBy == SortByMPAA)
   {
     sortQuery = orderBy + query::CODBMovie::mpaa + order;

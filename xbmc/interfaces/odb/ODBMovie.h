@@ -103,12 +103,13 @@ PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_thumbUrl_spoof;
   unsigned long m_updatedAt;
 
-  std::shared_ptr<CODBFile> m_file;
+
   std::shared_ptr<CODBBookmark> m_resumeBookmark;
 
 PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBSet> > m_sets;
-
+PRAGMA_DB (section(section_foreign))
+  odb::lazy_shared_ptr<CODBFile> m_file;
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBPath> m_basePath;
 PRAGMA_DB (section(section_foreign))
@@ -238,16 +239,17 @@ PRAGMA_DB (view \
   object(CODBTag = tag: CODBMovie::m_tags) \
   object(CODBFile = fileView: CODBMovie::m_file) \
   object(CODBPath = pathView: fileView::m_path) \
-  object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress)
+  object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress) \
   object(CODBPlayCount = playCount: CODBMovie::m_file == playCount::m_file && playCount::m_macAddress == g_MacAddress)
   query((?), distinct))
 struct ODBView_Movie_NoFilter
 {
   std::shared_ptr<CODBMovie> movie;
-  std::shared_ptr<CODBFile> fileView;
-  std::shared_ptr<CODBPath> pathView;
   std::shared_ptr<CODBBookmark> resumeBookmark;
   std::shared_ptr<CODBPlayCount> playCount;
+  std::shared_ptr<CODBFile> fileView;
+  PRAGMA_DB (column(pathView::m_path))
+  std::string path;
 };
 
 PRAGMA_DB (view \

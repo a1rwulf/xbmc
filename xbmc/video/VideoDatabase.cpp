@@ -5936,17 +5936,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
   details->m_premiered.SetFromULongLong(record.movie->m_premiered.m_ulong_date);
   details->m_bHasPremiered = details->m_premiered.IsValid();
   details->m_iUserRating = record.movie->m_userrating;
+  details->m_iFileId = record.fileView->m_idFile;
 
-  if (record.fileView)
-  {
-    details->m_iFileId = record.fileView->m_idFile;
-  }
-
-  if (record.pathView)
-  {
-    details->SetBasePath(record.pathView->m_path);
-    details->m_strPath = record.pathView->m_path;
-  }
+  details->SetBasePath(record.path);
+  details->m_strPath = record.path;
 
   ConstructPath(details->m_strFileNameAndPath, details->m_strPath, record.fileView->m_filename);
 
@@ -5956,10 +5949,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
   }
 
   CDateTime lastplayed;
-  lastplayed.SetFromULongLong(record.movie->m_file->m_lastPlayed.m_ulong_date);
+  lastplayed.SetFromULongLong(record.fileView->m_lastPlayed.m_ulong_date);
   details->m_lastPlayed = lastplayed;
   CDateTime dateadded;
-  dateadded.SetFromULongLong(record.movie->m_file->m_dateAdded.m_ulong_date);
+  dateadded.SetFromULongLong(record.fileView->m_dateAdded.m_ulong_date);
   details->m_dateAdded = dateadded;
 
   if (record.resumeBookmark)
@@ -5996,7 +5989,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
       details->m_set.overview  = record.movie->m_set->m_overview;
     }
 
-    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record.movie->m_file->m_idFile);
+    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record.fileView->m_idFile);
     for (odb::result<CODBFileStream>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*(i), i->section_foreign);
