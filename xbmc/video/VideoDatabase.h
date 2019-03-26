@@ -940,9 +940,6 @@ protected:
   template <class T>
   CVideoInfoTag GetDetailsForMovie(const T record, int getDetails = VideoDbDetailsNone);
 
-  //template <>
-  //CVideoInfoTag GetDetailsForMovie<ODBView_Movie>(const odb::result<ODBView_Movie>::iterator record, int getDetails = VideoDbDetailsNone);
-
   CVideoInfoTag GetDetailsForTvShow(const odb::result<ODBView_TVShow>::iterator record, int getDetails = VideoDbDetailsNone, CFileItem* item = NULL);
   CVideoInfoTag GetDetailsForEpisode(const odb::result<ODBView_Episode>::iterator record, int getDetails = VideoDbDetailsNone);
   CVideoInfoTag GetDetailsForMusicVideo(std::unique_ptr<dbiplus::Dataset> &pDS, int getDetails = VideoDbDetailsNone);

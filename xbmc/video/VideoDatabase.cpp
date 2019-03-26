@@ -2210,12 +2210,10 @@ bool CVideoDatabase::GetMovieInfo(const std::string& strFilenameAndPath, CVideoI
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     odb::session s;
 
-
-    odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(odb::query<ODBView_Movie>::CODBMovie::idMovie == idMovie));
-    for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
+    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(odb::query<ODBView_Movie_NoFilter>::CODBMovie::idMovie == idMovie));
+    for (auto &r : res)
     {
-      //details = GetDetailsForMovie(i, getDetails);
-      details = GetDetailsForMovie<odb::result<ODBView_Movie>::iterator>(i, getDetails);
+      details = GetDetailsForMovie<ODBView_Movie_NoFilter>(r, getDetails);
       break;
     }
 
@@ -5287,9 +5285,12 @@ void CVideoDatabase::DeleteMovie(int idMovie, bool bKeepId /* = false */)
       if(!res.m_file || !res.m_file->m_path)
         return;
 
-      std::string path = res.m_file->m_path->m_path;
-      if (!path.empty())
-        InvalidatePathHash(path);
+      if (res.m_file->m_path.load())
+      {
+        std::string path = res.m_file->m_path->m_path;
+        if (!path.empty())
+          InvalidatePathHash(path);
+      }
 
       m_cdb.getDB()->erase(res);
     }
@@ -5906,78 +5907,78 @@ bool CVideoDatabase::GetResumePoint(CVideoInfoTag& tag)
 template <class T>
 CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = VideoDbDetailsNone */)
 {
-  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getMovie(record->movie->m_idMovie, getDetails, record->movie->m_updatedAt);
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getMovie(record.movie->m_idMovie, getDetails, record.movie->m_updatedAt);
   if (det)
     return *det;
 
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
-  details->m_iDbId = record->movie->m_idMovie;
+  details->m_iDbId = record.movie->m_idMovie;
   details->m_type = MediaTypeMovie;
 
-  details->SetTitle(record->movie->m_title);
-  details->SetPlot(record->movie->m_plot);
-  details->SetPlotOutline(record->movie->m_plotoutline);
-  details->SetTagLine(record->movie->m_tagline);
+  details->SetTitle(record.movie->m_title);
+  details->SetPlot(record.movie->m_plot);
+  details->SetPlotOutline(record.movie->m_plotoutline);
+  details->SetTagLine(record.movie->m_tagline);
 
-  details->m_strPictureURL.m_spoof = record->movie->m_thumbUrl_spoof;
-  details->m_strPictureURL.m_xml = record->movie->m_thumbUrl;
+  details->m_strPictureURL.m_spoof = record.movie->m_thumbUrl_spoof;
+  details->m_strPictureURL.m_xml = record.movie->m_thumbUrl;
 
-  details->SetSortTitle(record->movie->m_sortTitle);
-  details->m_duration = record->movie->m_runtime;
-  details->SetMPAARating(record->movie->m_mpaa);
-  details->m_iTop250 = record->movie->m_top250;
-  details->SetOriginalTitle(record->movie->m_originalTitle);
-  details->SetTrailer(record->movie->m_trailer);
-  details->m_fanart.m_xml = record->movie->m_fanart;
+  details->SetSortTitle(record.movie->m_sortTitle);
+  details->m_duration = record.movie->m_runtime;
+  details->SetMPAARating(record.movie->m_mpaa);
+  details->m_iTop250 = record.movie->m_top250;
+  details->SetOriginalTitle(record.movie->m_originalTitle);
+  details->SetTrailer(record.movie->m_trailer);
+  details->m_fanart.m_xml = record.movie->m_fanart;
 
-  details->SetUserrating(record->movie->m_userrating);
-  details->m_premiered.SetFromULongLong(record->movie->m_premiered.m_ulong_date);
+  details->SetUserrating(record.movie->m_userrating);
+  details->m_premiered.SetFromULongLong(record.movie->m_premiered.m_ulong_date);
   details->m_bHasPremiered = details->m_premiered.IsValid();
-  details->m_iUserRating = record->movie->m_userrating;
+  details->m_iUserRating = record.movie->m_userrating;
 
-  if (record->fileView)
+  if (record.fileView)
   {
-    details->m_iFileId = record->fileView->m_idFile;
+    details->m_iFileId = record.fileView->m_idFile;
   }
 
-  if (record->pathView)
+  if (record.pathView)
   {
-    details->SetBasePath(record->pathView->m_path);
-    details->m_strPath = record->pathView->m_path;
+    details->SetBasePath(record.pathView->m_path);
+    details->m_strPath = record.pathView->m_path;
   }
 
-  ConstructPath(details->m_strFileNameAndPath, details->m_strPath, record->fileView->m_filename);
+  ConstructPath(details->m_strFileNameAndPath, details->m_strPath, record.fileView->m_filename);
 
-  if (record->playCount)
+  if (record.playCount)
   {
-    details->SetPlayCount(record->playCount->m_playCount);
+    details->SetPlayCount(record.playCount->m_playCount);
   }
 
   CDateTime lastplayed;
-  lastplayed.SetFromULongLong(record->movie->m_file->m_lastPlayed.m_ulong_date);
+  lastplayed.SetFromULongLong(record.movie->m_file->m_lastPlayed.m_ulong_date);
   details->m_lastPlayed = lastplayed;
   CDateTime dateadded;
-  dateadded.SetFromULongLong(record->movie->m_file->m_dateAdded.m_ulong_date);
+  dateadded.SetFromULongLong(record.movie->m_file->m_dateAdded.m_ulong_date);
   details->m_dateAdded = dateadded;
 
-  if (record->resumeBookmark)
+  if (record.resumeBookmark)
   {
-      details->SetResumePoint((int)record->resumeBookmark->m_timeInSeconds,
-                          (int)record->resumeBookmark->m_totalTimeInSeconds,
-                          record->resumeBookmark->m_playerState);
+      details->SetResumePoint((int)record.resumeBookmark->m_timeInSeconds,
+                          (int)record.resumeBookmark->m_totalTimeInSeconds,
+                          record.resumeBookmark->m_playerState);
   }
 
   //! @todo preload-speed
   //! Load/Get ParentPathID
-  // if (record->movie->m_basePath->m_parentPath.load())
-  //   details->m_parentPathID = record->movie->m_basePath->m_parentPath->m_idPath;
+  // if (record.movie->m_basePath->m_parentPath.load())
+  //   details->m_parentPathID = record.movie->m_basePath->m_parentPath->m_idPath;
 
   if (getDetails)
   {
-    m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
+    m_cdb.getDB()->load(*(record.movie), record.movie->section_foreign);
 
-    for (auto set: record->movie->m_sets)
+    for (auto set: record.movie->m_sets)
     {
       if (set.load())
       {
@@ -5988,14 +5989,14 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
       }
     }
 
-    if (record->movie->m_set.load())
+    if (record.movie->m_set.load())
     {
-      details->m_set.id = record->movie->m_set->m_idSet;
-      details->m_set.title = record->movie->m_set->m_name;
-      details->m_set.overview  = record->movie->m_set->m_overview;
+      details->m_set.id = record.movie->m_set->m_idSet;
+      details->m_set.title = record.movie->m_set->m_name;
+      details->m_set.overview  = record.movie->m_set->m_overview;
     }
 
-    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record->movie->m_file->m_idFile);
+    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record.movie->m_file->m_idFile);
     for (odb::result<CODBFileStream>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*(i), i->section_foreign);
@@ -6012,20 +6013,20 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
       }
     }
 
-    m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
-    if(record->movie->m_defaultRating.load())
+    m_cdb.getDB()->load(*(record.movie), record.movie->section_foreign);
+    if(record.movie->m_defaultRating.load())
     {
-      details->SetRating(record->movie->m_defaultRating->m_rating,
-                        record->movie->m_defaultRating->m_votes,
-                        record->movie->m_defaultRating->m_ratingType, true);
+      details->SetRating(record.movie->m_defaultRating->m_rating,
+                        record.movie->m_defaultRating->m_votes,
+                        record.movie->m_defaultRating->m_ratingType, true);
     }
 
-    if(record->movie->m_defaultID.load())
+    if(record.movie->m_defaultID.load())
     {
-      details->SetUniqueID(record->movie->m_defaultID->m_value, record->movie->m_defaultID->m_type ,true);
+      details->SetUniqueID(record.movie->m_defaultID->m_value, record.movie->m_defaultID->m_type ,true);
     }
 
-    for (auto genre: record->movie->m_genres)
+    for (auto genre: record.movie->m_genres)
     {
       if (genre.load())
       {
@@ -6033,7 +6034,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
       }
     }
 
-    for (auto country: record->movie->m_countries)
+    for (auto country: record.movie->m_countries)
     {
       if (country.load())
       {
@@ -6044,7 +6045,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
     if (getDetails & VideoDbDetailsCast)
     {
       int order = 0;
-      for (auto i: record->movie->m_actors)
+      for (auto i: record.movie->m_actors)
       {
         if (!i.load())
           continue;
@@ -6066,7 +6067,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
         details->m_cast.emplace_back(std::move(info));
       }
 
-      for (auto i: record->movie->m_directors)
+      for (auto i: record.movie->m_directors)
       {
         if (!i.load())
           continue;
@@ -6077,7 +6078,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
         details->m_director.emplace_back(i->m_person->m_name);
       }
 
-      for (auto i: record->movie->m_writingCredits)
+      for (auto i: record.movie->m_writingCredits)
       {
         if (!i.load())
           continue;
@@ -6090,7 +6091,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
 
     if (getDetails & VideoDbDetailsTag)
     {
-      for (auto i: record->movie->m_tags)
+      for (auto i: record.movie->m_tags)
       {
         if (!i.load())
           continue;
@@ -6101,7 +6102,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
 
     if (getDetails & VideoDbDetailsRating)
     {
-      for (auto i: record->movie->m_ratings)
+      for (auto i: record.movie->m_ratings)
       {
         if (!i.load())
           continue;
@@ -6112,7 +6113,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
 
     if (getDetails & VideoDbDetailsUniqueID)
     {
-      for (auto i: record->movie->m_ids)
+      for (auto i: record.movie->m_ids)
       {
         if (!i.load())
           continue;
@@ -6153,7 +6154,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
   //! Check how to handle translations
   //GetMovieTranslation(details.get());
 
-  gVideoDatabaseCache.addMovie(record->movie->m_idMovie, details, getDetails, record->movie->m_updatedAt);
+  gVideoDatabaseCache.addMovie(record.movie->m_idMovie, details, getDetails, record.movie->m_updatedAt);
   return *details;
 }
 
@@ -10693,69 +10694,59 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
   try
   {
     int total = 0;
-
-    // parse the base path to get additional filters
     CVideoDbUrl videoUrl;
+    typedef odb::query<ODBView_Movie_NoFilter> query;
+    query movie_query;
+    std::string queryStr;
+
     if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
       return false;
 
+    // Create a database transaction, this is needed in order to use sessions
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
     odb::session s;
 
-    typedef odb::query<ODBView_Movie_NoFilter> query;
-    query movie_query;
-
-    std::string queryStr;
+    // Convert URL options to smart playlist rules
+    // queryStr will hold the full where clause
     AdjustQueryFromUrlOptions(queryStr, videoUrl);
-    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(queryStr));
-    for (odb::result<ODBView_Movie_NoFilter>::iterator i = res.begin(); i != res.end(); i++)
+
+    // Send the query to the database and add the "order by" and "limit" clause
+    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(queryStr + SortUtils::SortODBMovieQuery<query>(sortDescription)));
+
+    // Gather more details for the resultset and populate the FileItemList
+    for (auto &r : res)
     {
-      CVideoInfoTag movie = GetDetailsForMovie<odb::result<ODBView_Movie_NoFilter>::iterator>(i, getDetails);
+      CVideoInfoTag movie = GetDetailsForMovie<ODBView_Movie_NoFilter>(r, getDetails);
       if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
           g_passwordManager.bMasterUser ||
           g_passwordManager.IsDatabasePathUnlocked(movie.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
       {
         CFileItemPtr pItem(new CFileItem(movie));
-
         CVideoDbUrl itemUrl = videoUrl;
         std::string path = StringUtils::Format("%i", movie.m_iDbId);
+
         itemUrl.AppendPath(path);
         pItem->SetPath(itemUrl.ToString());
-
         pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED,movie.GetPlayCount() > 0);
         items.Add(pItem);
-
         ++total;
       }
     }
 
-    //Store the query without limits and sorting for the later
-    query objQueryWO = movie_query;
-    //movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
-
-    //TODO: Random sorting needs to be implemented
-
-    // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    // If Limits are set, we need to query the total amount of items without limits
+    // This is used to give clients like json api, the total amount of movies
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
     {
       ODBView_Movie_NoFilter_Total totals;
-      if (m_cdb.getDB()->query_one<ODBView_Movie_NoFilter_Total>(objQueryWO, totals))
-      {
+      if (m_cdb.getDB()->query_one<ODBView_Movie_NoFilter_Total>(queryStr, totals))
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-    }
 
-    // cleanup
     if (odb_transaction)
       odb_transaction->commit();
 
@@ -10906,7 +10897,7 @@ void CVideoDatabase::AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVide
   }
 
   if (!hasTags) {
-    whereClause += " AND idTag IS NULL;";
+    whereClause += " AND idTag IS NULL";
   }
 
   //strMovieQuery = baseQuery + whereClause;
