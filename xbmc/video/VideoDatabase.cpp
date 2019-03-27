@@ -10147,15 +10147,6 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
         auto it = mapItems.find(lYear);
         if (it == mapItems.end())
         {
-          // check path
-          if (i->m_file->m_path.load())
-          {
-            if (g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_file->m_path->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-            {
-              continue;
-            }
-          }
-
           mapItems.insert(std::pair<int, std::pair<std::string,int> >(lYear, std::pair<std::string, int>(std::to_string(lYear), playCount)));
         }
         else
