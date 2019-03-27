@@ -14693,6 +14693,7 @@ bool CVideoDatabase::GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, 
         if (it != movieCacheMap.end())
         {
           it->second.m_item->SetTitle(movie.m_title);
+          it->second.m_item->SetSortTitle(movie.m_title);
           it->second.m_item->SetPlot(movie.m_plot);
         }
       }
@@ -14712,7 +14713,10 @@ bool CVideoDatabase::GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, 
         std::string key = ss.str();
         std::map<std::string, std::string>::iterator it = translations.find(key);
         if (it != translations.end())
+        {
           item.second.m_item->SetTitle(it->second);
+          item.second.m_item->SetSortTitle(it->second);
+        }
 
         ss.str("");
         ss.clear();
@@ -14756,6 +14760,7 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
       if (m_cdb.getDB()->query_one<CODBMovie>(odb::query<CODBMovie>::idMovie == details->m_iDbId, movie))
       {
         details->SetTitle(movie.m_title);
+        details->SetSortTitle(movie.m_title);
         details->SetPlot(movie.m_plot);
       }
     }
@@ -14767,6 +14772,7 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
        movie.plot
        */
       GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title");
       GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot");
     }
 
@@ -14799,6 +14805,7 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
       if (m_cdb.getDB()->query_one<CODBSeason>(odb::query<CODBSeason>::idSeason == details->m_iDbId, season))
       {
         details->SetTitle(season.m_name);
+        details->SetSortTitle(season.m_name);
       }
       
       CODBTVShow show;
@@ -14816,6 +14823,7 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
        season.plot
        */
       GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title");
       
       // Also translate the TV Show elements in it
       GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title");
@@ -14858,6 +14866,7 @@ bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tF
         if (it != tvshowCacheMap.end())
         {
           it->second.m_item->GetVideoInfoTag()->SetTitle(tvshow.m_title);
+          it->second.m_item->GetVideoInfoTag()->SetSortTitle(tvshow.m_title);
           it->second.m_item->GetVideoInfoTag()->SetPlot(tvshow.m_plot);
         }
       }
@@ -14870,6 +14879,7 @@ bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tF
         if (it != seasonCacheMap.end())
         {
           it->second.m_item->GetVideoInfoTag()->SetTitle(season.m_name);
+          it->second.m_item->GetVideoInfoTag()->SetSortTitle(season.m_name);
 
           tFileItemCacheMap::iterator itshow = tvshowCacheMap.find(it->second.m_item->GetVideoInfoTag()->m_iShowId);
           if (itshow != tvshowCacheMap.end())
@@ -14888,6 +14898,7 @@ bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tF
         if (it != episodeCacheMap.end())
         {
           it->second.m_item->GetVideoInfoTag()->SetTitle(episode.m_title);
+          it->second.m_item->GetVideoInfoTag()->SetSortTitle(episode.m_title);
           it->second.m_item->GetVideoInfoTag()->SetPlot(episode.m_plot);
         }
       }
@@ -14905,7 +14916,10 @@ bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tF
         std::string key = ss.str();
         std::map<std::string, std::string>::iterator it = translations.find(key);
         if (it != translations.end())
+        {
           item.second.m_item->GetVideoInfoTag()->SetTitle(it->second);
+          item.second.m_item->GetVideoInfoTag()->SetSortTitle(it->second);
+        }
 
         ss.str("");
         ss.clear();
@@ -14940,12 +14954,21 @@ bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tF
         key = ss.str();
         it = translations.find(key);
         if (it != translations.end())
+        {
           item.second.m_item->GetVideoInfoTag()->SetTitle(it->second);
+          item.second.m_item->GetVideoInfoTag()->SetSortTitle(it->second);
+        }
 
         if (item.second.m_item->GetVideoInfoTag()->m_iSeason == 0)
+        {
           item.second.m_item->GetVideoInfoTag()->SetTitle(g_localizeStrings.Get(20381));
+          item.second.m_item->GetVideoInfoTag()->SetSortTitle(g_localizeStrings.Get(20381));
+        }
         else
+        {
           item.second.m_item->GetVideoInfoTag()->SetTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->GetVideoInfoTag()->m_iSeason));
+          item.second.m_item->GetVideoInfoTag()->SetSortTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->GetVideoInfoTag()->m_iSeason));
+        }
       }
 
       // Translate Episode elements
@@ -14996,6 +15019,7 @@ bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
       {
         details->SetTitle(show.m_title);
         details->SetPlot(show.m_plot);
+        details->SetSortTitle(show.m_title);
       }
     }
     else
@@ -15006,6 +15030,7 @@ bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
        tvshow.plot
        */
       GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title");
       GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot");
     }
   }
@@ -15037,6 +15062,7 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
       {
         details->SetTitle(episode.m_title);
         details->SetPlot(episode.m_plot);
+        details->SetSortTitle(episode.m_title);
       }
       
       CODBTVShow tvshow;
@@ -15053,6 +15079,7 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
        episode.plot
        */
       GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title");
       GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot");
       GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title");
     }
