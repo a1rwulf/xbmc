@@ -711,7 +711,7 @@ bool CVideoDatabase::GetPathsForTvShow(int idShow, std::set<int>& paths)
             continue;
 
           m_cdb.getDB()->load(*episode, episode->section_foreign);
-          if(episode->m_file.load() && episode->m_file->m_path)
+          if(episode->m_file.load() && episode->m_file->m_path.load())
           {
             paths.insert(episode->m_file->m_path->m_idPath);
           }
@@ -2631,7 +2631,7 @@ int CVideoDatabase::SetDetailsForMovie(const std::string& strFilenameAndPath, CV
     m_cdb.getDB()->load(odb_movie, odb_movie.section_artwork);
 
     //We need the file object many times below
-    //odb_movie.m_file.load();
+    odb_movie.m_file.load();
 
     // update dateadded if it's set
     if (details.m_dateAdded.IsValid())
@@ -3402,10 +3402,12 @@ void CVideoDatabase::SetMovieDetailsValues(CODBMovie& odbMovie, CVideoInfoTag& d
   odbMovie.m_fanart = details.m_fanart.m_xml;
 
   //TODO: These relations can be refacored away in the future
-  odbMovie.m_file->m_path;
-  odbMovie.m_basePath = odbMovie.m_file->m_path;
-  odbMovie.m_file->m_path->m_parentPath.load();
-  odbMovie.m_parentPath = odbMovie.m_file->m_path->m_parentPath;
+  if (odbMovie.m_file->m_path.load())
+  {
+    odbMovie.m_basePath = odbMovie.m_file->m_path;
+    if (odbMovie.m_file->m_path->m_parentPath.load())
+      odbMovie.m_parentPath = odbMovie.m_file->m_path->m_parentPath;
+  }
 
   if (details.m_iUserRating > 0 && details.m_iUserRating < 11)
     odbMovie.m_userrating = details.m_iUserRating;
@@ -4748,7 +4750,7 @@ void CVideoDatabase::GetFilePathById(int idContent, std::string &filePath, VIDEO
       if (m_cdb.getDB()->query_one<CODBMovie>(odb::query<CODBMovie>::idMovie == idContent, movie))
       {
         m_cdb.getDB()->load(movie, movie.section_foreign);
-        if (!movie.m_file || movie.m_file->m_path)
+        if (!movie.m_file || movie.m_file->m_path.load())
           return;
 
         db_filename = movie.m_file->m_filename;
@@ -4761,7 +4763,7 @@ void CVideoDatabase::GetFilePathById(int idContent, std::string &filePath, VIDEO
       if (m_cdb.getDB()->query_one<CODBEpisode>(odb::query<CODBEpisode>::idEpisode == idContent, episode))
       {
         m_cdb.getDB()->load(episode, episode.section_foreign);
-        if (!episode.m_file.load() || episode.m_file->m_path)
+        if (!episode.m_file.load() || episode.m_file->m_path.load())
           return;
 
         db_filename = episode.m_file->m_filename;
@@ -5282,7 +5284,7 @@ void CVideoDatabase::DeleteMovie(int idMovie, bool bKeepId /* = false */)
 
       m_cdb.getDB()->load(res, res.section_foreign);
 
-      if(!res.m_file || !res.m_file->m_path)
+      if(!res.m_file || !res.m_file->m_path.load())
         return;
 
       if (res.m_file->m_path.load())
@@ -10136,7 +10138,7 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
       for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
       {
         m_cdb.getDB()->load(*i, i->section_foreign);
-        if (!i->m_file || !i->m_file->m_path)
+        if (!i->m_file || !i->m_file->m_path.load())
           continue;
 
         int lYear = i->m_premiered.m_year;
@@ -12491,7 +12493,7 @@ void CVideoDatabase::GetMoviesByName(const std::string& strSearch, CFileItemList
     for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*i, i->section_foreign);
-      if(!i->m_file || !i->m_file->m_path)
+      if(!i->m_file || !i->m_file->m_path.load())
         continue;
       if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
       {
@@ -12722,7 +12724,7 @@ void CVideoDatabase::GetMoviesByPlot(const std::string& strSearch, CFileItemList
     for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*i, i->section_foreign);
-      if(!i->m_file || !i->m_file->m_path)
+      if(!i->m_file || !i->m_file->m_path.load())
         continue;
 
       if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
