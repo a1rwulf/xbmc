@@ -919,6 +919,10 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::fileView::playCount + order;
   }
+  else if (sortDescription.sortBy == SortByRating)
+  {
+    sortQuery = orderBy + query::defaultRating::rating + order;
+  }
   else if (sortDescription.sortBy == SortByRandom)
   {
     //Random is handled not via the query directly
