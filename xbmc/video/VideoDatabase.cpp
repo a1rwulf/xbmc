@@ -6135,10 +6135,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
     }*/
 
 
-    //! @todo preload-speed
-    //! Handle stream details
-    //if (getDetails & VideoDbDetailsStream)
-    //  GetStreamDetails(*details);
+    if (getDetails & VideoDbDetailsStream)
+      GetStreamDetails(*details);
 
     details->m_parsedDetails = getDetails;
   }
