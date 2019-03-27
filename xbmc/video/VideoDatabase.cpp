@@ -5962,6 +5962,14 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
                           record.resumeBookmark->m_playerState);
   }
 
+  if (record.defaultRating)
+  {
+
+    details->SetRating(record.defaultRating->m_rating,
+                       record.defaultRating->m_votes,
+                       record.defaultRating->m_ratingType, true);
+  }
+
   //! @todo preload-speed
   //! Load/Get ParentPathID
   // if (record.movie->m_basePath->m_parentPath.load())
@@ -6004,14 +6012,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
           details->m_streamSubtitleLanguage.emplace_back(i->m_language->m_name);
         }
       }
-    }
-
-    m_cdb.getDB()->load(*(record.movie), record.movie->section_foreign);
-    if(record.movie->m_defaultRating.load())
-    {
-      details->SetRating(record.movie->m_defaultRating->m_rating,
-                        record.movie->m_defaultRating->m_votes,
-                        record.movie->m_defaultRating->m_ratingType, true);
     }
 
     if(record.movie->m_defaultID.load())

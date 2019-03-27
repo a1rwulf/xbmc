@@ -239,6 +239,7 @@ PRAGMA_DB (view \
   object(CODBTag = tag: CODBMovie::m_tags) \
   object(CODBFile = fileView: CODBMovie::m_file) \
   object(CODBPath = pathView: fileView::m_path) \
+  object(CODBRating = defaultRating: CODBMovie::m_defaultRating) \
   object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress) \
   object(CODBPlayCount = playCount: CODBMovie::m_file == playCount::m_file && playCount::m_macAddress == g_MacAddress)
   query((?), distinct))
@@ -248,6 +249,7 @@ struct ODBView_Movie_NoFilter
   std::shared_ptr<CODBBookmark> resumeBookmark;
   std::shared_ptr<CODBPlayCount> playCount;
   std::shared_ptr<CODBFile> fileView;
+  std::shared_ptr<CODBRating> defaultRating;
   PRAGMA_DB (column(pathView::m_path))
   std::string path;
 };
