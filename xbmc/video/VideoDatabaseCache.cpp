@@ -59,13 +59,6 @@ void CVideoDatabaseCache::languageChange()
   videodb.GetMovieTranslations(m_MovieCacheMap, true);
   videodb.GetTVShowTranslations(m_TVShowCacheMap, m_SeasonCacheMap, m_EpisodeCacheMap, true);
 
-  //Set the item label again after translation
-  for (tFileItemCacheMap::iterator iter = m_TVShowCacheMap.begin(); iter != m_TVShowCacheMap.end(); ++iter)
-  {
-    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
-  }
-
   for (tFileItemCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end(); ++iter)
   {
     iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
@@ -94,9 +87,9 @@ void CVideoDatabaseCache::clearCacheByFileID(long id)
     ++iter;
   }
   
-  for (tFileItemCacheMap::iterator iter = m_TVShowCacheMap.begin(); iter != m_TVShowCacheMap.end();)
+  for (tVideoInfoTagCacheMap::iterator iter = m_TVShowCacheMap.begin(); iter != m_TVShowCacheMap.end();)
   {
-    if (iter->second.m_item->GetVideoInfoTag()->m_iFileId == id)
+    if (iter->second.m_item->m_iFileId == id)
     {
       iter = m_TVShowCacheMap.erase(iter);
       continue;
@@ -244,9 +237,9 @@ std::shared_ptr<CFileItem> CVideoDatabaseCache::getPerson(long id)
   return nullptr;
 }
 
-void CVideoDatabaseCache::addTVShow(long id, std::shared_ptr<CFileItem>& item, int getDetails, uint64_t updatedAt)
+void CVideoDatabaseCache::addTVShow(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt)
 {
-  CVideoDatabaseCacheItem<CFileItem> cacheItem;
+  CVideoDatabaseCacheItem<CVideoInfoTag> cacheItem;
   cacheItem.m_getDetails = getDetails;
   cacheItem.m_updatedAt = updatedAt;
   cacheItem.m_item = item;
@@ -256,10 +249,10 @@ void CVideoDatabaseCache::addTVShow(long id, std::shared_ptr<CFileItem>& item, i
   setCurrentLanguage();
 }
 
-std::shared_ptr<CFileItem> CVideoDatabaseCache::getTVShow(long id, int getDetails, uint64_t updatedAt)
+std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getTVShow(long id, int getDetails, uint64_t updatedAt)
 {
   CSingleLock lock(m_mutex);
-  tFileItemCacheMap ::iterator it = m_TVShowCacheMap.find(id);
+  tVideoInfoTagCacheMap ::iterator it = m_TVShowCacheMap.find(id);
   
   if (it != m_TVShowCacheMap.end())
   {
