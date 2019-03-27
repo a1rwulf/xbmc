@@ -2183,13 +2183,20 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
   else if (strType == "tvshows")
   {
     table = "tvshow";
-
-    if (m_field == FieldGenre)
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    if (m_field == FieldGenreId)
+      query = negate + FormatLinkQuery("idGenre", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldGenre)
+      query = negate + FormatLinkQuery("name", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldDirectorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldDirector)
-      query = negate + FormatLinkQuery("director", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+      query = negate + FormatLinkPersonQuery("name", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldActorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldActor)
-      query = negate + FormatLinkQuery("actor", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+      query = negate + FormatLinkPersonQuery("name", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldStudioId)
+      query = negate + FormatLinkQuery("idStudio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldStudio)
       query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldMPAA)
