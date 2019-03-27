@@ -5970,14 +5970,12 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(T record, int getDetails /* = V
                        record.defaultRating->m_ratingType, true);
   }
 
-  //! @todo preload-speed
-  //! Load/Get ParentPathID
-  // if (record.movie->m_basePath->m_parentPath.load())
-  //   details->m_parentPathID = record.movie->m_basePath->m_parentPath->m_idPath;
-
   if (getDetails)
   {
     m_cdb.getDB()->load(*(record.movie), record.movie->section_foreign);
+
+    if (record.movie->m_basePath.load() && record.movie->m_basePath->m_parentPath.load())
+      details->m_parentPathID = record.movie->m_basePath->m_parentPath->m_idPath;
 
     for (auto set: record.movie->m_sets)
     {
