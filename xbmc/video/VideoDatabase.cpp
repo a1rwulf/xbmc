@@ -2153,15 +2153,17 @@ void CVideoDatabase::GetMoviesByActor(const std::string& name, CFileItemList& it
 void CVideoDatabase::GetTvShowsByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_TVShow> optQuery = (odb::query<ODBView_TVShow>::actor::name.like(name) || odb::query<ODBView_TVShow>::director::name.like(name));
-  GetTvShowsByWhere("videodb://tvshows/titles/", filter, items, SortDescription(), VideoDbDetailsNone, optQuery);
+  //!@todo preload-speed
+  //odb::query<ODBView_TVShow> optQuery = (odb::query<ODBView_TVShow>::actor::name.like(name) || odb::query<ODBView_TVShow>::director::name.like(name));
+  GetTvShowsByWhere("videodb://tvshows/titles/", filter, items, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetEpisodesByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_Episode> optQuery = (odb::query<ODBView_Episode>::actor::name.like(name) || odb::query<ODBView_Episode>::director::name.like(name));
-  GetEpisodesByWhere("videodb://tvshows/titles/", filter, items, true, SortDescription(), VideoDbDetailsNone, optQuery);
+  //!@todo preload-speed
+  //odb::query<ODBView_Episode> optQuery = (odb::query<ODBView_Episode>::actor::name.like(name) || odb::query<ODBView_Episode>::director::name.like(name));
+  GetEpisodesByWhere("videodb://tvshows/titles/", filter, items, true, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetMusicVideosByArtist(const std::string& strArtist, CFileItemList& items)
@@ -6154,10 +6156,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
       return *det;
 
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
-  int idTvShow = record.show->m_idTVShow;
 
-  details->m_iDbId = idTvShow;
+  details->m_iDbId = record.show->m_idTVShow;
   details->m_strTitle = record.show->m_title;
+  details->m_strShowTitle = record.show->m_title;
   details->SetPlot(record.show->m_plot);
   details->SetStatus(record.show->m_status);
   details->m_premiered.SetFromULongLong(record.show->m_premiered.m_ulong_date);
@@ -6168,82 +6170,67 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
   details->m_fanart.m_xml = record.show->m_fanart;
   details->SetMPAARating(record.show->m_mpaa);
   details->SetSortTitle(record.show->m_sortTitle);
-
-  m_cdb.getDB()->load(*(record.show), record.show->section_foreign);
-
-  if(record.show->m_defaultRating.load())
-  {
-    details->m_iIdRating = record.show->m_defaultRating->m_idRating;
-    details->SetRating(record.show->m_defaultRating->m_rating,
-                      record.show->m_defaultRating->m_votes,
-                      record.show->m_defaultRating->m_ratingType, true);
-  }
-
-  for (auto genre: record.show->m_genres)
-  {
-    if (genre.load())
-    {
-      details->m_genre.emplace_back(genre->m_name);
-    }
-  }
-
-  if(record.show->m_defaultID.load())
-  {
-    details->SetUniqueID(record.show->m_defaultID->m_value, record.show->m_defaultID->m_type ,true);
-  }
-
-  for (auto studio: record.show->m_studios)
-  {
-    if (studio.load())
-    {
-      details->m_studio.push_back(studio->m_name);
-    }
-  }
-
   details->m_bHasPremiered = details->m_premiered.IsValid();
   details->m_type = MediaTypeTvShow;
-  if (record.show->m_paths.size() > 0)
-  {
-    auto first = record.show->m_paths.begin();
-    if (first != record.show->m_paths.end() && first->load())
-    {
-      auto path = *first;
-      details->m_strPath = path->m_path;
-      details->m_basePath = details->m_strPath;
-      if (path->m_parentPath.load())
-        details->m_parentPathID = path->m_parentPath->m_idPath;
-    }
-  }
-
-  ODBView_TVShow_Counts resTVShowCounts;
-  if (m_cdb.getDB()->query_one<ODBView_TVShow_Counts>(odb::query<ODBView_TVShow_Counts>::CODBTVShow::idTVShow == record.show->m_idTVShow, resTVShowCounts))
-  {
-    details->m_dateAdded.SetFromULongLong(resTVShowCounts.dateAddedULong);
-    details->m_lastPlayed.SetFromULongLong(resTVShowCounts.lastPlayedULong);
-    details->m_iSeason = resTVShowCounts.totalSeasons;
-    details->m_iEpisode = resTVShowCounts.totalCount;
-    details->SetPlayCount(resTVShowCounts.watchedCount);
-  }
-
-  details->m_strShowTitle = details->m_strTitle;
   details->m_iUserRating = record.show->m_userrating;
-
-  if (record.show->m_defaultRating.load())
-  {
-    details->SetRating(record.show->m_defaultRating->m_rating,
-                      record.show->m_defaultRating->m_votes,
-                      record.show->m_defaultRating->m_ratingType, true);
-  }
-
-  if(record.show->m_defaultID.load())
-  {
-    details->SetUniqueID(record.show->m_defaultID->m_value, record.show->m_defaultID->m_type ,true);
-  }
-
   details->SetDuration(record.show->m_runtime);
+
+  if (record.defaultRating)
+  {
+    details->m_iIdRating = record.defaultRating->m_idRating;
+    details->SetRating(record.defaultRating->m_rating,
+                      record.defaultRating->m_votes,
+                      record.defaultRating->m_ratingType, true);
+  }
 
   if (getDetails)
   {
+    m_cdb.getDB()->load(*(record.show), record.show->section_foreign);
+
+    for (auto genre: record.show->m_genres)
+    {
+      if (genre.load())
+      {
+        details->m_genre.emplace_back(genre->m_name);
+      }
+    }
+
+    if(record.show->m_defaultID.load())
+    {
+      details->SetUniqueID(record.show->m_defaultID->m_value, record.show->m_defaultID->m_type ,true);
+    }
+
+    for (auto studio: record.show->m_studios)
+    {
+      if (studio.load())
+      {
+        details->m_studio.push_back(studio->m_name);
+      }
+    }
+
+    if (record.show->m_paths.size() > 0)
+    {
+      auto first = record.show->m_paths.begin();
+      if (first != record.show->m_paths.end() && first->load())
+      {
+        auto path = *first;
+        details->m_strPath = path->m_path;
+        details->m_basePath = details->m_strPath;
+        if (path->m_parentPath.load())
+          details->m_parentPathID = path->m_parentPath->m_idPath;
+      }
+    }
+
+    ODBView_TVShow_Counts resTVShowCounts;
+    if (m_cdb.getDB()->query_one<ODBView_TVShow_Counts>(odb::query<ODBView_TVShow_Counts>::CODBTVShow::idTVShow == record.show->m_idTVShow, resTVShowCounts))
+    {
+      details->m_dateAdded.SetFromULongLong(resTVShowCounts.dateAddedULong);
+      details->m_lastPlayed.SetFromULongLong(resTVShowCounts.lastPlayedULong);
+      details->m_iSeason = resTVShowCounts.totalSeasons;
+      details->m_iEpisode = resTVShowCounts.totalCount;
+      details->SetPlayCount(resTVShowCounts.watchedCount);
+    }
+
     if (getDetails & VideoDbDetailsCast)
     {
       GetCast(record.show->m_actors, details->m_cast);
@@ -6259,12 +6246,11 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
       GetUniqueIDs(record.show->m_ids, *details);
 
     details->m_strPictureURL.Parse();
-
     details->m_parsedDetails = getDetails;
+
+    details->SetPlayCount((details->m_iEpisode <= details->GetPlayCount()) ? 1 : 0);
   }
 
-  details->SetPlayCount((details->m_iEpisode <= details->GetPlayCount()) ? 1 : 0);
-  
   GetTVShowTranslation(details.get());
 
   gVideoDatabaseCache.addTVShow(record.show->m_idTVShow, details, getDetails, record.show->m_updatedAt);

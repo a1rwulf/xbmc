@@ -986,10 +986,6 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBTVShow::sortTitle + order;
   }
-  else if (sortDescription.sortBy == SortByGenre)
-  {
-    sortQuery = orderBy + query::genre::name + order;
-  }
   else if (sortDescription.sortBy == SortByYear)
   {
     sortQuery = orderBy + query::CODBTVShow::premiered.year + order;
@@ -1017,10 +1013,6 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByPlaylistOrder)
   {
     //TODO: ???
-  }
-  else if (sortDescription.sortBy == SortByStudio)
-  {
-    sortQuery = orderBy + query::studio::name + order;
   }
   else if (sortDescription.sortBy == SortByPlaycount)
   {

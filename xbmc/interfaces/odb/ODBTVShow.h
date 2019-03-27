@@ -136,12 +136,6 @@ PRAGMA_DB (index member(m_userrating))
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
-                object(CODBGenre = genre: CODBTVShow::m_genres) \
-                object(CODBPersonLink = director_link: CODBTVShow::m_directors) \
-                object(CODBPerson = director: director_link::m_person) \
-                object(CODBPersonLink = actor_ink: CODBTVShow::m_actors) \
-                object(CODBPerson = actor: actor_ink::m_person) \
-                object(CODBStudio = studio: CODBTVShow::m_studios) \
                 object(CODBTag = tag: CODBTVShow::m_tags) \
                 object(CODBRating = defaultRating: CODBTVShow::m_defaultRating) \
                 object(CODBPath = path: CODBTVShow::m_paths) \
@@ -149,6 +143,7 @@ PRAGMA_DB (view object(CODBTVShow) \
 struct ODBView_TVShow
 {
   std::shared_ptr<CODBTVShow> show;
+  std::shared_ptr<CODBRating> defaultRating;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
