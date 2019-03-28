@@ -165,20 +165,18 @@ struct ODBView_TVShow_Total
 // ODBView_Season and ODBView_Episode are here to avoid forward declarations
 
 PRAGMA_DB (view object(CODBTVShow) \
+                object(CODBRating = defaultRating: CODBTVShow::m_defaultRating) \
                 object(CODBSeason inner: CODBTVShow::m_seasons) \
                 object(CODBEpisode inner: CODBSeason::m_episodes) \
                 object(CODBFile inner: CODBEpisode::m_file) \
-                query(distinct))
+                query((?) + "GROUP BY" + CODBSeason::m_idSeason, distinct))
 struct ODBView_Season
 {
-PRAGMA_DB(column(CODBTVShow::m_idTVShow))
-  unsigned long m_idTVShow;
-  
-PRAGMA_DB(column(CODBSeason::m_idSeason))
-  unsigned long m_idSeason;
-
-PRAGMA_DB(column(CODBSeason::m_updatedAt))
-  unsigned long m_updatedAt;
+  std::shared_ptr<CODBTVShow> show;
+  std::shared_ptr<CODBRating> defaultRating;
+  std::shared_ptr<CODBSeason> season;
+  PRAGMA_DB (column("SUM(" + CODBFile::m_playCount + ") AS playCount"))
+  int playCount;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
@@ -251,15 +249,6 @@ struct ODBView_TVShow_UID
 {
   std::shared_ptr<CODBTVShow> show;
   std::shared_ptr<CODBUniqueID> uid;
-};
-
-PRAGMA_DB (view object(CODBTVShow) \
-                object(CODBSeason inner: CODBTVShow::m_seasons) \
-                query(distinct))
-struct ODBView_TVShow_Seasons
-{
-  std::shared_ptr<CODBTVShow> show;
-  std::shared_ptr<CODBSeason> season;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \

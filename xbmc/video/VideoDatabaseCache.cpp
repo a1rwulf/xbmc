@@ -59,10 +59,9 @@ void CVideoDatabaseCache::languageChange()
   videodb.GetMovieTranslations(m_MovieCacheMap, true);
   videodb.GetTVShowTranslations(m_TVShowCacheMap, m_SeasonCacheMap, m_EpisodeCacheMap, true);
 
-  for (tFileItemCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end(); ++iter)
+  for (tVideoInfoTagCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end(); ++iter)
   {
-    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
+    iter->second.m_item->SetTitle(iter->second.m_item->m_strTitle);
   }
 
   for (tFileItemCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end(); ++iter)
@@ -98,9 +97,9 @@ void CVideoDatabaseCache::clearCacheByFileID(long id)
     ++iter;
   }
   
-  for (tFileItemCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end();)
+  for (tVideoInfoTagCacheMap::iterator iter = m_SeasonCacheMap.begin(); iter != m_SeasonCacheMap.end();)
   {
-    if (iter->second.m_item->GetVideoInfoTag()->m_iFileId == id)
+    if (iter->second.m_item->m_iFileId == id)
     {
       iter = m_SeasonCacheMap.erase(iter);
       continue;
@@ -269,10 +268,10 @@ std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getTVShow(long id, int getDe
   return nullptr;
 }
 
-void CVideoDatabaseCache::addSeason(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt)
+void CVideoDatabaseCache::addSeason(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt)
 {
-  CVideoDatabaseCacheItem<CFileItem> cacheItem;
-  cacheItem.m_getDetails = 0;
+  CVideoDatabaseCacheItem<CVideoInfoTag> cacheItem;
+  cacheItem.m_getDetails = getDetails;
   cacheItem.m_updatedAt = updatedAt;
   cacheItem.m_item = item;
   
@@ -281,22 +280,22 @@ void CVideoDatabaseCache::addSeason(long id, std::shared_ptr<CFileItem>& item, u
   setCurrentLanguage();
 }
 
-std::shared_ptr<CFileItem> CVideoDatabaseCache::getSeason(long id, uint64_t updatedAt)
+std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getSeason(long id, int getDetails, uint64_t updatedAt)
 {
   CSingleLock lock(m_mutex);
-  tFileItemCacheMap ::iterator it = m_SeasonCacheMap.find(id);
-  
+  tVideoInfoTagCacheMap ::iterator it = m_SeasonCacheMap.find(id);
+
   if (it != m_SeasonCacheMap.end())
   {
-    if (it->second.m_updatedAt != updatedAt)
+    if (it->second.m_getDetails < getDetails || it->second.m_updatedAt != updatedAt)
     {
       m_SeasonCacheMap.erase(it);
       return nullptr;
     }
-    
+
     return it->second.m_item;
   }
-  
+
   return nullptr;
 }
 

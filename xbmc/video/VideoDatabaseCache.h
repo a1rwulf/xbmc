@@ -75,8 +75,8 @@ public:
   void addTVShow(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt);
   std::shared_ptr<CVideoInfoTag> getTVShow(long id, int getDetails, uint64_t updatedAt);
   
-  void addSeason(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt);
-  std::shared_ptr<CFileItem> getSeason(long id, uint64_t updatedAt);
+  void addSeason(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt);
+  std::shared_ptr<CVideoInfoTag> getSeason(long id, int getDetails, uint64_t updatedAt);
   
   void addEpisode(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt);
   std::shared_ptr<CFileItem> getEpisode(long id, uint64_t updatedAt);
@@ -88,7 +88,7 @@ private:
   tArtTypeCacheMap m_ArtCacheMap;
   tFileItemCacheMap m_PersonCacheMap;
   tVideoInfoTagCacheMap m_TVShowCacheMap;
-  tFileItemCacheMap m_SeasonCacheMap;
+  tVideoInfoTagCacheMap m_SeasonCacheMap;
   tFileItemCacheMap m_EpisodeCacheMap;
   
   std::string m_language;
