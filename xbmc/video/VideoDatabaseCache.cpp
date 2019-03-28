@@ -64,10 +64,9 @@ void CVideoDatabaseCache::languageChange()
     iter->second.m_item->SetTitle(iter->second.m_item->m_strTitle);
   }
 
-  for (tFileItemCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end(); ++iter)
+  for (tVideoInfoTagCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end(); ++iter)
   {
-    iter->second.m_item->SetLabel(iter->second.m_item->GetVideoInfoTag()->m_strTitle);
-    iter->second.m_item->SetProperty("castandrole", iter->second.m_item->GetVideoInfoTag()->GetCast(true));
+    iter->second.m_item->SetTitle(iter->second.m_item->m_strTitle);
   }
 }
 
@@ -108,9 +107,9 @@ void CVideoDatabaseCache::clearCacheByFileID(long id)
     ++iter;
   }
   
-  for (tFileItemCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end();)
+  for (tVideoInfoTagCacheMap::iterator iter = m_EpisodeCacheMap.begin(); iter != m_EpisodeCacheMap.end();)
   {
-    if (iter->second.m_item->GetVideoInfoTag()->m_iFileId == id)
+    if (iter->second.m_item->m_iFileId == id)
     {
       iter = m_EpisodeCacheMap.erase(iter);
       continue;
@@ -299,10 +298,10 @@ std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getSeason(long id, int getDe
   return nullptr;
 }
 
-void CVideoDatabaseCache::addEpisode(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt)
+void CVideoDatabaseCache::addEpisode(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt)
 {
-  CVideoDatabaseCacheItem<CFileItem> cacheItem;
-  cacheItem.m_getDetails = 0;
+  CVideoDatabaseCacheItem<CVideoInfoTag> cacheItem;
+  cacheItem.m_getDetails = getDetails;
   cacheItem.m_updatedAt = updatedAt;
   cacheItem.m_item = item;
   
@@ -311,10 +310,10 @@ void CVideoDatabaseCache::addEpisode(long id, std::shared_ptr<CFileItem>& item, 
   setCurrentLanguage();
 }
 
-std::shared_ptr<CFileItem> CVideoDatabaseCache::getEpisode(long id, uint64_t updatedAt)
+std::shared_ptr<CVideoInfoTag> CVideoDatabaseCache::getEpisode(long id, uint64_t updatedAt)
 {
   CSingleLock lock(m_mutex);
-  tFileItemCacheMap ::iterator it = m_EpisodeCacheMap.find(id);
+  tVideoInfoTagCacheMap ::iterator it = m_EpisodeCacheMap.find(id);
   
   if (it != m_EpisodeCacheMap.end())
   {

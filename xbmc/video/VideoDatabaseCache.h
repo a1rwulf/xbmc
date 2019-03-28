@@ -78,8 +78,8 @@ public:
   void addSeason(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt);
   std::shared_ptr<CVideoInfoTag> getSeason(long id, int getDetails, uint64_t updatedAt);
   
-  void addEpisode(long id, std::shared_ptr<CFileItem>& item, uint64_t updatedAt);
-  std::shared_ptr<CFileItem> getEpisode(long id, uint64_t updatedAt);
+  void addEpisode(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt);
+  std::shared_ptr<CVideoInfoTag> getEpisode(long id, uint64_t updatedAt);
 private:
   void setCurrentLanguage();
   
@@ -89,7 +89,7 @@ private:
   tFileItemCacheMap m_PersonCacheMap;
   tVideoInfoTagCacheMap m_TVShowCacheMap;
   tVideoInfoTagCacheMap m_SeasonCacheMap;
-  tFileItemCacheMap m_EpisodeCacheMap;
+  tVideoInfoTagCacheMap m_EpisodeCacheMap;
   
   std::string m_language;
   CCriticalSection m_mutex;

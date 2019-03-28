@@ -1685,26 +1685,6 @@ odb::query<ODBView_Episode> CSmartPlaylistRule::FormatEpisodeWhereClause(const b
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::genre::name_type_, std::string>(query::genre::name, oper, prepared_string);
   }
-  else if (m_field == FieldDirector)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
-  }
-  else if (m_field == FieldActor)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
-  }
-  else if (m_field == FieldWriter)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::writingCredit::name_type_, std::string>(query::writingCredit::name, oper, prepared_string);
-  }
-  else if (m_field == FieldStudio)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::studio::name_type_, std::string>(query::studio::name, oper, prepared_string);
-  }
   else if (m_field == FieldTag)
   {
     std::string prepared_string = FormatODBString(oper, param);

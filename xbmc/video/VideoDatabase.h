@@ -946,7 +946,9 @@ protected:
   template <class T>
   CVideoInfoTag GetDetailsForSeason(const T record, const CVideoInfoTag& tvshow, int getDetails = VideoDbDetailsNone);
 
-  CVideoInfoTag GetDetailsForEpisode(const odb::result<ODBView_Episode>::iterator record, int getDetails = VideoDbDetailsNone);
+  template <class T>
+  CVideoInfoTag GetDetailsForEpisode(const T record, int getDetails = VideoDbDetailsNone);
+
   CVideoInfoTag GetDetailsForMusicVideo(std::unique_ptr<dbiplus::Dataset> &pDS, int getDetails = VideoDbDetailsNone);
   CVideoInfoTag GetDetailsForMusicVideo(const dbiplus::sql_record* const record, int getDetails = VideoDbDetailsNone);
   bool GetPeopleNav(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent = -1, const Filter &filter = Filter(), bool countOnly = false);
@@ -1074,7 +1076,7 @@ public:
    \param force true = forcefully update languages, false = do nothing when default language is chosen
    \return true when successful, false otherwise
    */
-  bool GetTVShowTranslations(tVideoInfoTagCacheMap& tvshowCacheMap, tVideoInfoTagCacheMap& seasonCacheMap, tFileItemCacheMap& episodeCacheMap, bool force);
+  bool GetTVShowTranslations(tVideoInfoTagCacheMap& tvshowCacheMap, tVideoInfoTagCacheMap& seasonCacheMap, tVideoInfoTagCacheMap& episodeCacheMap, bool force);
   CVideoDatabaseCache& getCache();
 
   std::string GetMACAddress();

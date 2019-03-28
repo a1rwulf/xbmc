@@ -199,13 +199,6 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBSeason inner: CODBTVShow::m_seasons) \
                 object(CODBEpisode inner: CODBSeason::m_episodes) \
                 object(CODBGenre = genre: CODBTVShow::m_genres) \
-                object(CODBPersonLink = director_link: CODBEpisode::m_directors) \
-                object(CODBPerson = director: director_link::m_person) \
-                object(CODBPersonLink = actor_ink: CODBEpisode::m_actors) \
-                object(CODBPerson = actor: actor_ink::m_person) \
-                object(CODBPersonLink = writingCredit_link: CODBEpisode::m_writingCredits) \
-                object(CODBPerson = writingCredit: writingCredit_link::m_person) \
-                object(CODBStudio = studio: CODBTVShow::m_studios) \
                 object(CODBFile = fileView: CODBEpisode::m_file) \
                 object(CODBPath = pathView: fileView::m_path) \
                 object(CODBStreamDetails: CODBEpisode::m_file == CODBStreamDetails::m_file) \
@@ -214,7 +207,12 @@ PRAGMA_DB (view object(CODBTVShow) \
                 query(distinct))
 struct ODBView_Episode
 {
+  std::shared_ptr<CODBTVShow> show;
+  std::shared_ptr<CODBRating> defaultRating;
+  std::shared_ptr<CODBSeason> season;
   std::shared_ptr<CODBEpisode> episode;
+  PRAGMA_DB (column(fileView::m_dateAdded.m_ulong_date + "as dateadded"))
+  unsigned long dateAddedULong;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \

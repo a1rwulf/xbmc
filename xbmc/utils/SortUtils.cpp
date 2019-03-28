@@ -1138,10 +1138,6 @@ T SortUtils::SortODBEpisodeQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBTVShow::title + order;
   }
-  else if (sortDescription.sortBy == SortByStudio)
-  {
-    sortQuery = orderBy + query::studio::name + order;
-  }
   else if (sortDescription.sortBy == SortByLastPlayed)
   {
     sortQuery = orderBy + query::fileView::lastPlayed.ulong_date + order;
