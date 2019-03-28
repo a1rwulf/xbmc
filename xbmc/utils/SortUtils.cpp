@@ -994,10 +994,10 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBTVShow::runtime + order;
   }
-  else if (sortDescription.sortBy == SortByPath)
-  {
-    sortQuery = orderBy + query::path::path + order;
-  }
+  // else if (sortDescription.sortBy == SortByPath)
+  // {
+  //   sortQuery = orderBy + query::path::path + order;
+  // }
   else if (sortDescription.sortBy == SortByRating)
   {
     sortQuery = orderBy + query::defaultRating::rating + order;

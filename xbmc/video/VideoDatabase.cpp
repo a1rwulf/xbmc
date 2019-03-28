@@ -6175,6 +6175,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
   details->m_type = MediaTypeTvShow;
   details->m_iUserRating = record.show->m_userrating;
   details->SetDuration(record.show->m_runtime);
+  details->m_dateAdded.SetFromULongLong(record.dateAddedULong);
 
   if (record.defaultRating)
   {
@@ -6225,7 +6226,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
     ODBView_TVShow_Counts resTVShowCounts;
     if (m_cdb.getDB()->query_one<ODBView_TVShow_Counts>(odb::query<ODBView_TVShow_Counts>::CODBTVShow::idTVShow == record.show->m_idTVShow, resTVShowCounts))
     {
-      details->m_dateAdded.SetFromULongLong(resTVShowCounts.dateAddedULong);
       details->m_lastPlayed.SetFromULongLong(resTVShowCounts.lastPlayedULong);
       details->m_iSeason = resTVShowCounts.totalSeasons;
       details->m_iEpisode = resTVShowCounts.totalCount;
@@ -6341,7 +6341,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Epi
       if(link.load() && link->m_person.load())
         details.m_writingCredits.push_back(link->m_person->m_name);
     }
-
 
     details.SetPremieredFromDBDate(record->episode->m_aired.m_date);
     details.m_firstAired.SetFromULongLong(record->episode->m_aired.m_ulong_date);

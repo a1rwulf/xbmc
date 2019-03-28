@@ -1531,11 +1531,11 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   {
     where_query = FormatODBParam<query, query::defaultRating::votes_type_, int>(query::defaultRating::votes, oper, std::stoi(param));
   }
-  else if (m_field == FieldPath)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::path::path_type_, std::string>(query::path::path, oper, prepared_string);
-  }
+  // else if (m_field == FieldPath)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::path::path_type_, std::string>(query::path::path, oper, prepared_string);
+  // }
   else if (m_field == FieldSet)
   {
     //TODO: How?

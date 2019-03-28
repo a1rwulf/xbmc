@@ -138,12 +138,16 @@ PRAGMA_DB (index member(m_userrating))
 PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBTag = tag: CODBTVShow::m_tags) \
                 object(CODBRating = defaultRating: CODBTVShow::m_defaultRating) \
-                object(CODBPath = path: CODBTVShow::m_paths) \
-                query(distinct))
+                object(CODBSeason inner: CODBTVShow::m_seasons) \
+                object(CODBEpisode inner: CODBSeason::m_episodes) \
+                object(CODBFile inner: CODBEpisode::m_file) \
+                query((?) + "GROUP BY" + CODBTVShow::m_idTVShow, distinct))
 struct ODBView_TVShow
 {
   std::shared_ptr<CODBTVShow> show;
   std::shared_ptr<CODBRating> defaultRating;
+  PRAGMA_DB (column("MAX(" + CODBFile::m_dateAdded.m_ulong_date + ")"))
+  unsigned long dateAddedULong;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
@@ -175,6 +179,8 @@ struct ODBView_Season
   std::shared_ptr<CODBTVShow> show;
   std::shared_ptr<CODBRating> defaultRating;
   std::shared_ptr<CODBSeason> season;
+  PRAGMA_DB (column("MAX(" + CODBFile::m_dateAdded.m_ulong_date + ")"))
+  unsigned long dateAddedULong;
   PRAGMA_DB (column("SUM(" + CODBFile::m_playCount + ") AS playCount"))
   int playCount;
 };
