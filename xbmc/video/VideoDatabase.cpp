@@ -6307,23 +6307,12 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
 
   if (getDetails)
   {
-    for (auto& genre : record.show->m_genres)
-    {
-      if (genre.load())
-        details->m_genre.push_back(genre->m_name);
-    }
-
-    for (auto& studio : record.show->m_studios)
-    {
-      if (studio.load())
-        details->m_studio.push_back(studio->m_name);
-    }
+    details->m_genre = tvshow.m_genre;
+    details->m_studio = tvshow.m_studio;
 
     ODBView_Season_Episode_Count objEpisodeCount;
     if (m_cdb.getDB()->query_one<ODBView_Season_Episode_Count>(odb::query<ODBView_Season_Episode_Count>::CODBSeason::idSeason == record.season->m_idSeason, objEpisodeCount))
-    {
       details->m_iEpisode = objEpisodeCount.episodesTotal;
-    }
 
     if (getDetails & VideoDbDetailsCast)
       GetCast(record.show->m_actors, details->m_cast);
