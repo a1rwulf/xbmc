@@ -33,8 +33,7 @@
 PRAGMA_DB (model version(1, 1, open))
 
 PRAGMA_DB (object pointer(std::shared_ptr) \
-                  table("file") \
-                  session)
+                  table("file"))
 class CODBFile
 {
 public:
