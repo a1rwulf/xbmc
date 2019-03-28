@@ -10875,27 +10875,22 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
     for (auto &r : res)
     {
       CVideoInfoTag tvshow = GetDetailsForTvShow(r, getDetails);
-      if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-          g_passwordManager.bMasterUser ||
-          g_passwordManager.IsDatabasePathUnlocked(tvshow.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-      {
-        CFileItemPtr pItem(new CFileItem(tvshow));
-        CVideoDbUrl itemUrl = videoDbUrl;
-        std::string path = StringUtils::Format("%i", tvshow.m_iDbId);
+      CFileItemPtr pItem(new CFileItem(tvshow));
+      CVideoDbUrl itemUrl = videoDbUrl;
+      std::string path = StringUtils::Format("%i", tvshow.m_iDbId);
 
-        itemUrl.AppendPath(path);
-        pItem->SetPath(itemUrl.ToString());
-        pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
-        pItem->m_dateTime = tvshow.GetPremiered();
-        pItem->SetProperty("totalseasons", tvshow.m_iSeason);
-        pItem->SetProperty("totalepisodes", tvshow.m_iEpisode);
-        pItem->SetProperty("numepisodes", tvshow.m_iEpisode); // will be changed later to reflect watchmode setting
-        pItem->SetProperty("watchedepisodes", tvshow.GetPlayCount());
-        pItem->SetProperty("unwatchedepisodes", tvshow.m_iEpisode - tvshow.GetPlayCount());
+      itemUrl.AppendPath(path);
+      pItem->SetPath(itemUrl.ToString());
+      pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
+      pItem->m_dateTime = tvshow.GetPremiered();
+      pItem->SetProperty("totalseasons", tvshow.m_iSeason);
+      pItem->SetProperty("totalepisodes", tvshow.m_iEpisode);
+      pItem->SetProperty("numepisodes", tvshow.m_iEpisode); // will be changed later to reflect watchmode setting
+      pItem->SetProperty("watchedepisodes", tvshow.GetPlayCount());
+      pItem->SetProperty("unwatchedepisodes", tvshow.m_iEpisode - tvshow.GetPlayCount());
 
-        items.Add(pItem);
-        ++total;
-      }
+      items.Add(pItem);
+      ++total;
     }
 
     // If Limits are set, we need to query the total amount of items without limits
