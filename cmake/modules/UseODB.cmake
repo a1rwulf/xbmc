@@ -136,6 +136,8 @@ function(odb_compile outvar)
     list(APPEND ODB_ARGS "-I${dir}")
   endforeach ()
 
+  list(APPEND ODB_ARGS "-I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include")
+
   file(REMOVE_RECURSE "${ODB_COMPILE_OUTPUT_DIR}")
   file(MAKE_DIRECTORY "${ODB_COMPILE_OUTPUT_DIR}")
 

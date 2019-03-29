@@ -43,12 +43,27 @@ public:
   std::shared_ptr<T> m_item;
 };
 
+class CVideoDatabaseTranslationItem
+{
+public:
+  CVideoDatabaseTranslationItem()
+  {
+    m_updatedAt = 0;
+  }
+  
+  uint64_t m_updatedAt;
+  std::string m_language;
+  std::string m_text;
+};
+
 typedef std::map<long, CVideoDatabaseCacheItem<CVideoInfoTag> > tVideoInfoTagCacheMap;
 typedef std::map<long, CVideoDatabaseCacheItem<CStreamDetails> > tStreamDetailsCacheMap;
 typedef std::map<long, CVideoDatabaseCacheItem<CFileItem> > tFileItemCacheMap;
 typedef std::map<std::string, std::string> tArtTypeCacheType;
 typedef std::map<long, CVideoDatabaseCacheItem<tArtTypeCacheType> > tArtCacheMap;
 typedef std::map<std::string, tArtCacheMap> tArtTypeCacheMap;
+
+typedef std::map<std::string, CVideoDatabaseTranslationItem> tTranslationCacheMap;
 
 class CVideoDatabaseCache
 {
@@ -80,8 +95,31 @@ public:
   
   void addEpisode(long id, std::shared_ptr<CVideoInfoTag>& item, int getDetails, uint64_t updatedAt);
   std::shared_ptr<CVideoInfoTag> getEpisode(long id, uint64_t updatedAt);
+  
+  std::string getTranslation(std::string key, uint64_t updatedAt);
 private:
   void setCurrentLanguage();
+  
+  void loadTranslations();
+  
+  /*! \brief Translate VideoInfoTag items
+   Translates all items stored in movieCacheMap into the current
+   chosen language.
+   If the current langauge is the default language and force is not set,
+   nothing happens.
+   \return true when successful, false otherwise
+   */
+  bool GetTVShowTranslations();
+  
+  /*! \brief Translate VideoInfoTag items
+   Translates all items stored in movieCacheMap into the current
+   chosen language.
+   If the current langauge is the default language and force is not set,
+   nothing happens.
+   \return true when successful, false otherwise
+   */
+  bool GetMovieTranslations();
+  
   
   tVideoInfoTagCacheMap m_MovieCacheMap;
   tStreamDetailsCacheMap m_StreamDetailsCacheMap;
@@ -90,6 +128,7 @@ private:
   tVideoInfoTagCacheMap m_TVShowCacheMap;
   tVideoInfoTagCacheMap m_SeasonCacheMap;
   tVideoInfoTagCacheMap m_EpisodeCacheMap;
+  tTranslationCacheMap m_TranslationCacheMap;
   
   std::string m_language;
   CCriticalSection m_mutex;

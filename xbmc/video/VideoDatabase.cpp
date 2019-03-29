@@ -14406,76 +14406,6 @@ bool CVideoDatabase::SetVideoUserRating(int dbId, int rating, const MediaType& m
   return false;
 }
 
-bool CVideoDatabase::GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, bool force)
-{
-  bool ret = false;
-
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBMovie movie;
-      odb::result<CODBMovie> r (m_cdb.getDB()->query<CODBMovie>());
-      for (CODBMovie& movie : r)
-      {
-        tVideoInfoTagCacheMap::iterator it = movieCacheMap.find(movie.m_idMovie);
-        if (it != movieCacheMap.end())
-        {
-          it->second.m_item->SetTitle(movie.m_title);
-          it->second.m_item->SetSortTitle(movie.m_title);
-          it->second.m_item->SetPlot(movie.m_plot);
-        }
-      }
-    }
-    else
-    {
-      /*
-       Available Contexts:
-       movie.title
-       movie.plot
-       */
-      std::map<std::string, std::string> translations = GetTranslatedStrings();
-      for (auto& item : movieCacheMap)
-      {
-        std::stringstream ss;
-        ss << "movie." << item.second.m_item->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->SetTitle(it->second);
-          item.second.m_item->SetSortTitle(it->second);
-        }
-
-        ss.str("");
-        ss.clear();
-        ss << "movie." << item.second.m_item->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetPlot(it->second);
-      }
-    }
-
-    ret = true;
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-
-  return ret;
-}
-
 bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
 {
   bool ret = false;
@@ -14505,9 +14435,9 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
        movie.title
        movie.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot", details->m_dateAdded.GetAsULongLong());
     }
 
     ret = true;
@@ -14556,12 +14486,12 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
        season.title
        season.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
       
       // Also translate the TV Show elements in it
-      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot");
+      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
       
       if (details->m_iSeason == 0)
         details->m_strTitle = g_localizeStrings.Get(20381);
@@ -14578,162 +14508,6 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
   return false;
-}
-
-bool CVideoDatabase::GetTVShowTranslations(tVideoInfoTagCacheMap& tvshowCacheMap, tVideoInfoTagCacheMap& seasonCacheMap, tVideoInfoTagCacheMap& episodeCacheMap, bool force)
-{
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      // Translate TVShows to English
-      odb::result<CODBTVShow> r (m_cdb.getDB()->query<CODBTVShow>());
-      for (CODBTVShow& tvshow : r)
-      {
-        tVideoInfoTagCacheMap::iterator it = tvshowCacheMap.find(tvshow.m_idTVShow);
-        if (it != tvshowCacheMap.end())
-        {
-          it->second.m_item->SetTitle(tvshow.m_title);
-          it->second.m_item->SetSortTitle(tvshow.m_title);
-          it->second.m_item->SetPlot(tvshow.m_plot);
-        }
-      }
-
-      // Translate Seasons to English
-      odb::result<CODBSeason> r1 (m_cdb.getDB()->query<CODBSeason>());
-      for (CODBSeason& season : r1)
-      {
-        tVideoInfoTagCacheMap::iterator it = seasonCacheMap.find(season.m_idSeason);
-        if (it != seasonCacheMap.end())
-        {
-          it->second.m_item->SetTitle(season.m_name);
-          it->second.m_item->SetSortTitle(season.m_name);
-
-          tVideoInfoTagCacheMap::iterator itshow = tvshowCacheMap.find(it->second.m_item->m_iShowId);
-          if (itshow != tvshowCacheMap.end())
-          {
-            it->second.m_item->SetShowTitle(itshow->second.m_item->m_strShowTitle);
-            it->second.m_item->SetPlot(itshow->second.m_item->m_strPlot);
-          }
-        }
-      }
-
-      // Translate Episodes to English
-      odb::result<CODBEpisode> r2 (m_cdb.getDB()->query<CODBEpisode>());
-      for (CODBEpisode& episode : r2)
-      {
-        tVideoInfoTagCacheMap::iterator it = episodeCacheMap.find(episode.m_idEpisode);
-        if (it != episodeCacheMap.end())
-        {
-          it->second.m_item->SetTitle(episode.m_title);
-          it->second.m_item->SetSortTitle(episode.m_title);
-          it->second.m_item->SetPlot(episode.m_plot);
-        }
-      }
-    }
-    else
-    {
-      // Read all translations for the current active language
-      std::map<std::string, std::string> translations = GetTranslatedStrings();
-
-      // Translate TVShows elements
-      for (auto& item : tvshowCacheMap)
-      {
-        std::stringstream ss;
-        ss << "tvshow." << item.second.m_item->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->SetTitle(it->second);
-          item.second.m_item->SetSortTitle(it->second);
-        }
-
-        ss.str("");
-        ss.clear();
-        ss << "tvshow." << item.second.m_item->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetPlot(it->second);
-      }
-
-      // Translate Season elements
-      for (auto& item : seasonCacheMap)
-      {
-        std::stringstream ss;
-        ss << "tvshow." << item.second.m_item->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetShowTitle(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "tvshow." << item.second.m_item->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetPlot(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "season." << item.second.m_item->m_iDbId << ".title";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->SetTitle(it->second);
-          item.second.m_item->SetSortTitle(it->second);
-        }
-
-        if (item.second.m_item->m_iSeason == 0)
-        {
-          item.second.m_item->SetTitle(g_localizeStrings.Get(20381));
-          item.second.m_item->SetSortTitle(g_localizeStrings.Get(20381));
-        }
-        else
-        {
-          item.second.m_item->SetTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->m_iSeason));
-          item.second.m_item->SetSortTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->m_iSeason));
-        }
-      }
-
-      // Translate Episode elements
-      for (auto& item : seasonCacheMap)
-      {
-        std::stringstream ss;
-        ss << "episode." << item.second.m_item->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetShowTitle(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "episode." << item.second.m_item->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetPlot(it->second);
-      }
-    }
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-  return true;
 }
 
 bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
@@ -14763,9 +14537,9 @@ bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
        tvshow.title
        tvshow.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
     }
   }
   catch (std::exception& e)
@@ -14812,10 +14586,10 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
        episode.title
        episode.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot");
-      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
     }
   }
   catch (std::exception& e)
@@ -14829,35 +14603,14 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
   return false;
 }
 
-void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2)
+void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt)
 {
-  typedef odb::query<CODBTranslation> query;
-  
-  std::string lang = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
   std::string key = key1 + "." + std::to_string(id) + "." + key2;
-  
-  CODBTranslation objTranslation;
-  if (m_cdb.getDB()->query_one<CODBTranslation>(query::language == lang
-                                                && query::key == key
-                                                , objTranslation))
+  std::string newVar = gVideoDatabaseCache.getTranslation(key, updatedAt);
+  if (!newVar.empty())
   {
-    var = objTranslation.m_text;
+    var = newVar;
   }
-}
-
-std::map<std::string, std::string> CVideoDatabase::GetTranslatedStrings()
-{
-  typedef odb::query<CODBTranslation> query;
-  std::map<std::string, std::string> transmap;
-  std::string lang = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
-
-  odb::result<CODBTranslation> r(m_cdb.getDB()->query<CODBTranslation>(query::language == lang));
-  for (CODBTranslation& translation : r)
-  {
-    transmap.insert(std::make_pair(translation.m_key, translation.m_text));
-  }
-
-  return transmap;
 }
 
 CVideoDatabaseCache& CVideoDatabase::getCache()
