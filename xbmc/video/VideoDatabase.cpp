@@ -10695,10 +10695,8 @@ void CVideoDatabase::AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVide
       spq = "{\"rules\":{\"and\":[{\"field\":\"set\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
     else if (option.first == "year")
       spq = "{\"rules\":{\"and\":[{\"field\":\"year\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
-    else if (option.first == "tagid") {
+    else if (option.first == "tagid")
         spq = "{\"rules\":{\"and\":[{\"field\":\"tagid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
-      hasTags = true;
-    }
     else if (option.first == "tag")
         spq = "{\"rules\":{\"and\":[{\"field\":\"tag\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
     else if (option.first == "filter" || option.first == "xsp")
