@@ -140,6 +140,7 @@ typedef enum {
   FieldDirectorId,
   FieldActorId,
   FieldWriterId,
+  FieldSetId,
   FieldMax
 } Field;
 

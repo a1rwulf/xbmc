@@ -121,7 +121,8 @@ static const translateField fields[] = {
   { "studioid",          FieldStudioId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  572 },
   { "directorid",        FieldDirectorId,              CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20339 },
   { "actorid",           FieldActorId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20337 },
-  { "writerid",          FieldWriterId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20417 }
+  { "writerid",          FieldWriterId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20417 },
+  { "setid",             FieldSetId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20457 }
 };
 
 typedef struct
@@ -897,9 +898,9 @@ std::string CSmartPlaylistRule::FormatLinkQuery(const char *field,
                                                 const std::string& keyField)
 {
   // NOTE: no need for a PrepareSQL here, as the parameter has already been formatted
-  return StringUtils::Format(" EXISTS (SELECT 1 FROM %s_%ss"
-                             " INNER JOIN %s ON %s_%ss.value = %s.%s"
-                             " WHERE %s_%ss.object_id = %s AND %s.%s %s)",
+  return StringUtils::Format(" EXISTS (SELECT 1 FROM `%s_%ss`"
+                             " INNER JOIN `%s` ON `%s_%ss`.`value` = `%s`.`%s`"
+                             " WHERE `%s_%ss`.`object_id` = %s AND `%s`.`%s` %s)",
                              mediaType.c_str(),
                              table,
 
@@ -2140,6 +2141,10 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
       query = negate + FormatLinkQuery("name", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
     else if (m_field == FieldTagId)
       query = negate + FormatLinkQuery("idTag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+    else if (m_field == FieldSet)
+      query = negate + FormatLinkQuery("name", "set", MediaTypeMovie, GetField(FieldId, strType), parameter, "idSet");
+    else if (m_field == FieldSetId)
+      query = negate + FormatLinkQuery("idSet", "set", MediaTypeMovie, GetField(FieldId, strType), parameter, "idSet");
     else if (m_field == FieldStreamAudioLanguage)
       query = negate + FormatLinkStreamQuery("audio", "filestream", MediaTypeMovie, GetField(FieldId, strType), parameter, "name");
     else if (m_field == FieldStreamSubtitleLanguage)
