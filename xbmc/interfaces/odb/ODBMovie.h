@@ -411,4 +411,13 @@ struct ODBView_MovieFileStreamLanguages
   std::shared_ptr<CODBLanguage> language;
 };
 
+PRAGMA_DB (view \
+  object(CODBMovie) \
+  object(CODBSet = set inner: CODBMovie::m_sets))
+struct ODBView_Movie_Sets
+{
+  std::shared_ptr<CODBMovie> movie;
+  std::shared_ptr<CODBSet> set;
+};
+
 #endif /* ODBMOVIE_H */

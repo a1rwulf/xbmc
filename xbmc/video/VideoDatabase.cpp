@@ -9398,6 +9398,43 @@ bool CVideoDatabase::GetSetsByWhere(const std::string& strBaseDir, const Filter 
     if (!GetMoviesByWhere(strBaseDir, filter, items, SortDescription(), VideoDbDetailsNone, optionalQueries))
       return false;
 
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
+
+    std::map<unsigned int, std::vector<CVideoInfoTag::SetInfo> > setmap;
+    odb::result<ODBView_Movie_Sets> res(m_cdb.getDB()->query<ODBView_Movie_Sets>());
+    for (auto & r : res)
+    {
+      CVideoInfoTag::SetInfo tmp;
+      tmp.id = r.set->m_idSet;
+      tmp.title = r.set->m_name;
+      tmp.overview  = r.set->m_overview;
+
+      auto item = setmap.find(r.movie->m_idMovie);
+      if (item != setmap.end())
+      {
+        auto &setlist = item->second;
+        setlist.push_back(tmp);
+      }
+      else
+      {
+        std::vector<CVideoInfoTag::SetInfo> newlist;
+        newlist.push_back(tmp);
+        setmap.insert(std::make_pair(r.movie->m_idMovie, newlist));
+      }
+    }
+
+    for (auto &i : items)
+    {
+      auto it = setmap.find(i->GetVideoInfoTag()->m_iDbId);
+      if (it != setmap.end())
+        i->GetVideoInfoTag()->m_sets = it->second;
+    }
+
     CFileItemList sets;
     GroupAttribute groupingAttributes = ignoreSingleMovieSets ? GroupAttributeIgnoreSingleItems : GroupAttributeNone;
     if (!GroupUtils::Group(GroupBySet, strBaseDir, items, sets, groupingAttributes))
