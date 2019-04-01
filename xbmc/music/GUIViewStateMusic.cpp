@@ -183,6 +183,8 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       AddSortMethod(SortByUserRating, 38018, LABEL_MASKS("%F", "", strAlbum, "%r"));  // Filename, empty | Userdefined, UserRating
       // title
       AddSortMethod(SortByTitle, sortAttribute, 556, LABEL_MASKS("%F", "", strAlbum, "%A"));  // Filename, empty | Userdefined (default=%B), Artist
+      // title
+      AddSortMethod(SortBySortTitle, sortAttribute, 556, LABEL_MASKS("%F", "", strAlbum, "%A"));  // Filename, empty | Userdefined (default=%B), Artist
 
       const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavalbums");
       SetSortMethod(viewState->m_sortDescription);
@@ -294,6 +296,7 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
   {
     AddSortMethod(SortByDateAdded, sortAttribute, 570, LABEL_MASKS("%F", "", "", "%a"));  // Filename, empty | Userdefined, dateAdded
     AddSortMethod(SortByTitle, sortAttribute, 556, LABEL_MASKS("%T - %A", "%D"));  // Title, Artist, Duration| empty, empty
+    AddSortMethod(SortBySortTitle, sortAttribute, 556, LABEL_MASKS("%T - %A", "%D"));  // Title, Artist, Duration| empty, empty
     AddSortMethod(SortBySize, 553, LABEL_MASKS("%F", "%I", "%L", "%I"));  // Filename, Size | Foldername, Size
 
     const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavplaylists");
