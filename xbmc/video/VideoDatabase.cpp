@@ -6138,9 +6138,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
     details->m_parsedDetails = getDetails;
   }
 
-  //! @todo preload-speed
-  //! Check how to handle translations
-  //GetMovieTranslation(details.get());
+  GetMovieTranslation(details.get());
 
   gVideoDatabaseCache.addMovie(record.movie->m_idMovie, details, getDetails, record.movie->m_updatedAt);
   return *details;

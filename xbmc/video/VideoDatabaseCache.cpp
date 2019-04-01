@@ -371,7 +371,7 @@ std::string CVideoDatabaseCache::getTranslation(std::string key, uint64_t update
   
   if (it != m_TranslationCacheMap.end())
   {
-    if (updatedAt != 0 && updatedAt != it->second.m_updatedAt)
+    if (it->second.m_updatedAt != 0 && updatedAt != it->second.m_updatedAt)
     {
       std::shared_ptr<odb::transaction> odb_transaction (CCommonDatabase::GetInstance().getTransaction());
       typedef odb::query<CODBTranslation> query;
@@ -383,6 +383,8 @@ std::string CVideoDatabaseCache::getTranslation(std::string key, uint64_t update
         it->second.m_updatedAt = updatedAt;
         it->second.m_text = translation.m_text;
       }
+    } else {
+      it->second.m_updatedAt = updatedAt;
     }
     return it->second.m_text;
   }
