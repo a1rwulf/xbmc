@@ -43,7 +43,7 @@ bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
 std::string CDirectoryNodePlaylist::GetLocalizedName() const
 {
   if (GetID() == -1)
-    return g_localizeStrings.Get(31543); // All playlists
+    return g_localizeStrings.Get(80001); // All playlists
   CMusicDatabase db;
   if (db.Open())
   {
