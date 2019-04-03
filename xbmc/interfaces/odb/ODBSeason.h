@@ -94,6 +94,8 @@ PRAGMA_DB (view object(CODBSeason) \
                 query(distinct))
 struct ODBView_Season_Art
 {
+  PRAGMA_DB (column(CODBSeason::m_idSeason))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 

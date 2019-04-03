@@ -396,6 +396,8 @@ PRAGMA_DB (view object(CODBMovie) \
   query(distinct))
 struct ODBView_Movie_Art
 {
+  PRAGMA_DB (column(CODBMovie::m_idMovie))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 

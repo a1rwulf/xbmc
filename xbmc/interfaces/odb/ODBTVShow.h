@@ -294,6 +294,8 @@ PRAGMA_DB (view object(CODBTVShow) \
                 query(distinct))
 struct ODBView_TVShow_Art
 {
+  PRAGMA_DB (column(CODBTVShow::m_idTVShow))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 

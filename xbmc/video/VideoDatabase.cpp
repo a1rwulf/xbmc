@@ -6909,6 +6909,61 @@ void CVideoDatabase::SetArtForItem(int mediaId, const MediaType &mediaType, cons
   }
 }
 
+template <class T>
+void CVideoDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art)
+{
+  std::string mt = mediaType;
+
+  // mediaType matches the key name for everything but movie sets
+  // In case of mediaType "set" we have the word "collection" in the translation table
+  if (mediaType == MediaTypeVideoCollection)
+    mt = "collection";
+
+  std::map<unsigned int, std::map<std::string, std::string> > idartsmap;
+  for (auto& i: m_cdb.getDB()->query<T>())
+  {
+      std::string new_url = i.art->m_url;
+      if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+      {
+        std::string query_type = i.art->m_type;
+        if (query_type == "poster") query_type = "thumb";
+        GetTranslatedString(i.id, new_url, mt, query_type);
+      }
+
+      auto artmap = idartsmap.find(i.id);
+      if (artmap != idartsmap.end())
+      {
+        auto &artItem = artmap->second;
+        artItem.insert(std::make_pair(i.art->m_type, new_url));
+      }
+      else
+      {
+        std::map<std::string, std::string> artItem;
+        artItem.insert(std::make_pair(i.art->m_type, new_url));
+        idartsmap.insert(std::make_pair(i.id, artItem));
+      }
+
+      if (i.id == mediaId)
+        art.insert(make_pair(i.art->m_type, new_url));
+  }
+
+  // Special fallbacks for seasons and episodes
+  if (art.empty())
+  {
+    if (mediaType == MediaTypeSeason)
+      art.insert(std::make_pair("thumb", "DefaultSeason.png"));
+    else if (mediaType == MediaTypeEpisode)
+      art.insert(std::make_pair("thumb", "DefaultEpisode.png"));
+  }
+
+  for (auto &at : idartsmap)
+  {
+    std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
+    *artItem = at.second;
+    gVideoDatabaseCache.addArtMap(at.first, artItem, mediaType);
+  }
+}
+
 bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art)
 {
   try
@@ -6923,28 +6978,15 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     if (mediaType == MediaTypeMovie)
-    {
-      typedef odb::query<CODBMovie> query;
-      CODBMovie odbMovie;
-      if (m_cdb.getDB()->query_one<CODBMovie>(query::idMovie == mediaId, odbMovie))
-      {
-        m_cdb.getDB()->load(odbMovie, odbMovie.section_artwork);
-        for (auto& i: odbMovie.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "movie", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-    }
+      FillCacheAndGetArt<ODBView_Movie_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeTvShow)
+      FillCacheAndGetArt<ODBView_TVShow_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeSeason)
+      FillCacheAndGetArt<ODBView_Season_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeEpisode)
+      FillCacheAndGetArt<ODBView_Episode_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeVideoCollection)
+      FillCacheAndGetArt<ODBView_Set_Art>(mediaId, mediaType, art);
     else if (mediaType == MediaTypeActor || mediaType == MediaTypeDirector)
     {
       typedef odb::query<CODBPerson> query;
@@ -6960,105 +7002,6 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
     else if (mediaType == "genre")
     {
       //TODO: This is called but no where defined. Need to be checked
-    }
-    else if (mediaType == MediaTypeTvShow)
-    {
-      typedef odb::query<CODBTVShow> query;
-      CODBTVShow odjShow;
-      if (m_cdb.getDB()->query_one<CODBTVShow>(query::idTVShow == mediaId, odjShow))
-      {
-        m_cdb.getDB()->load(odjShow, odjShow.section_foreign);
-        for (auto& i: odjShow.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "tvshow", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-    }
-    else if (mediaType == MediaTypeSeason)
-    {
-      typedef odb::query<CODBSeason> query;
-      CODBSeason objSeason;
-      if (m_cdb.getDB()->query_one<CODBSeason>(query::idSeason == mediaId, objSeason))
-      {
-        m_cdb.getDB()->load(objSeason, objSeason.section_foreign);
-        for (auto& i: objSeason.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "season", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-      
-      //Fallback
-      if (art.empty())
-        art.insert(std::make_pair("thumb", "DefaultSeason.png"));
-    }
-    else if (mediaType == MediaTypeEpisode)
-    {
-      typedef odb::query<CODBEpisode> query;
-      CODBEpisode odjEpisode;
-      if (m_cdb.getDB()->query_one<CODBEpisode>(query::idEpisode == mediaId, odjEpisode))
-      {
-        m_cdb.getDB()->load(odjEpisode, odjEpisode.section_foreign);
-        for (auto& i: odjEpisode.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "episode", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-      
-      //Fallback
-      if (art.empty())
-        art.insert(std::make_pair("thumb", "DefaultEpisode.png"));
-    }
-    else if (mediaType == MediaTypeVideoCollection)
-    {
-      typedef odb::query<CODBSet> query;
-      CODBSet odjSet;
-      if (m_cdb.getDB()->query_one<CODBSet>(query::idSet == mediaId, odjSet))
-      {
-        for (auto& i: odjSet.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "collection", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
     }
     //TODO: Add MusicMovies
     else

@@ -1040,6 +1040,9 @@ private:
   void AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_query, CVideoDbUrl& videoDbUrl);
   void AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVideoDbUrl& videoDbUrl);
 
+  template <class T>
+  void FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art);
+
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
   bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);
