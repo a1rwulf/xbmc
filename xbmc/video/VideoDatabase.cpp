@@ -6948,7 +6948,7 @@ void CVideoDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType,
         idartsmap.insert(std::make_pair(i.id, artItem));
       }
 
-      if (i.id == mediaId)
+      if (i.id == static_cast<unsigned long>(mediaId))
         art.insert(make_pair(i.art->m_type, new_url));
   }
 
