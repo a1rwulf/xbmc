@@ -2146,24 +2146,30 @@ void CVideoDatabase::DeleteDetailsForTvShow(int idTvShow)
 void CVideoDatabase::GetMoviesByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_Movie> optQuery = (odb::query<ODBView_Movie>::actor::name.like(name) || odb::query<ODBView_Movie>::director::name.like(name));
-  GetMoviesByWhere("videodb://movies/titles/", filter, items, SortDescription(), VideoDbDetailsNone, optQuery);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://movies/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+
+  GetMoviesByWhere(videoUrl.ToString(), filter, items, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetTvShowsByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  //!@todo preload-speed
-  //odb::query<ODBView_TVShow> optQuery = (odb::query<ODBView_TVShow>::actor::name.like(name) || odb::query<ODBView_TVShow>::director::name.like(name));
-  GetTvShowsByWhere("videodb://tvshows/titles/", filter, items, SortDescription(), VideoDbDetailsNone);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://tvshows/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+
+  GetTvShowsByWhere(videoUrl.ToString(), filter, items, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetEpisodesByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  //!@todo preload-speed
-  //odb::query<ODBView_Episode> optQuery = (odb::query<ODBView_Episode>::actor::name.like(name) || odb::query<ODBView_Episode>::director::name.like(name));
-  GetEpisodesByWhere("videodb://tvshows/titles/", filter, items, true, SortDescription(), VideoDbDetailsNone);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://tvshows/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+  GetEpisodesByWhere(videoUrl.ToString(), filter, items, true, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetMusicVideosByArtist(const std::string& strArtist, CFileItemList& items)
@@ -4490,7 +4496,6 @@ int CVideoDatabase::SetDetailsForEpisode(const std::string& strFilenameAndPath, 
   return -1;
 }
 
-//! @todo preload-speed -> sense!?
 int CVideoDatabase::GetSeasonId(int showID, int season)
 {
   try
