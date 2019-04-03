@@ -10868,21 +10868,25 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
 {
   try
   {
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    // parse the base path to get additional filters
+    int total = 0;
     CVideoDbUrl videoUrl;
-    Filter extFilter = filter;
+    typedef odb::query<ODBView_Episode> query;
+    query episode_query;
+    std::string strQuery;
+
     if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
       return false;
 
-    std::string type = videoUrl.GetType();
-    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
     const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
 
-    typedef odb::query<ODBView_Episode> query;
-    query episode_query = optionalQueries;
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
 
+    // Extract tvshow and season from url options
     int idShow = -1;
     auto option = options.find("tvshowid");
     if (option != options.end())
@@ -10893,53 +10897,15 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
     if (option != options.end())
       season = (int)option->second.asInteger();
 
+    // Convert URL options to smart playlist rules
+    // queryStr will hold the full where clause
+    AdjustQueryFromUrlOptions(strQuery, videoUrl);
+
+    // If we have tvshow and/or season in url options
+    // we change the query to have the needed where clause
     if (idShow > -1)
     {
-      bool condition = false;
-
-      for (auto option: options)
-      {
-        //! @todo preload-speed
-        // if (option.first == "directorid")
-        //   episode_query = episode_query && query(query::director::idPerson == option.second.asInteger());
-        // else if (option.first == "director")
-        //   episode_query = episode_query && query(query::director::name.like(option.second.asString()));
-        // else if (option.first == "actorid")
-        //   episode_query = episode_query && query(query::actor::idPerson == option.second.asInteger());
-        // else if (option.first == "actor")
-        //   episode_query = episode_query && query(query::actor::name.like(option.second.asString()));
-        // else if (option.first == "genre")
-        //   episode_query = episode_query && query(query::genre::name == option.second.asString());
-        // else if (option.first == "genreid")
-        //   episode_query = episode_query && query(query::genre::idGenre == option.second.asInteger());
-        if (option.first == "year")
-        {
-          condition = true;
-          episode_query = episode_query && query(query::CODBSeason::firstAired.year == option.second.asInteger());
-        }
-        else if (option.first == "filter" || option.first == "xsp")
-        {
-          CSmartPlaylist xspFilter;
-          if (!xspFilter.LoadFromJson(option.second.asString()))
-            return false;
-
-          // check if the filter playlist matches the item type
-          if (xspFilter.GetType() == itemType)
-          {
-            std::set<std::string> playlists;
-            episode_query = episode_query && xspFilter.GetEpisodeWhereClause(playlists);
-          }
-          // remove the filter if it doesn't match the item type
-          else
-            videoUrl.RemoveOption(option.first);
-        }
-        CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-      }
-
-
-
-      if (!condition)
-        episode_query = episode_query && query(query::CODBTVShow::idTVShow == idShow);
+      episode_query = episode_query && query(query::CODBTVShow::idTVShow == idShow);
 
       if (season > -1)
       {
@@ -10947,53 +10913,19 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
           episode_query = episode_query && query(query::CODBSeason::season == season);
         else
           episode_query = episode_query && query(query::CODBSeason::season == season ||
-                                                    query(query::CODBSeason::season == 0 &&
-                                                          query(query::CODBEpisode::sortSeason == 0 || query::CODBEpisode::sortSeason == season)
-                                                    )
-                                                 );
+                                           query(query::CODBSeason::season == 0 &&
+                                           query(query::CODBEpisode::sortSeason == 0 || query::CODBEpisode::sortSeason == season)));
       }
+
+      // In this case we need to append an "AND" in front of the
+      // other filters (this always works as strQuery will at least hold "1=1")
+      strQuery = " AND " + strQuery;
     }
-    else
-    {
-      for (auto option: options)
-      {
-        //! @todo preload-speed
-        // if (option.first == "directorid")
-        //   episode_query = episode_query && query(query::director::idPerson == option.second.asInteger());
-        // else if (option.first == "director")
-        //   episode_query = episode_query && query(query::director::name.like(option.second.asString()));
-        if (option.first == "year")
-          episode_query = episode_query && query(query::CODBSeason::firstAired.year == option.second.asInteger());
-        else if (option.first == "filter" || option.first == "xsp")
-        {
-          CSmartPlaylist xspFilter;
-          if (!xspFilter.LoadFromJson(option.second.asString()))
-            return false;
-
-          // check if the filter playlist matches the item type
-          if (xspFilter.GetType() == itemType)
-          {
-            std::set<std::string> playlists;
-            episode_query = episode_query && xspFilter.GetEpisodeWhereClause(playlists);
-          }
-          // remove the filter if it doesn't match the item type
-          else
-            videoUrl.RemoveOption(option.first);
-        }
-        CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-      }
-    }
-
-    int total = 0;
-
-    //Store the query without limits and sorting for the later
-    query objQueryWO = episode_query;
-    
-    episode_query = episode_query + SortUtils::SortODBEpisodeQuery<query>(sortDescription);
 
     CLabelFormatter formatter("%H. %T", "");
 
-    odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>(episode_query));
+    // Send the query to the database and add the "order by" and "limit" clause
+    odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>(episode_query + strQuery + SortUtils::SortODBEpisodeQuery<query>(sortDescription)));
     for (auto &r : res)
     {
       // This happens if you have a season with no episode
@@ -11021,41 +10953,24 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
 
         pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, episode.GetPlayCount() > 0);
         pItem->m_dateTime = episode.m_firstAired;
-        
-        std::string cast = pItem->GetVideoInfoTag()->GetCast();
-        std::string castrole = pItem->GetVideoInfoTag()->GetCast(true);
-        
-        pItem->SetProperty("cast", pItem->GetVideoInfoTag()->GetCast());
-        pItem->SetProperty("castandrole", pItem->GetVideoInfoTag()->GetCast(true));
-        
+        pItem->SetProperty("cast", episode.GetCast());
+        pItem->SetProperty("castandrole", episode.GetCast(true));
+
         items.Add(pItem);
         ++total;
       }
     }
 
-    //TODO: Random sorting needs to be implemented
-
     // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
     {
       ODBView_Episode_Total totals;
-      if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(objQueryWO, totals))
-      {
+      if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(episode_query, totals))
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-    }
 
-    // cleanup
     if(odb_transaction)
       odb_transaction->commit();
 

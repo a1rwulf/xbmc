@@ -204,7 +204,7 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBStreamDetails: CODBEpisode::m_file == CODBStreamDetails::m_file) \
                 object(CODBRating = defaultRating: CODBEpisode::m_defaultRating) \
                 object(CODBTag = tag: CODBTVShow::m_tags) \
-                query(distinct))
+                query((?), distinct))
 struct ODBView_Episode
 {
   std::shared_ptr<CODBTVShow> show;
