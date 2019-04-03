@@ -6487,7 +6487,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetail
   }
 
   GetEpisodeTranslation(details.get());
-  gVideoDatabaseCache.addEpisode(record.episode->m_idEpisode, details, getDetails, record.season->m_updatedAt);
+  gVideoDatabaseCache.addEpisode(record.episode->m_idEpisode, details, getDetails, record.episode->m_updatedAt);
 
   return *details;
 }
