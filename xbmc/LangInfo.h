@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <threads/Thread.h>
 
 #include "settings/lib/ISettingCallback.h"
 #include "settings/lib/ISettingsHandler.h"
@@ -108,12 +109,12 @@ public:
 
   const std::string& GetRegionLocale() const;
 
-  const std::locale& GetOriginalLocale() const;
+  const std::locale& GetOriginalLocale();
 
   /*!
   \brief Returns the full locale of the current language.
   */
-  const CLocale& GetLocale() const;
+  const CLocale& GetLocale();
 
   /*!
    \brief Returns the system's current locale.
@@ -263,6 +264,8 @@ protected:
   std::string m_subtitleLanguage;
   // this is the general (not win32-specific) three char language code
   std::string m_languageCodeGeneral;
+
+  CCriticalSection m_mutex;
 };
 
 

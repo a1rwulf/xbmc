@@ -1154,6 +1154,8 @@ void CApplication::ReloadSkin(bool confirm/*=false*/)
   // always go back to the home screen for the language change
   // otherwise we see various crashes in rendering cause skin unload
   // destroys the font, locale, etc.
+  // Stop playback if necessary to make sure it doesn't play in the background
+  CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
   CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME, {}, false, true);
 
   if (LoadSkin(newSkin))
