@@ -21615,9 +21615,9 @@ msgstr ""
 #: /xml/DialogVideoInfo.xml
 msgctxt "#80002"
 msgid "AUDIO"
-msgstr "аудио"
+msgstr ""
 
 #: /xml/DialogVideoInfo.xml
 msgctxt "#80003"
 msgid "SUBTITLES"
-msgstr "Субтитры"
+msgstr ""
