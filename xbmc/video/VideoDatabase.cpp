@@ -9,6 +9,8 @@
 
 #include "VideoDatabase.h"
 
+#include <odb/session.hxx>
+
 #include <odb/odb_gen/ODBBookmark.h>
 #include <odb/odb_gen/ODBBookmark_odb.h>
 #include <odb/odb_gen/ODBFile.h>
@@ -105,6 +107,7 @@ using namespace KODI::GUILIB;
 
 
 CVideoDatabaseCache gVideoDatabaseCache;
+extern std::string g_MacAddress;
 
 //********************************************************************************************************************************
 CVideoDatabase::CVideoDatabase(void) : m_cdb(CCommonDatabase::GetInstance())
@@ -1110,7 +1113,7 @@ bool CVideoDatabase::LinkMovieToTvshow(int idMovie, int idShow, bool bRemove)
 
       for (odb::lazy_shared_ptr<CODBTVShow> show: movie.m_linkedTVShows)
       {
-        if (show.load() && show->m_idTVShow == idShow)
+        if (show.load() && static_cast<int>(show->m_idTVShow) == idShow)
           return true;
       }
 
@@ -1644,14 +1647,14 @@ int CVideoDatabase::AddEpisode(int idShow, const std::string& strFilenameAndPath
   return -1;
 }
 
-int CVideoDatabase::GetPlayerPlayCount(const CODBFile& file)
+int CVideoDatabase::GetPlayerPlayCount(unsigned long fileId)
 {
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     CODBPlayCount objPlayCount;
-    if (!m_cdb.getDB()->query_one<CODBPlayCount>(odb::query<CODBPlayCount>::file->idFile == file.m_idFile
+    if (!m_cdb.getDB()->query_one<CODBPlayCount>(odb::query<CODBPlayCount>::file->idFile == fileId
                                                  && odb::query<CODBPlayCount>::macAddress == GetMACAddress()
                                                  , objPlayCount))
       return 0;
@@ -2143,22 +2146,30 @@ void CVideoDatabase::DeleteDetailsForTvShow(int idTvShow)
 void CVideoDatabase::GetMoviesByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_Movie> optQuery = (odb::query<ODBView_Movie>::actor::name.like(name) || odb::query<ODBView_Movie>::director::name.like(name));
-  GetMoviesByWhere("videodb://movies/titles/", filter, items, SortDescription(), VideoDbDetailsNone, optQuery);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://movies/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+
+  GetMoviesByWhere(videoUrl.ToString(), filter, items, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetTvShowsByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_TVShow> optQuery = (odb::query<ODBView_TVShow>::actor::name.like(name) || odb::query<ODBView_TVShow>::director::name.like(name));
-  GetTvShowsByWhere("videodb://tvshows/titles/", filter, items, SortDescription(), VideoDbDetailsNone, optQuery);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://tvshows/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+
+  GetTvShowsByWhere(videoUrl.ToString(), filter, items, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetEpisodesByActor(const std::string& name, CFileItemList& items)
 {
   Filter filter;
-  odb::query<ODBView_Episode> optQuery = (odb::query<ODBView_Episode>::actor::name.like(name) || odb::query<ODBView_Episode>::director::name.like(name));
-  GetEpisodesByWhere("videodb://tvshows/titles/", filter, items, true, SortDescription(), VideoDbDetailsNone, optQuery);
+  CVideoDbUrl videoUrl;
+  if (videoUrl.FromString("videodb://tvshows/titles/") && videoUrl.IsValid())
+    videoUrl.AddOption("actor", name);
+  GetEpisodesByWhere(videoUrl.ToString(), filter, items, true, SortDescription(), VideoDbDetailsNone);
 }
 
 void CVideoDatabase::GetMusicVideosByArtist(const std::string& strArtist, CFileItemList& items)
@@ -2205,12 +2216,12 @@ bool CVideoDatabase::GetMovieInfo(const std::string& strFilenameAndPath, CVideoI
     if (idMovie < 0) return false;
 
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    odb::session s;
 
-
-    odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(odb::query<ODBView_Movie>::CODBMovie::idMovie == idMovie));
-    for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
+    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(odb::query<ODBView_Movie_NoFilter>::CODBMovie::idMovie == idMovie));
+    for (auto &r : res)
     {
-      details = GetDetailsForMovie(i, getDetails);
+      details = GetDetailsForMovie<ODBView_Movie_NoFilter>(r, getDetails);
       break;
     }
 
@@ -2244,12 +2255,9 @@ bool CVideoDatabase::GetTvShowInfo(const std::string& strPath, CVideoInfoTag& de
 
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
-    odb::result<ODBView_TVShow> res(m_cdb.getDB()->query<ODBView_TVShow>((odb::query<ODBView_TVShow>::CODBTVShow::idTVShow == idTvShow) + "GROUP BY"+odb::query<ODBView_TVShow>::CODBTVShow::idTVShow));
-    for (odb::result<ODBView_TVShow>::iterator i = res.begin(); i != res.end(); i++)
-    {
-      details = GetDetailsForTvShow(i, getDetails, item);
-      break;
-    }
+    odb::result<ODBView_TVShow> res(m_cdb.getDB()->query<ODBView_TVShow>((odb::query<ODBView_TVShow>::CODBTVShow::idTVShow == idTvShow)));
+    for (auto &r : res)
+      details = GetDetailsForTvShow<ODBView_TVShow>(r, getDetails);
 
     return !details.IsEmpty();
   }
@@ -2273,8 +2281,8 @@ bool CVideoDatabase::GetSeasonInfo(int idSeason, CVideoInfoTag& details, bool al
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
-    ODBView_TVShow_Seasons objTVShowSeason;
-    if (!m_cdb.getDB()->query_one<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBSeason::idSeason == idSeason, objTVShowSeason))
+    ODBView_Season objTVShowSeason;
+    if (!m_cdb.getDB()->query_one<ODBView_Season>(odb::query<ODBView_Season>::CODBSeason::idSeason == idSeason, objTVShowSeason))
       return false;
     
     if (allDetails)
@@ -2374,11 +2382,8 @@ bool CVideoDatabase::GetEpisodeInfo(const std::string& strFilenameAndPath, CVide
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>((odb::query<ODBView_Episode>::CODBEpisode::idEpisode == idEpisode) + "GROUP BY"+odb::query<ODBView_Episode>::CODBEpisode::idEpisode));
-    for (odb::result<ODBView_Episode>::iterator i = res.begin(); i != res.end(); i++)
-    {
-      details = GetDetailsForEpisode(i, getDetails);
-      break;
-    }
+    for (auto &r : res)
+      details = GetDetailsForEpisode<ODBView_Episode>(r, getDetails);
 
     if (odb_transaction)
       odb_transaction->commit();
@@ -2469,11 +2474,11 @@ bool CVideoDatabase::GetFileInfo(const std::string& strFilenameAndPath, CVideoIn
                              m_pDS->fv("bookmark.playerState").get_asString());
       */
       details.m_iFileId = odbFile.m_idFile;
-      if (odbFile.m_path.load())
+      if (odbFile.m_path)
           details.m_strPath = odbFile.m_path->m_path;
       std::string strFileName = odbFile.m_filename;
       ConstructPath(details.m_strFileNameAndPath, details.m_strPath, strFileName);
-      details.SetPlayCount(std::max(details.GetPlayCount(), static_cast<int>(GetPlayerPlayCount(odbFile)))); //TODO: Replace by signed int?
+      details.SetPlayCount(std::max(details.GetPlayCount(), static_cast<int>(GetPlayerPlayCount(odbFile.m_idFile)))); //TODO: Replace by signed int?
       if (!details.m_lastPlayed.IsValid())
       {
         CDateTime datetime;
@@ -2809,11 +2814,8 @@ int CVideoDatabase::UpdateDetailsForMovie(int idMovie, CVideoInfoTag& details, c
       UpdateFileDateAdded(details.m_iFileId, details.GetPath(), details.m_dateAdded);
     }
 
-    // track if the set was updated
-    int idSet = 0;
     if (updatedDetails.find("set") != updatedDetails.end())
     { // set
-      idSet = -1;
       if (!details.m_set.title.empty())
       {
         std::shared_ptr<CODBSet> set(new CODBSet);
@@ -2827,8 +2829,6 @@ int CVideoDatabase::UpdateDetailsForMovie(int idMovie, CVideoInfoTag& details, c
         SetSetDetailsArtwork(*set, artwork);
       }
     }
-
-        
         
     //TODO: Add show link
     /*if (updatedDetails.find("showlink") != updatedDetails.end())
@@ -3404,10 +3404,12 @@ void CVideoDatabase::SetMovieDetailsValues(CODBMovie& odbMovie, CVideoInfoTag& d
   odbMovie.m_fanart = details.m_fanart.m_xml;
 
   //TODO: These relations can be refacored away in the future
-  odbMovie.m_file->m_path.load();
-  odbMovie.m_basePath = odbMovie.m_file->m_path;
-  odbMovie.m_file->m_path->m_parentPath.load();
-  odbMovie.m_parentPath = odbMovie.m_file->m_path->m_parentPath;
+  if (odbMovie.m_file->m_path.load())
+  {
+    odbMovie.m_basePath = odbMovie.m_file->m_path;
+    if (odbMovie.m_file->m_path->m_parentPath.load())
+      odbMovie.m_parentPath = odbMovie.m_file->m_path->m_parentPath;
+  }
 
   if (details.m_iUserRating > 0 && details.m_iUserRating < 11)
     odbMovie.m_userrating = details.m_iUserRating;
@@ -4499,9 +4501,9 @@ int CVideoDatabase::GetSeasonId(int showID, int season)
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    ODBView_TVShow_Seasons objSeason;
-    if (m_cdb.getDB()->query_one<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBTVShow::idTVShow == showID
-                                                         && odb::query<ODBView_TVShow_Seasons>::CODBSeason::season == season
+    ODBView_Season objSeason;
+    if (m_cdb.getDB()->query_one<ODBView_Season>(odb::query<ODBView_Season>::CODBTVShow::idTVShow == showID
+                                                         && odb::query<ODBView_Season>::CODBSeason::season == season
                                                          , objSeason))
     {
       return objSeason.season->m_idSeason;
@@ -4750,7 +4752,7 @@ void CVideoDatabase::GetFilePathById(int idContent, std::string &filePath, VIDEO
       if (m_cdb.getDB()->query_one<CODBMovie>(odb::query<CODBMovie>::idMovie == idContent, movie))
       {
         m_cdb.getDB()->load(movie, movie.section_foreign);
-        if (!movie.m_file.load() || movie.m_file->m_path.load())
+        if (!movie.m_file || movie.m_file->m_path.load())
           return;
 
         db_filename = movie.m_file->m_filename;
@@ -4967,9 +4969,9 @@ void CVideoDatabase::GetEpisodesByFile(const std::string& strFilenameAndPath, st
     query episodeQuery = query::fileView::idFile == GetFileId(strFilenameAndPath);
     episodeQuery += "ORDER BY "+query::CODBEpisode::sortSeason+", "+query::CODBEpisode::sortEpisode+" asc";
     res = m_cdb.getDB()->query<ODBView_Episode>(episodeQuery);
-    for (odb::result<ODBView_Episode>::iterator i = res.begin(); i != res.end(); i++)
+    for (auto &r : res)
     {
-      episodes.emplace_back(GetDetailsForEpisode(i));
+      episodes.emplace_back(GetDetailsForEpisode<ODBView_Episode>(r));
     }
 
     if(odb_transaction)
@@ -5284,12 +5286,15 @@ void CVideoDatabase::DeleteMovie(int idMovie, bool bKeepId /* = false */)
 
       m_cdb.getDB()->load(res, res.section_foreign);
 
-      if(!res.m_file.load() || !res.m_file->m_path.load())
+      if(!res.m_file || !res.m_file->m_path.load())
         return;
 
-      std::string path = res.m_file->m_path->m_path;
-      if (!path.empty())
-        InvalidatePathHash(path);
+      if (res.m_file->m_path.load())
+      {
+        std::string path = res.m_file->m_path->m_path;
+        if (!path.empty())
+          InvalidatePathHash(path);
+      }
 
       m_cdb.getDB()->erase(res);
     }
@@ -5342,10 +5347,10 @@ void CVideoDatabase::DeleteTvShow(int idTvShow, bool bKeepId /* = false */)
 
     DeleteDetailsForTvShow(idTvShow);
 
-    odb::result<ODBView_TVShow_Seasons> resSeasons(m_cdb.getDB()->query<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBTVShow::idTVShow == idTvShow));
-    for (odb::result<ODBView_TVShow_Seasons>::iterator i = resSeasons.begin(); i != resSeasons.end(); i++)
+    odb::result<ODBView_Season> resSeasons(m_cdb.getDB()->query<ODBView_Season>(odb::query<ODBView_Season>::CODBTVShow::idTVShow == idTvShow));
+    for (auto &r : resSeasons)
     {
-      DeleteSeason(i->season->m_idSeason, bKeepId);
+      DeleteSeason(r.season->m_idSeason, bKeepId);
     }
 
     if (!bKeepId)
@@ -5625,15 +5630,13 @@ void CVideoDatabase::DeleteTag(int idTag, VIDEODB_CONTENT_TYPE mediaType)
       for (odb::result<ODBView_Movie>::iterator i = resMovies.begin(); i != resMovies.end(); i++)
       {
         m_cdb.getDB()->load(*(i->movie), i->movie->section_foreign);
-        bool found = false;
         for (std::vector<odb::lazy_shared_ptr<CODBTag> >::iterator tag = i->movie->m_tags.begin(); tag != i->movie->m_tags.end(); tag++)
         {
           if (!tag->load())
             continue;
 
-          if ((*tag)->m_idTag == idTag)
+          if (static_cast<int>((*tag)->m_idTag) == idTag)
           {
-            found = true;
             i->movie->m_tags.erase(tag);
             break;
           }
@@ -5647,15 +5650,13 @@ void CVideoDatabase::DeleteTag(int idTag, VIDEODB_CONTENT_TYPE mediaType)
       for (odb::result<ODBView_TVShow>::iterator i = resTVShows.begin(); i != resTVShows.end(); i++)
       {
         m_cdb.getDB()->load(*(i->show), i->show->section_foreign);
-        bool found = false;
         for (std::vector<odb::lazy_shared_ptr<CODBTag> >::iterator tag = i->show->m_tags.begin(); tag != i->show->m_tags.end(); tag++)
         {
           if (!tag->load())
             continue;
 
-          if ((*tag)->m_idTag == idTag)
+          if (static_cast<int>((*tag)->m_idTag) == idTag)
           {
-            found = true;
             i->show->m_tags.erase(tag);
             break;
           }
@@ -5723,9 +5724,6 @@ void CVideoDatabase::GetDetailsFromDB(const dbiplus::sql_record* const record, i
     }
   }
 }
-
-DWORD movieTime = 0;
-DWORD castTime = 0;
 
 CVideoInfoTag CVideoDatabase::GetDetailsByTypeAndId(VIDEODB_CONTENT_TYPE type, int id)
 {
@@ -5910,86 +5908,98 @@ bool CVideoDatabase::GetResumePoint(CVideoInfoTag& tag)
   return match;
 }
 
-CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie>::iterator record, int getDetails /* = VideoDbDetailsNone */)
+template <class T>
+CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails /* = VideoDbDetailsNone */)
 {
-  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
-  
-  DWORD time = XbmcThreads::SystemClockMillis();
-
-  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getMovie(record->movie->m_idMovie, getDetails, record->movie->m_updatedAt);
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getMovie(record.movie->m_idMovie, getDetails, record.movie->m_updatedAt);
   if (det)
     return *det;
 
-  details->m_iDbId = record->movie->m_idMovie;
+  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
+
+  details->m_iDbId = record.movie->m_idMovie;
   details->m_type = MediaTypeMovie;
 
-  details->SetTitle(record->movie->m_title);
-  details->SetPlot(record->movie->m_plot);
-  details->SetPlotOutline(record->movie->m_plotoutline);
-  details->SetTagLine(record->movie->m_tagline);
+  details->SetTitle(record.movie->m_title);
+  details->SetPlot(record.movie->m_plot);
+  details->SetPlotOutline(record.movie->m_plotoutline);
+  details->SetTagLine(record.movie->m_tagline);
 
-  details->m_strPictureURL.m_spoof = record->movie->m_thumbUrl_spoof;
-  details->m_strPictureURL.m_xml = record->movie->m_thumbUrl;
+  details->m_strPictureURL.m_spoof = record.movie->m_thumbUrl_spoof;
+  details->m_strPictureURL.m_xml = record.movie->m_thumbUrl;
 
-  details->SetSortTitle(record->movie->m_sortTitle);
-  details->m_duration = record->movie->m_runtime;
-  details->SetMPAARating(record->movie->m_mpaa);
-  details->m_iTop250 = record->movie->m_top250;
-  details->SetOriginalTitle(record->movie->m_originalTitle);
-  details->SetTrailer(record->movie->m_trailer);
-  details->m_fanart.m_xml = record->movie->m_fanart;
+  details->SetSortTitle(record.movie->m_sortTitle);
+  details->m_duration = record.movie->m_runtime;
+  details->SetMPAARating(record.movie->m_mpaa);
+  details->m_iTop250 = record.movie->m_top250;
+  details->SetOriginalTitle(record.movie->m_originalTitle);
+  details->SetTrailer(record.movie->m_trailer);
+  details->m_fanart.m_xml = record.movie->m_fanart;
 
-  details->SetUserrating(record->movie->m_userrating);
-  details->m_premiered.SetFromULongLong(record->movie->m_premiered.m_ulong_date);
+  details->SetUserrating(record.movie->m_userrating);
+  details->m_premiered.SetFromULongLong(record.movie->m_premiered.m_ulong_date);
   details->m_bHasPremiered = details->m_premiered.IsValid();
-  details->m_iUserRating = record->movie->m_userrating;
+  details->m_iUserRating = record.movie->m_userrating;
+  details->m_iFileId = record.fileView->m_idFile;
 
+  details->SetBasePath(record.path);
+  details->m_strPath = record.path;
 
-  m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
+  ConstructPath(details->m_strFileNameAndPath, details->m_strPath, record.fileView->m_filename);
 
-  if(record->movie->m_basePath.load())
-    details->SetBasePath(record->movie->m_basePath->m_path);
-  if(record->movie->m_parentPath.load())
-    details->m_parentPathID = record->movie->m_parentPath->m_idPath;
-  
-  for (auto set: record->movie->m_sets)
+  if (record.playCount)
   {
-    if (set.load())
-    {
-      details->m_set.id = set->m_idSet;
-      details->m_set.title = set->m_name;
-      details->m_set.overview  = set->m_overview;
-      details->m_sets.push_back(details->m_set);
-    }
-  }
-  
-  if (record->movie->m_set.load())
-  {
-    details->m_set.id = record->movie->m_set->m_idSet;
-    details->m_set.title = record->movie->m_set->m_name;
-    details->m_set.overview  = record->movie->m_set->m_overview;
+    details->SetPlayCount(record.playCount->m_playCount);
   }
 
-  if (record->movie->m_file.load())
+  CDateTime lastplayed;
+  lastplayed.SetFromULongLong(record.fileView->m_lastPlayed.m_ulong_date);
+  details->m_lastPlayed = lastplayed;
+  CDateTime dateadded;
+  dateadded.SetFromULongLong(record.fileView->m_dateAdded.m_ulong_date);
+  details->m_dateAdded = dateadded;
+
+  if (record.resumeBookmark)
   {
-    details->m_iFileId = record->movie->m_file->m_idFile;
-    if(record->movie->m_file->m_path.load())
+      details->SetResumePoint((int)record.resumeBookmark->m_timeInSeconds,
+                          (int)record.resumeBookmark->m_totalTimeInSeconds,
+                          record.resumeBookmark->m_playerState);
+  }
+
+  if (record.defaultRating)
+  {
+
+    details->SetRating(record.defaultRating->m_rating,
+                       record.defaultRating->m_votes,
+                       record.defaultRating->m_ratingType, true);
+  }
+
+  if (getDetails)
+  {
+    m_cdb.getDB()->load(*(record.movie), record.movie->section_foreign);
+
+    if (record.movie->m_basePath.load() && record.movie->m_basePath->m_parentPath.load())
+      details->m_parentPathID = record.movie->m_basePath->m_parentPath->m_idPath;
+
+    for (auto set: record.movie->m_sets)
     {
-      details->m_strPath = record->movie->m_file->m_path->m_path;
+      if (set.load())
+      {
+        details->m_set.id = set->m_idSet;
+        details->m_set.title = set->m_name;
+        details->m_set.overview  = set->m_overview;
+        details->m_sets.push_back(details->m_set);
+      }
     }
 
-    std::string strFileName = record->movie->m_file->m_filename;
-    ConstructPath(details->m_strFileNameAndPath, details->m_strPath, strFileName);
-    details->SetPlayCount(GetPlayerPlayCount(*record->movie->m_file));
+    if (record.movie->m_set.load())
+    {
+      details->m_set.id = record.movie->m_set->m_idSet;
+      details->m_set.title = record.movie->m_set->m_name;
+      details->m_set.overview  = record.movie->m_set->m_overview;
+    }
 
-    CDateTime lastplayed;
-    lastplayed.SetFromULongLong(record->movie->m_file->m_lastPlayed.m_ulong_date);
-    details->m_lastPlayed = lastplayed;
-    CDateTime dateadded;
-    dateadded.SetFromULongLong(record->movie->m_file->m_dateAdded.m_ulong_date);
-    details->m_dateAdded = dateadded;
-    
-    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record->movie->m_file->m_idFile);
+    odb::result<CODBFileStream> res = m_cdb.getDB()->query<CODBFileStream>(odb::query<CODBFileStream>::file == record.fileView->m_idFile);
     for (odb::result<CODBFileStream>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*(i), i->section_foreign);
@@ -6005,60 +6015,32 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         }
       }
     }
-  }
 
-  m_cdb.getDB()->load(*(record->movie), record->movie->section_foreign);
-  if(record->movie->m_defaultRating.load())
-  {
-    details->SetRating(record->movie->m_defaultRating->m_rating,
-                      record->movie->m_defaultRating->m_votes,
-                      record->movie->m_defaultRating->m_ratingType, true);
-  }
-
-  if(record->movie->m_defaultID.load())
-  {
-    details->SetUniqueID(record->movie->m_defaultID->m_value, record->movie->m_defaultID->m_type ,true);
-  }
-
-  for (auto genre: record->movie->m_genres)
-  {
-    if (genre.load())
+    if(record.movie->m_defaultID.load())
     {
-      details->m_genre.emplace_back(genre->m_name);
+      details->SetUniqueID(record.movie->m_defaultID->m_value, record.movie->m_defaultID->m_type ,true);
     }
-  }
 
-  for (auto country: record->movie->m_countries)
-  {
-    if (country.load())
+    for (auto genre: record.movie->m_genres)
     {
-      details->m_country.emplace_back(country->m_name);
+      if (genre.load())
+      {
+        details->m_genre.emplace_back(genre->m_name);
+      }
     }
-  }
 
-  movieTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
+    for (auto country: record.movie->m_countries)
+    {
+      if (country.load())
+      {
+        details->m_country.emplace_back(country->m_name);
+      }
+    }
 
-  //Load the bookmark
-  CODBBookmark odbBookmark;
-  if (m_cdb.getDB()->query_one<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details->m_iFileId
-                                             && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME
-                                             && odb::query<CODBBookmark>::macAddress == GetMACAddress(), odbBookmark))
-  {
-    details->SetResumePoint((int)odbBookmark.m_timeInSeconds,
-                           (int)odbBookmark.m_totalTimeInSeconds,
-                           odbBookmark.m_playerState);
-
-    /*details.m_resumePoint.player = odbBookmark.m_player;
-    details.m_resumePoint.thumbNailImage = odbBookmark.m_thumbNailImage;
-    details.m_resumePoint.player = odbBookmark.m_player;*/
-  }
-
-  if (getDetails)
-  {
     if (getDetails & VideoDbDetailsCast)
     {
       int order = 0;
-      for (auto i: record->movie->m_actors)
+      for (auto i: record.movie->m_actors)
       {
         if (!i.load())
           continue;
@@ -6078,10 +6060,9 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         }
 
         details->m_cast.emplace_back(std::move(info));
-        castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
       }
 
-      for (auto i: record->movie->m_directors)
+      for (auto i: record.movie->m_directors)
       {
         if (!i.load())
           continue;
@@ -6092,7 +6073,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
         details->m_director.emplace_back(i->m_person->m_name);
       }
 
-      for (auto i: record->movie->m_writingCredits)
+      for (auto i: record.movie->m_writingCredits)
       {
         if (!i.load())
           continue;
@@ -6105,7 +6086,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
     if (getDetails & VideoDbDetailsTag)
     {
-      for (auto i: record->movie->m_tags)
+      for (auto i: record.movie->m_tags)
       {
         if (!i.load())
           continue;
@@ -6116,7 +6097,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
     if (getDetails & VideoDbDetailsRating)
     {
-      for (auto i: record->movie->m_ratings)
+      for (auto i: record.movie->m_ratings)
       {
         if (!i.load())
           continue;
@@ -6127,7 +6108,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
 
     if (getDetails & VideoDbDetailsUniqueID)
     {
-      for (auto i: record->movie->m_ids)
+      for (auto i: record.movie->m_ids)
       {
         if (!i.load())
           continue;
@@ -6155,394 +6136,360 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const odb::result<ODBView_Movie
       m_pDS2->close();
     }*/
 
+
     if (getDetails & VideoDbDetailsStream)
       GetStreamDetails(*details);
 
     details->m_parsedDetails = getDetails;
   }
-  
 
   GetMovieTranslation(details.get());
 
-  gVideoDatabaseCache.addMovie(record->movie->m_idMovie, details, getDetails, record->movie->m_updatedAt);
+  gVideoDatabaseCache.addMovie(record.movie->m_idMovie, details, getDetails, record.movie->m_updatedAt);
   return *details;
 }
 
-CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(const odb::result<ODBView_TVShow>::iterator record, int getDetails /* = VideoDbDetailsNone */, CFileItem* item /* = NULL */)
+template <class T>
+CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = VideoDbDetailsNone */)
 {
-  CVideoInfoTag details;
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getTVShow(record.show->m_idTVShow, getDetails, record.show->m_updatedAt);
+  if (det)
+      return *det;
 
-  DWORD time = XbmcThreads::SystemClockMillis();
-  int idTvShow = record->show->m_idTVShow;
+  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
-  details.m_iDbId = idTvShow;
-  details.m_strTitle = record->show->m_title;
-  details.SetPlot(record->show->m_plot);
-  details.SetStatus(record->show->m_status);
-  details.m_premiered.SetFromULongLong(record->show->m_premiered.m_ulong_date);
-  details.m_strPictureURL.m_xml = record->show->m_thumbUrl;
-  details.m_strPictureURL.m_spoof = record->show->m_thumbUrl_spoof;
-  details.SetOriginalTitle(record->show->m_originalTitle);
-  details.SetEpisodeGuide(record->show->m_episodeGuide);
-  details.m_fanart.m_xml = record->show->m_fanart;
-  details.SetMPAARating(record->show->m_mpaa);
-  details.SetSortTitle(record->show->m_sortTitle);
+  details->m_iDbId = record.show->m_idTVShow;
+  details->m_strTitle = record.show->m_title;
+  details->m_strShowTitle = record.show->m_title;
+  details->SetPlot(record.show->m_plot);
+  details->SetStatus(record.show->m_status);
+  details->m_premiered.SetFromULongLong(record.show->m_premiered.m_ulong_date);
+  details->m_strPictureURL.m_xml = record.show->m_thumbUrl;
+  details->m_strPictureURL.m_spoof = record.show->m_thumbUrl_spoof;
+  details->SetOriginalTitle(record.show->m_originalTitle);
+  details->SetEpisodeGuide(record.show->m_episodeGuide);
+  details->m_fanart.m_xml = record.show->m_fanart;
+  details->SetMPAARating(record.show->m_mpaa);
+  details->SetSortTitle(record.show->m_sortTitle);
+  details->m_bHasPremiered = details->m_premiered.IsValid();
+  details->m_type = MediaTypeTvShow;
+  details->m_iUserRating = record.show->m_userrating;
+  details->SetDuration(record.show->m_runtime);
+  details->m_dateAdded.SetFromULongLong(record.dateAddedULong);
 
-  m_cdb.getDB()->load(*(record->show), record->show->section_foreign);
-
-  if(record->show->m_defaultRating.load())
+  if (record.defaultRating)
   {
-    details.m_iIdRating = record->show->m_defaultRating->m_idRating;
-    details.SetRating(record->show->m_defaultRating->m_rating,
-                      record->show->m_defaultRating->m_votes,
-                      record->show->m_defaultRating->m_ratingType, true);
+    details->m_iIdRating = record.defaultRating->m_idRating;
+    details->SetRating(record.defaultRating->m_rating,
+                      record.defaultRating->m_votes,
+                      record.defaultRating->m_ratingType, true);
   }
-
-  for (auto genre: record->show->m_genres)
-  {
-    if (genre.load())
-    {
-      details.m_genre.emplace_back(genre->m_name);
-    }
-  }
-
-  if(record->show->m_defaultID.load())
-  {
-    details.SetUniqueID(record->show->m_defaultID->m_value, record->show->m_defaultID->m_type ,true);
-  }
-
-  for (auto studio: record->show->m_studios)
-  {
-    if (studio.load())
-    {
-      details.m_studio.push_back(studio->m_name);
-    }
-  }
-
-  details.m_bHasPremiered = details.m_premiered.IsValid();
-  details.m_type = MediaTypeTvShow;
-  if (record->show->m_paths.size() > 0)
-  {
-    auto first = record->show->m_paths.begin();
-    if (first != record->show->m_paths.end() && first->load())
-    {
-      auto path = *first;
-      details.m_strPath = path->m_path;
-      details.m_basePath = details.m_strPath;
-      if (path->m_parentPath.load())
-        details.m_parentPathID = path->m_parentPath->m_idPath;
-    }
-  }
-
-  ODBView_TVShow_Counts resTVShowCounts;
-  if (m_cdb.getDB()->query_one<ODBView_TVShow_Counts>(odb::query<ODBView_TVShow_Counts>::CODBTVShow::idTVShow == record->show->m_idTVShow, resTVShowCounts))
-  {
-    details.m_dateAdded.SetFromULongLong(resTVShowCounts.dateAddedULong);
-    details.m_lastPlayed.SetFromULongLong(resTVShowCounts.lastPlayedULong);
-    details.m_iSeason = resTVShowCounts.totalSeasons;
-    details.m_iEpisode = resTVShowCounts.totalCount;
-    details.SetPlayCount(resTVShowCounts.watchedCount);
-  }
-
-  details.m_strShowTitle = details.m_strTitle;
-  details.m_iUserRating = record->show->m_userrating;
-
-  if (record->show->m_defaultRating.load())
-  {
-    details.SetRating(record->show->m_defaultRating->m_rating,
-                      record->show->m_defaultRating->m_votes,
-                      record->show->m_defaultRating->m_ratingType, true);
-  }
-
-  if(record->show->m_defaultID.load())
-  {
-    details.SetUniqueID(record->show->m_defaultID->m_value, record->show->m_defaultID->m_type ,true);
-  }
-
-  details.SetDuration(record->show->m_runtime);
-
-  movieTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
 
   if (getDetails)
   {
+    m_cdb.getDB()->load(*(record.show), record.show->section_foreign);
+
+    for (auto genre: record.show->m_genres)
+    {
+      if (genre.load())
+      {
+        details->m_genre.emplace_back(genre->m_name);
+      }
+    }
+
+    if(record.show->m_defaultID.load())
+    {
+      details->SetUniqueID(record.show->m_defaultID->m_value, record.show->m_defaultID->m_type ,true);
+    }
+
+    for (auto studio: record.show->m_studios)
+    {
+      if (studio.load())
+      {
+        details->m_studio.push_back(studio->m_name);
+      }
+    }
+
+    if (record.show->m_paths.size() > 0)
+    {
+      auto first = record.show->m_paths.begin();
+      if (first != record.show->m_paths.end() && first->load())
+      {
+        auto path = *first;
+        details->m_strPath = path->m_path;
+        details->m_basePath = details->m_strPath;
+        if (path->m_parentPath.load())
+          details->m_parentPathID = path->m_parentPath->m_idPath;
+      }
+    }
+
+    ODBView_TVShow_Counts resTVShowCounts;
+    if (m_cdb.getDB()->query_one<ODBView_TVShow_Counts>(odb::query<ODBView_TVShow_Counts>::CODBTVShow::idTVShow == record.show->m_idTVShow, resTVShowCounts))
+    {
+      details->m_lastPlayed.SetFromULongLong(resTVShowCounts.lastPlayedULong);
+      details->m_iSeason = resTVShowCounts.totalSeasons;
+      details->m_iEpisode = resTVShowCounts.totalCount;
+      details->SetPlayCount(resTVShowCounts.watchedCount);
+    }
+
     if (getDetails & VideoDbDetailsCast)
     {
-
-      GetCast(record->show->m_actors, details.m_cast);
-      castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
+      GetCast(record.show->m_actors, details->m_cast);
     }
 
     if (getDetails & VideoDbDetailsTag)
-      GetTags(record->show->m_tags, details.m_tags);
+      GetTags(record.show->m_tags, details->m_tags);
 
     if (getDetails & VideoDbDetailsRating)
-      GetRatings(record->show->m_ratings, details.m_ratings);
+      GetRatings(record.show->m_ratings, details->m_ratings);
 
     if (getDetails & VideoDbDetailsUniqueID)
-      GetUniqueIDs(record->show->m_ids, details);
+      GetUniqueIDs(record.show->m_ids, *details);
 
-    details.m_strPictureURL.Parse();
+    details->m_strPictureURL.Parse();
+    details->m_parsedDetails = getDetails;
 
-    details.m_parsedDetails = getDetails;
+    details->SetPlayCount((details->m_iEpisode <= details->GetPlayCount()) ? 1 : 0);
   }
 
-  if (item != NULL)
-  {
-    item->m_dateTime = details.GetPremiered();
-    item->SetProperty("totalseasons", details.m_iSeason);
-    item->SetProperty("totalepisodes", details.m_iEpisode);
-    item->SetProperty("numepisodes", details.m_iEpisode); // will be changed later to reflect watchmode setting
-    item->SetProperty("watchedepisodes", details.GetPlayCount());
-    item->SetProperty("unwatchedepisodes", details.m_iEpisode - details.GetPlayCount());
-  }
-  details.SetPlayCount((details.m_iEpisode <= details.GetPlayCount()) ? 1 : 0);
-  
-  GetTVShowTranslation(&details);
+  GetTVShowTranslation(details.get());
 
-  return details;
+  gVideoDatabaseCache.addTVShow(record.show->m_idTVShow, details, getDetails, record.show->m_updatedAt);
+  return *details;
 }
 
-CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const odb::result<ODBView_Episode>::iterator record, int getDetails /* = VideoDbDetailsNone */)
+template <class T>
+CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoInfoTag& tvshow, int getDetails /* = VideoDbDetailsNone */)
 {
-  CVideoInfoTag details;
-  try
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getSeason(record.season->m_idSeason, getDetails, record.season->m_updatedAt);
+  if (det)
+      return *det;
+
+  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
+
+  int id = record.season->m_idSeason;
+  int iSeason = record.season->m_season;
+  std::string name = record.season->m_name;
+  std::string strLabel = name;
+
+  if (strLabel.empty())
   {
-    m_cdb.getDB()->load(*(record->episode), record->episode->section_foreign);
-    DWORD time = XbmcThreads::SystemClockMillis();
-    int idEpisode = record->episode->m_idEpisode;
+    if (iSeason == 0)
+      strLabel = g_localizeStrings.Get(20381);
+    else
+      strLabel = StringUtils::Format(g_localizeStrings.Get(20358).c_str(), iSeason);
+  }
 
-    details.m_iDbId = idEpisode;
-    details.SetTitle(record->episode->m_title);
-    details.SetOriginalTitle(record->episode->m_originalTitle);
-    details.SetPlot(record->episode->m_plot);
+  details->m_strTitle = strLabel;
+  if (!name.empty())
+    details->m_strSortTitle = name;
+  details->m_iSeason = iSeason;
+  details->m_iDbId = id;
+  details->m_iIdSeason = id;
+  details->m_type = MediaTypeSeason;
+  details->m_strShowTitle = tvshow.m_strTitle;
+  details->m_iShowId = tvshow.m_iDbId;
+  details->m_strPlot = tvshow.m_strPlot;
+  details->m_premiered = tvshow.m_premiered;
+  details->m_firstAired.SetFromULongLong(record.season->m_firstAired.m_ulong_date);
+  details->m_firstAired.GetAsULongLong();
+  details->m_iUserRating = record.season->m_userrating;
+  details->m_strMPAARating = tvshow.m_strMPAARating;
 
-    for (odb::lazy_shared_ptr<CODBPersonLink> link: record->episode->m_credits)
+  // season premiered date based on first episode airdate associated to the season
+  // tvshow premiered date is used as a fallback
+  if (details->m_firstAired.IsValid())
+    details->SetPremiered(details->m_firstAired);
+  else if (details->HasPremiered())
+    details->SetPremiered(details->GetPremiered());
+  else if (details->HasYear())
+    details->SetYear(details->GetYear());
+
+  if (getDetails)
+  {
+    details->m_genre = tvshow.m_genre;
+    details->m_studio = tvshow.m_studio;
+
+    ODBView_Season_Episode_Count objEpisodeCount;
+    if (m_cdb.getDB()->query_one<ODBView_Season_Episode_Count>(odb::query<ODBView_Season_Episode_Count>::CODBSeason::idSeason == record.season->m_idSeason, objEpisodeCount))
+      details->m_iEpisode = objEpisodeCount.episodesTotal;
+
+    if (getDetails & VideoDbDetailsCast)
+      GetCast(record.show->m_actors, details->m_cast);
+  }
+
+  GetSeasonTranslation(details.get());
+  gVideoDatabaseCache.addSeason(id, details, getDetails, record.season->m_updatedAt);
+  return *details;
+}
+
+template <class T>
+CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetails /* = VideoDbDetailsNone */)
+{
+  std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getEpisode(record.episode->m_idEpisode, record.episode->m_updatedAt);
+  if (det)
+      return *det;
+
+  CVideoInfoTag tvshow = GetDetailsForTvShow(record, getDetails);
+  std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
+
+  m_cdb.getDB()->load(*(record.episode), record.episode->section_foreign);
+  int idEpisode = record.episode->m_idEpisode;
+
+  details->m_type = MediaTypeEpisode;
+  details->m_iDbId = idEpisode;
+  details->SetTitle(record.episode->m_title);
+  details->SetOriginalTitle(record.episode->m_originalTitle);
+  details->SetPlot(record.episode->m_plot);
+
+  details->SetPremieredFromDBDate(record.episode->m_aired.m_date);
+  details->m_firstAired.SetFromULongLong(record.episode->m_aired.m_ulong_date);
+  details->m_firstAired.GetAsULongLong();
+  // season premiered date based on first episode airdate associated to the season
+  // tvshow premiered date is used as a fallback
+  if (details->m_firstAired.IsValid())
+    details->SetPremiered(details->m_firstAired);
+  else if (details->HasPremiered())
+    details->SetPremiered(details->GetPremiered());
+  else if (details->HasYear())
+    details->SetYear(details->GetYear());
+
+  details->SetDuration(record.episode->m_runtime);
+  details->m_strPictureURL.m_spoof = record.episode->m_thumbUrl_spoofed;
+  details->m_strPictureURL.m_xml = record.episode->m_thumbUrl;
+
+  details->SetProductionCode(record.episode->m_productionCode);
+  details->m_iSeason = record.season->m_season;
+  details->m_iIdSeason = record.season->m_idSeason;
+  details->m_strMPAARating = record.show->m_mpaa;
+  details->m_strShowTitle = record.show->m_title;
+  details->m_iIdShow = record.show->m_idTVShow;
+  details->m_iEpisode = record.episode->m_episode;
+  details->m_iSpecialSortEpisode = record.episode->m_sortEpisode;
+
+  details->m_genre = tvshow.m_genre;
+  details->m_studio = tvshow.m_studio;
+  GetCast(record.episode->m_actors, details->m_cast);
+  GetCast(record.show->m_actors, details->m_cast);
+
+  for (odb::lazy_shared_ptr<CODBPersonLink> link: record.episode->m_credits)
+  {
+    if(link.load() && link->m_person.load())
+      details->m_writingCredits.push_back(link->m_person->m_name);
+  }
+
+  if (record.episode->m_defaultID.load())
+  {
+    details->m_iIdUniqueID = record.episode->m_defaultID->m_idUniqueID;
+    details->SetUniqueID(record.episode->m_defaultID->m_value, record.episode->m_defaultID->m_type);
+  }
+
+  if (record.episode->m_file.load())
+  {
+    details->m_iFileId = record.episode->m_file->m_idFile;
+    if(record.episode->m_file->m_path.load())
     {
-      if(link.load() && link->m_person.load())
-        details.m_writingCredits.push_back(link->m_person->m_name);
+      details->m_strPath = record.episode->m_file->m_path->m_path;
+
+      if (record.episode->m_file->m_path->m_parentPath.load())
+        details->m_parentPathID = record.episode->m_file->m_path->m_parentPath->m_idPath;
     }
 
+    std::string strFileName = record.episode->m_file->m_filename;
+    ConstructPath(details->m_strFileNameAndPath,details->m_strPath,strFileName);
 
-    details.SetPremieredFromDBDate(record->episode->m_aired.m_date);
-    details.m_firstAired.SetFromULongLong(record->episode->m_aired.m_ulong_date);
-    details.m_firstAired.GetAsULongLong();
+    details->SetPlayCount(GetPlayerPlayCount(record.episode->m_file->m_idFile));
+    CDateTime lastplayed;
+    lastplayed.SetFromULongLong(record.episode->m_file->m_lastPlayed.m_ulong_date);
+    details->m_lastPlayed = lastplayed;
+    CDateTime dateadded;
+    dateadded.SetFromULongLong(record.episode->m_file->m_dateAdded.m_ulong_date);
+    details->m_dateAdded = dateadded;
+  }
 
-    // season premiered date based on first episode airdate associated to the season
-    // tvshow premiered date is used as a fallback
-    if (details.m_firstAired.IsValid())
-      details.SetPremiered(details.m_firstAired);
-    else if (details.HasPremiered())
-      details.SetPremiered(details.GetPremiered());
-    else if (details.HasYear())
-      details.SetYear(details.GetYear());
+  if (record.episode->m_basepath.load())
+    details->m_basePath = record.episode->m_basepath->m_path;
 
-    details.m_strPictureURL.m_spoof = record->episode->m_thumbUrl_spoofed;
-    details.m_strPictureURL.m_xml = record->episode->m_thumbUrl;
+  for (auto i: record.episode->m_directors)
+  {
+    if (!i.load())
+      continue;
 
-    details.SetDuration(record->episode->m_runtime);
+    if (!i->m_person.load())
+      continue;
 
-    if (record->episode->m_defaultID.load())
+    details->m_director.emplace_back(i->m_person->m_name);
+  }
+
+  //Load the bookmark
+  {
+    if (details->m_iFileId > 0)
     {
-      details.m_iIdUniqueID = record->episode->m_defaultID->m_idUniqueID;
-
-      details.SetUniqueID(record->episode->m_defaultID->m_value, record->episode->m_defaultID->m_type);
-    }
-
-    if (record->episode->m_file.load())
-    {
-      details.m_iFileId = record->episode->m_file->m_idFile;
-      if(record->episode->m_file->m_path.load())
+      odb::result<CODBBookmark> res3 = m_cdb.getDB()->query<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details->m_iFileId
+                                                                          && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME
+                                                                          && odb::query<CODBBookmark>::macAddress == GetMACAddress() );
+      if (res3.begin() != res3.end())
       {
-        details.m_strPath = record->episode->m_file->m_path->m_path;
+        CODBBookmark odbBookmark;
+        res3.begin().load(odbBookmark);
 
-        if (record->episode->m_file->m_path->m_parentPath.load())
-        {
-          details.m_parentPathID = record->episode->m_file->m_path->m_parentPath->m_idPath;
-        }
+        details->SetResumePoint((int)odbBookmark.m_timeInSeconds,
+                                (int)odbBookmark.m_totalTimeInSeconds,
+                                odbBookmark.m_playerState);
+
+        /*details->m_resumePoint.player = odbBookmark.m_player;
+        details->m_resumePoint.thumbNailImage = odbBookmark.m_thumbNailImage;
+        details->m_resumePoint.player = odbBookmark.m_player;*/
       }
-      std::string strFileName = record->episode->m_file->m_filename;
-      ConstructPath(details.m_strFileNameAndPath,details.m_strPath,strFileName);
-
-      details.SetPlayCount(GetPlayerPlayCount(*record->episode->m_file));
-      CDateTime lastplayed;
-      lastplayed.SetFromULongLong(record->episode->m_file->m_lastPlayed.m_ulong_date);
-      details.m_lastPlayed = lastplayed;
-      CDateTime dateadded;
-      dateadded.SetFromULongLong(record->episode->m_file->m_dateAdded.m_ulong_date);
-      details.m_dateAdded = dateadded;
     }
+  }
 
-    if (record->episode->m_basepath.load())
+  details->SetUserrating(record.episode->m_userrating);
+  if(record.episode->m_defaultRating.load())
+  {
+    details->m_iIdRating = record.episode->m_defaultRating->m_idRating;
+    details->SetRating(record.episode->m_defaultRating->m_rating,
+                      record.episode->m_defaultRating->m_votes,
+                      record.episode->m_defaultRating->m_ratingType, true);
+  }
+
+  if (getDetails)
+  {
+    if (getDetails & VideoDbDetailsRating)
+      GetRatings(record.episode->m_ratings, details->m_ratings);
+
+    if (getDetails & VideoDbDetailsUniqueID)
+      GetUniqueIDs(record.episode->m_ids, *details);
+
+    details->m_strPictureURL.Parse();
+
+    if (getDetails &  VideoDbDetailsBookmark)
     {
-      details.m_basePath = record->episode->m_basepath->m_path;
-    }
-
-    for (auto i: record->episode->m_directors)
-    {
-      if (!i.load())
-        continue;
-
-      if (!i->m_person.load())
-        continue;
-
-      details.m_director.emplace_back(i->m_person->m_name);
-    }
-
-    details.SetProductionCode(record->episode->m_productionCode);
-
-    // Load the Season
-    {
-      odb::result< ODBView_Season_Episodes> res = m_cdb.getDB()->query<ODBView_Season_Episodes>(odb::query<ODBView_Season_Episodes>::CODBEpisode::idEpisode == record->episode->m_idEpisode);
+      odb::result<CODBBookmark> res;
+      res = m_cdb.getDB()->query<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == record.episode->m_file->m_idFile);
       if (res.begin() != res.end())
       {
-        ODBView_Season_Episodes objSeasonEpisode;
-        res.begin().load(objSeasonEpisode);
-        
-        odb::result<CODBSeason> resSeason(m_cdb.getDB()->query<CODBSeason>(odb::query<CODBSeason>::idSeason == objSeasonEpisode.m_idSeason));
-        if (resSeason.begin() != resSeason.end())
-        {
-          CODBSeason objSeason;
-          resSeason.begin().load(objSeason);
-          
-          m_cdb.getDB()->load(objSeason, objSeason.section_foreign);
-          details.m_iSeason = objSeason.m_season;
-          details.m_iIdSeason = objSeason.m_idSeason;
-        }
+        auto bookmark = res.begin();
+        details->m_EpBookmark.timeInSeconds = bookmark->m_timeInSeconds;
+        details->m_EpBookmark.totalTimeInSeconds = bookmark->m_totalTimeInSeconds;
+        details->m_EpBookmark.thumbNailImage = bookmark->m_thumbNailImage;
+        details->m_EpBookmark.playerState = bookmark->m_playerState;
+        details->m_EpBookmark.player = bookmark->m_player;
+        details->m_EpBookmark.type = (CBookmark::EType)bookmark->m_type;
       }
-    }
-    
-    {
-      if (details.m_iIdSeason > 0)
-      {
-        odb::result<ODBView_TVShow_Seasons> res = m_cdb.getDB()->query<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBSeason::idSeason == details.m_iIdSeason);
-        if (res.begin() != res.end())
-        {
-          ODBView_TVShow_Seasons objTVshow;
-          res.begin().load(objTVshow);
-          
-          details.m_strMPAARating = objTVshow.show->m_mpaa;
-          details.m_strShowTitle = objTVshow.show->m_title;
-          
-          m_cdb.getDB()->load(*(objTVshow.show), objTVshow.show->section_foreign);
-          for (odb::lazy_shared_ptr<CODBGenre> genre : objTVshow.show->m_genres)
-          {
-            if (genre.load())
-            {
-              details.m_genre.push_back(genre->m_name);
-            }
-          }
-          
-          for (odb::lazy_shared_ptr<CODBStudio> studio : objTVshow.show->m_studios)
-          {
-            if ( studio.load())
-            {
-              details.m_studio.push_back(studio->m_name);
-            }
-          }
-          
-          /*CDateTime premiered;
-           premiered.SetFromULongLong(objTVshow.show->m_premiered.m_ulong_date);
-           details.SetPremiered(premiered);*/
-          
-          details.m_iIdShow = objTVshow.show->m_idTVShow;
-          
-          GetCast(record->episode->m_actors, details.m_cast);
-          GetCast(objTVshow.show->m_actors, details.m_cast);
-          castTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis(); //TODO: What are all those timers in the code??
-        }
-      }
+      GetBookMarkForEpisode(*details, details->m_EpBookmark);
     }
 
-    details.m_iEpisode = record->episode->m_episode;
-    details.m_iSpecialSortEpisode = record->episode->m_sortEpisode;
+    if (getDetails & VideoDbDetailsStream)
+      GetStreamDetails(*details);
 
-    //Load the bookmark
-    {
-      if (details.m_iFileId > 0)
-      {
-        odb::result<CODBBookmark> res3 = m_cdb.getDB()->query<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == details.m_iFileId
-                                                                           && odb::query<CODBBookmark>::type == (int)CBookmark::RESUME
-                                                                           && odb::query<CODBBookmark>::macAddress == GetMACAddress() );
-        if (res3.begin() != res3.end())
-        {
-          CODBBookmark odbBookmark;
-          res3.begin().load(odbBookmark);
-          
-          details.SetResumePoint((int)odbBookmark.m_timeInSeconds,
-                                 (int)odbBookmark.m_totalTimeInSeconds,
-                                 odbBookmark.m_playerState);
-
-          /*details.m_resumePoint.player = odbBookmark.m_player;
-          details.m_resumePoint.thumbNailImage = odbBookmark.m_thumbNailImage;
-          details.m_resumePoint.player = odbBookmark.m_player;*/
-        }
-      }
-    }
-
-
-    details.m_iDbId = idEpisode;
-    details.m_type = MediaTypeEpisode;
-
-    
-
-    details.SetUserrating(record->episode->m_userrating);
-    if(record->episode->m_defaultRating.load())
-    {
-      details.m_iIdRating = record->episode->m_defaultRating->m_idRating;
-      details.SetRating(record->episode->m_defaultRating->m_rating,
-                        record->episode->m_defaultRating->m_votes,
-                        record->episode->m_defaultRating->m_ratingType, true);
-    }
-
-    movieTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
-
-    if (getDetails)
-    {
-      if (getDetails & VideoDbDetailsRating)
-        GetRatings(record->episode->m_ratings, details.m_ratings);
-
-      if (getDetails & VideoDbDetailsUniqueID)
-        GetUniqueIDs(record->episode->m_ids, details);
-
-      details.m_strPictureURL.Parse();
-
-      if (getDetails &  VideoDbDetailsBookmark)
-      {
-        odb::result<CODBBookmark> res;
-        res = m_cdb.getDB()->query<CODBBookmark>(odb::query<CODBBookmark>::file->idFile == record->episode->m_file->m_idFile);
-        if (res.begin() != res.end())
-        {
-          auto bookmark = res.begin();
-          details.m_EpBookmark.timeInSeconds = bookmark->m_timeInSeconds;
-          details.m_EpBookmark.totalTimeInSeconds = bookmark->m_totalTimeInSeconds;
-          details.m_EpBookmark.thumbNailImage = bookmark->m_thumbNailImage;
-          details.m_EpBookmark.playerState = bookmark->m_playerState;
-          details.m_EpBookmark.player = bookmark->m_player;
-          details.m_EpBookmark.type = (CBookmark::EType)bookmark->m_type;
-        }
-        GetBookMarkForEpisode(details, details.m_EpBookmark);
-      }
-
-      if (getDetails & VideoDbDetailsStream)
-        GetStreamDetails(details);
-
-      details.m_parsedDetails = getDetails;
-    }
-    
-    GetEpisodeTranslation(&details);
-    
-    return details;
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s exception %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+    details->m_parsedDetails = getDetails;
   }
 
-  return details;
+  GetEpisodeTranslation(details.get());
+  gVideoDatabaseCache.addEpisode(record.episode->m_idEpisode, details, getDetails, record.episode->m_updatedAt);
+
+  return *details;
 }
 
 CVideoInfoTag CVideoDatabase::GetDetailsForMusicVideo(std::unique_ptr<Dataset> &pDS, int getDetails /* = VideoDbDetailsNone */)
@@ -6553,8 +6500,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMusicVideo(std::unique_ptr<Dataset> &
 CVideoInfoTag CVideoDatabase::GetDetailsForMusicVideo(const dbiplus::sql_record* const record, int getDetails /* = VideoDbDetailsNone */)
 {
   CVideoInfoTag details;
-
-  unsigned int time = XbmcThreads::SystemClockMillis();
   int idMVideo = record->at(0).get_asInt();
 
   GetDetailsFromDB(record, VIDEODB_ID_MUSICVIDEO_MIN, VIDEODB_ID_MUSICVIDEO_MAX, DbMusicVideoOffsets, details);
@@ -6577,8 +6522,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMusicVideo(const dbiplus::sql_record*
     details.SetYear(record->at(VIDEODB_DETAILS_MUSICVIDEO_PREMIERED).get_asInt());
   else
     details.SetPremieredFromDBDate(premieredString);
-
-  movieTime += XbmcThreads::SystemClockMillis() - time; time = XbmcThreads::SystemClockMillis();
 
   if (getDetails)
   {
@@ -6971,6 +6914,61 @@ void CVideoDatabase::SetArtForItem(int mediaId, const MediaType &mediaType, cons
   }
 }
 
+template <class T>
+void CVideoDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art)
+{
+  std::string mt = mediaType;
+
+  // mediaType matches the key name for everything but movie sets
+  // In case of mediaType "set" we have the word "collection" in the translation table
+  if (mediaType == MediaTypeVideoCollection)
+    mt = "collection";
+
+  std::map<unsigned int, std::map<std::string, std::string> > idartsmap;
+  for (auto& i: m_cdb.getDB()->query<T>())
+  {
+      std::string new_url = i.art->m_url;
+      if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
+      {
+        std::string query_type = i.art->m_type;
+        if (query_type == "poster") query_type = "thumb";
+        GetTranslatedString(i.id, new_url, mt, query_type);
+      }
+
+      auto artmap = idartsmap.find(i.id);
+      if (artmap != idartsmap.end())
+      {
+        auto &artItem = artmap->second;
+        artItem.insert(std::make_pair(i.art->m_type, new_url));
+      }
+      else
+      {
+        std::map<std::string, std::string> artItem;
+        artItem.insert(std::make_pair(i.art->m_type, new_url));
+        idartsmap.insert(std::make_pair(i.id, artItem));
+      }
+
+      if (i.id == static_cast<unsigned long>(mediaId))
+        art.insert(make_pair(i.art->m_type, new_url));
+  }
+
+  // Special fallbacks for seasons and episodes
+  if (art.empty())
+  {
+    if (mediaType == MediaTypeSeason)
+      art.insert(std::make_pair("thumb", "DefaultSeason.png"));
+    else if (mediaType == MediaTypeEpisode)
+      art.insert(std::make_pair("thumb", "DefaultEpisode.png"));
+  }
+
+  for (auto &at : idartsmap)
+  {
+    std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
+    *artItem = at.second;
+    gVideoDatabaseCache.addArtMap(at.first, artItem, mediaType);
+  }
+}
+
 bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art)
 {
   try
@@ -6981,32 +6979,19 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
       art = *cached;
       return true;
     }
-    
+
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     if (mediaType == MediaTypeMovie)
-    {
-      typedef odb::query<CODBMovie> query;
-      CODBMovie odbMovie;
-      if (m_cdb.getDB()->query_one<CODBMovie>(query::idMovie == mediaId, odbMovie))
-      {
-        m_cdb.getDB()->load(odbMovie, odbMovie.section_artwork);
-        for (auto& i: odbMovie.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "movie", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-    }
+      FillCacheAndGetArt<ODBView_Movie_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeTvShow)
+      FillCacheAndGetArt<ODBView_TVShow_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeSeason)
+      FillCacheAndGetArt<ODBView_Season_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeEpisode)
+      FillCacheAndGetArt<ODBView_Episode_Art>(mediaId, mediaType, art);
+    else if (mediaType == MediaTypeVideoCollection)
+      FillCacheAndGetArt<ODBView_Set_Art>(mediaId, mediaType, art);
     else if (mediaType == MediaTypeActor || mediaType == MediaTypeDirector)
     {
       typedef odb::query<CODBPerson> query;
@@ -7022,105 +7007,6 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
     else if (mediaType == "genre")
     {
       //TODO: This is called but no where defined. Need to be checked
-    }
-    else if (mediaType == MediaTypeTvShow)
-    {
-      typedef odb::query<CODBTVShow> query;
-      CODBTVShow odjShow;
-      if (m_cdb.getDB()->query_one<CODBTVShow>(query::idTVShow == mediaId, odjShow))
-      {
-        m_cdb.getDB()->load(odjShow, odjShow.section_foreign);
-        for (auto& i: odjShow.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "tvshow", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-    }
-    else if (mediaType == MediaTypeSeason)
-    {
-      typedef odb::query<CODBSeason> query;
-      CODBSeason objSeason;
-      if (m_cdb.getDB()->query_one<CODBSeason>(query::idSeason == mediaId, objSeason))
-      {
-        m_cdb.getDB()->load(objSeason, objSeason.section_foreign);
-        for (auto& i: objSeason.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "season", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-      
-      //Fallback
-      if (art.empty())
-        art.insert(std::make_pair("thumb", "DefaultSeason.png"));
-    }
-    else if (mediaType == MediaTypeEpisode)
-    {
-      typedef odb::query<CODBEpisode> query;
-      CODBEpisode odjEpisode;
-      if (m_cdb.getDB()->query_one<CODBEpisode>(query::idEpisode == mediaId, odjEpisode))
-      {
-        m_cdb.getDB()->load(odjEpisode, odjEpisode.section_foreign);
-        for (auto& i: odjEpisode.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "episode", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
-      
-      //Fallback
-      if (art.empty())
-        art.insert(std::make_pair("thumb", "DefaultEpisode.png"));
-    }
-    else if (mediaType == MediaTypeVideoCollection)
-    {
-      typedef odb::query<CODBSet> query;
-      CODBSet odjSet;
-      if (m_cdb.getDB()->query_one<CODBSet>(query::idSet == mediaId, odjSet))
-      {
-        for (auto& i: odjSet.m_artwork)
-        {
-          if (i.load())
-          {
-            std::string new_url = i->m_url;
-            if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) != LANGUAGE_DEFAULT)
-            {
-              std::string query_type = i->m_type;
-              if (query_type == "poster") query_type = "thumb";
-              GetTranslatedString(mediaId, new_url, "collection", query_type);
-            }
-            art.insert(make_pair(i->m_type, new_url));
-          }
-        }
-      }
     }
     //TODO: Add MusicMovies
     else
@@ -7375,10 +7261,10 @@ bool CVideoDatabase::GetTvShowSeasons(int showId, std::map<int, int> &seasons)
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
-    odb::result<ODBView_TVShow_Seasons> res(m_cdb.getDB()->query<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBTVShow::idTVShow == showId));
-    for (odb::result<ODBView_TVShow_Seasons>::iterator i = res.begin(); i != res.end(); i++)
+    odb::result<ODBView_Season> res(m_cdb.getDB()->query<ODBView_Season>(odb::query<ODBView_Season>::CODBTVShow::idTVShow == showId));
+    for (auto &r : res)
     {
-      seasons.insert(std::make_pair(i->season->m_idSeason, i->season->m_season));
+      seasons.insert(std::make_pair(r.season->m_idSeason, r.season->m_season));
     }
 
     return true;
@@ -7400,12 +7286,12 @@ bool CVideoDatabase::GetTvShowNamedSeasons(int showId, std::map<int, std::string
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
-    odb::result<ODBView_TVShow_Seasons> res(m_cdb.getDB()->query<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBTVShow::idTVShow == showId
-                                                                                         && odb::query<ODBView_TVShow_Seasons>::CODBSeason::season > 0
-                                                                                         && odb::query<ODBView_TVShow_Seasons>::CODBSeason::name != ""));
-    for (odb::result<ODBView_TVShow_Seasons>::iterator i = res.begin(); i != res.end(); i++)
+    odb::result<ODBView_Season> res(m_cdb.getDB()->query<ODBView_Season>(odb::query<ODBView_Season>::CODBTVShow::idTVShow == showId
+                                                                                         && odb::query<ODBView_Season>::CODBSeason::season > 0
+                                                                                         && odb::query<ODBView_Season>::CODBSeason::name != ""));
+    for (auto &r : res)
     {
-      seasons.insert(std::make_pair(i->season->m_idSeason, std::to_string(i->season->m_season)));
+      seasons.insert(std::make_pair(r.season->m_idSeason, std::to_string(r.season->m_season)));
     }
 
     return true;
@@ -7427,20 +7313,20 @@ bool CVideoDatabase::GetTvShowSeasonArt(int showId, std::map<int, std::map<std::
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
-    odb::result<ODBView_TVShow_Seasons> res(m_cdb.getDB()->query<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBTVShow::idTVShow == showId));
-    for (odb::result<ODBView_TVShow_Seasons>::iterator i = res.begin(); i != res.end(); i++)
+    odb::result<ODBView_Season> res(m_cdb.getDB()->query<ODBView_Season>(odb::query<ODBView_Season>::CODBTVShow::idTVShow == showId));
+    for (auto &r : res)
     {
-      m_cdb.getDB()->load(*(i->season), i->season->section_foreign);
+      m_cdb.getDB()->load(*(r.season), r.season->section_foreign);
       std::map<std::string, std::string> art;
 
-      for (auto objArt : i->season->m_artwork)
+      for (auto objArt : r.season->m_artwork)
       {
         if (!objArt.load())
           continue;
         art.insert(make_pair(objArt->m_type, objArt->m_url));
       }
 
-      seasonArt.insert(std::make_pair(i->season->m_idSeason, art));
+      seasonArt.insert(std::make_pair(r.season->m_idSeason, art));
     }
 
     return true;
@@ -8345,7 +8231,7 @@ bool CVideoDatabase::GetPlayCounts(const std::string &strPath, CFileItemList &it
       CFileItemPtr item = items.Get(path);
       if (item)
       {
-        item->GetVideoInfoTag()->SetPlayCount(GetPlayerPlayCount(*i));
+        item->GetVideoInfoTag()->SetPlayCount(GetPlayerPlayCount(i->m_idFile));
         if (!item->GetVideoInfoTag()->GetResumePoint().IsSet())
         {
           CODBBookmark bookmark;
@@ -8392,7 +8278,7 @@ int CVideoDatabase::GetPlayCount(int iFileId)
     if(odb_transaction)
       odb_transaction->commit();
 
-    return GetPlayerPlayCount(odb_file);
+    return GetPlayerPlayCount(odb_file.m_idFile);
   }
   catch (std::exception& e)
   {
@@ -9458,6 +9344,43 @@ bool CVideoDatabase::GetSetsByWhere(const std::string& strBaseDir, const Filter 
     if (!GetMoviesByWhere(strBaseDir, filter, items, SortDescription(), VideoDbDetailsNone, optionalQueries))
       return false;
 
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
+
+    std::map<unsigned int, std::vector<CVideoInfoTag::SetInfo> > setmap;
+    odb::result<ODBView_Movie_Sets> res(m_cdb.getDB()->query<ODBView_Movie_Sets>());
+    for (auto & r : res)
+    {
+      CVideoInfoTag::SetInfo tmp;
+      tmp.id = r.set->m_idSet;
+      tmp.title = r.set->m_name;
+      tmp.overview  = r.set->m_overview;
+
+      auto item = setmap.find(r.movie->m_idMovie);
+      if (item != setmap.end())
+      {
+        auto &setlist = item->second;
+        setlist.push_back(tmp);
+      }
+      else
+      {
+        std::vector<CVideoInfoTag::SetInfo> newlist;
+        newlist.push_back(tmp);
+        setmap.insert(std::make_pair(r.movie->m_idMovie, newlist));
+      }
+    }
+
+    for (auto &i : items)
+    {
+      auto it = setmap.find(i->GetVideoInfoTag()->m_iDbId);
+      if (it != setmap.end())
+        i->GetVideoInfoTag()->m_sets = it->second;
+    }
+
     CFileItemList sets;
     GroupAttribute groupingAttributes = ignoreSingleMovieSets ? GroupAttributeIgnoreSingleItems : GroupAttributeNone;
     if (!GroupUtils::Group(GroupBySet, strBaseDir, items, sets, groupingAttributes))
@@ -9614,7 +9537,7 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    std::map<int, std::pair<std::string,int> > mapItems;
+    std::map<int, std::string> mapItems;
 
     // parse the base path to get additional filters
     CVideoDbUrl videoUrl;
@@ -9650,19 +9573,12 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
       {
         int id = i->person->m_idPerson;
         std::string str = i->person->m_name;
-        int playCount = i->m_playCount; //TODO: Figure out where / why this is needed and if this value is correct
 
         // was this already found?
         auto it = mapItems.find(id);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
-          mapItems.insert(std::pair<int, std::pair<std::string,int> >(id, std::pair<std::string, int>(str,playCount)));
+          mapItems.insert(std::pair<int, std::string>(id, str));
         }
       }
     }
@@ -9690,19 +9606,12 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
       {
         int id = i->person->m_idPerson;
         std::string str = i->person->m_name;
-        int playCount = 0; //TODO: Figure out where / why this is needed
 
         // was this already found?
         auto it = mapItems.find(id);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
-          mapItems.insert(std::pair<int, std::pair<std::string,int> >(id, std::pair<std::string, int>(str,playCount)));
+          mapItems.insert(std::pair<int, std::string>(id, str));
         }
       }
     }
@@ -9722,7 +9631,7 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
 
     for (const auto &i : mapItems)
     {
-      CFileItemPtr pItem(new CFileItem(i.second.first));
+      CFileItemPtr pItem(new CFileItem(i.second));
       pItem->GetVideoInfoTag()->m_iDbId = i.first;
       pItem->GetVideoInfoTag()->m_type = "director";
 
@@ -9737,8 +9646,6 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
         pItem->SetIconImage("DefaultActor.png");
 
       pItem->m_bIsFolder = true;
-      if (idContent == VIDEODB_CONTENT_MOVIES || idContent == VIDEODB_CONTENT_MUSICVIDEOS)
-        pItem->GetVideoInfoTag()->SetPlayCount(i.second.second);
       pItem->SetLabelPreformatted(true);
       items.Add(pItem);
     }
@@ -9806,19 +9713,12 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
         actor.name = i->person->m_name;
         actor.thumb = i->m_art_url;
 
-        actor.playcount = i->m_playCount;
         actor.appearances = 1; //TODO: Need to be added
 
         // was this already found?
         auto it = mapItems.find(idActor);
         if (it == mapItems.end())
         {
-          // check path
-          if ( (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser) &&
-              !g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
           mapItems.insert(std::pair<int, CActor>(idActor, actor));
         }
       }
@@ -9898,8 +9798,6 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
       pItem->SetPath(itemUrl.ToString());
 
       pItem->m_bIsFolder=true;
-      pItem->GetVideoInfoTag()->SetPlayCount(i.second.playcount);
-      
       pItem->GetVideoInfoTag()->m_strPictureURL.ParseString("<thumb>"+i.second.thumb+"</thumb>");
       
       /*ODBView_Person_Art objArt;
@@ -10096,7 +9994,6 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
         actor.thumb = m_pDS->fv(2).get_asString();
         if (idContent != VIDEODB_CONTENT_TVSHOWS)
         {
-          actor.playcount = m_pDS->fv(3).get_asInt();
           actor.appearances = 1;
         }
         else actor.appearances = m_pDS->fv(4).get_asInt();
@@ -10124,7 +10021,6 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
         pItem->SetPath(itemUrl.ToString());
 
         pItem->m_bIsFolder=true;
-        pItem->GetVideoInfoTag()->SetPlayCount(i.second.playcount);
         pItem->GetVideoInfoTag()->m_strPictureURL.ParseString(i.second.thumb);
         pItem->GetVideoInfoTag()->m_iDbId = i.first;
         pItem->GetVideoInfoTag()->m_type = type;
@@ -10198,7 +10094,7 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
       for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
       {
         m_cdb.getDB()->load(*i, i->section_foreign);
-        if (!i->m_file.load() || !i->m_file->m_path.load())
+        if (!i->m_file || !i->m_file->m_path.load())
           continue;
 
         int lYear = i->m_premiered.m_year;
@@ -10209,11 +10105,6 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
         auto it = mapItems.find(lYear);
         if (it == mapItems.end())
         {
-          // check path
-          if (g_passwordManager.IsDatabasePathUnlocked(std::string(i->m_file->m_path->m_path),*CMediaSourceSettings::GetInstance().GetSources("video")))
-          {
-            continue;
-          }
           mapItems.insert(std::pair<int, std::pair<std::string,int> >(lYear, std::pair<std::string, int>(std::to_string(lYear), playCount)));
         }
         else
@@ -10390,180 +10281,53 @@ bool CVideoDatabase::GetSeasonsByWhere(const std::string& strBaseDir, const Filt
     query objQueryWO = season_query;
 
     season_query = season_query + SortUtils::SortODBSeasonQuery<query>(sortDescription);
-    std::set<std::pair<int, int>> mapSeasons;
 
     odb::result<ODBView_Season> res(m_cdb.getDB()->query<ODBView_Season>(season_query));
-    for (odb::result<ODBView_Season>::iterator i = res.begin(); i != res.end(); i++)
+    for (auto &r : res)
     {
-      std::shared_ptr<CFileItem> cached = gVideoDatabaseCache.getSeason(i->m_idSeason, i->m_updatedAt);
-      if (cached)
-      {
-        if (mapSeasons.find(std::make_pair(i->m_idTVShow, i->m_idSeason)) == mapSeasons.end() &&
-            (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE || g_passwordManager.bMasterUser ||
-             g_passwordManager.IsDatabasePathUnlocked(cached->GetVideoInfoTag()->m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video"))))
-        {
-          items.Add(cached);
-          continue;
-        }
-      }
+      CVideoInfoTag tvshow = GetDetailsForTvShow(r, VideoDbDetails::VideoDbDetailsAll);
+      CVideoInfoTag season = GetDetailsForSeason(r, tvshow, VideoDbDetails::VideoDbDetailsAll);
 
-      std::shared_ptr<CODBSeason> objSeason(new CODBSeason);
-      if (!m_cdb.getDB()->query_one<CODBSeason>(odb::query<CODBSeason>::idSeason == i->m_idSeason, *objSeason))
-        continue;
-      
-      std::shared_ptr<ODBView_TVShow_Seasons> objTVShowSeason(new ODBView_TVShow_Seasons);
-      if (!m_cdb.getDB()->query_one<ODBView_TVShow_Seasons>(odb::query<ODBView_TVShow_Seasons>::CODBSeason::idSeason == objSeason->m_idSeason, *objTVShowSeason))
-        continue;
-      
-      std::shared_ptr<CODBTVShow> objTVShow(objTVShowSeason->show);
+      std::string name = r.season->m_name;
+      CFileItemPtr pItem(new CFileItem(season));
 
-      int id = objSeason->m_idSeason;
-      int showId = objTVShow->m_idTVShow;
-      int iSeason = objSeason->m_season;
-      std::string name = objSeason->m_name;
+      CVideoDbUrl itemUrl = videoUrl;
+      std::string strDir;
+      if (appendFullShowPath)
+        strDir += StringUtils::Format("%d/", season.m_iShowId);
+      strDir += StringUtils::Format("%d/", r.season->m_season);
+      itemUrl.AppendPath(strDir);
+      pItem->m_bIsFolder = true;
+      pItem->SetPath(itemUrl.ToString());
 
-      std::string path;
-      m_cdb.getDB()->load( *objTVShow, objTVShow->section_foreign);
-      if (!objTVShow->m_paths.empty())
-      {
-        odb::lazy_shared_ptr<CODBPath> objPath(*(objTVShow->m_paths.begin()));
-        if (objPath.load())
-          path = objPath->m_path;
-      }
+      int watchedEpisodes = r.playCount;
+      pItem->SetProperty("totalseasons", tvshow.m_iSeason);
+      pItem->SetProperty("totalshowepisodes", tvshow.m_iEpisode);
+      pItem->SetProperty("totalepisodes", season.m_iEpisode);
+      pItem->SetProperty("numepisodes", season.m_iEpisode); // will be changed later to reflect watchmode setting
+      pItem->SetProperty("watchedepisodes", watchedEpisodes);
+      pItem->SetProperty("unwatchedepisodes", season.m_iEpisode - watchedEpisodes);
+      if (r.season->m_season == 0)
+        pItem->SetProperty("isspecial", true);
 
-      if (mapSeasons.find(std::make_pair(showId, iSeason)) == mapSeasons.end() &&
-         (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE || g_passwordManager.bMasterUser ||
-          g_passwordManager.IsDatabasePathUnlocked(path, *CMediaSourceSettings::GetInstance().GetSources("video"))))
-      {
-        mapSeasons.insert(std::make_pair(showId, iSeason));
+      pItem->GetVideoInfoTag()->SetPlayCount((season.m_iEpisode == watchedEpisodes) ? 1 : 0);
+      pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
 
-        std::string strLabel = name;
-        if (strLabel.empty())
-        {
-          if (iSeason == 0)
-            strLabel = g_localizeStrings.Get(20381);
-          else
-            strLabel = StringUtils::Format(g_localizeStrings.Get(20358).c_str(), iSeason);
-        }
-        CFileItemPtr pItem(new CFileItem(strLabel));
+      pItem->SetProperty("cast", tvshow.GetCast());
+      pItem->SetProperty("castandrole", tvshow.GetCast(true));
 
-        CVideoDbUrl itemUrl = videoUrl;
-        std::string strDir;
-        if (appendFullShowPath)
-          strDir += StringUtils::Format("%d/", showId);
-        strDir += StringUtils::Format("%d/", iSeason);
-        itemUrl.AppendPath(strDir);
-        pItem->SetPath(itemUrl.ToString());
-
-        pItem->m_bIsFolder = true;
-        pItem->GetVideoInfoTag()->m_strTitle = strLabel;
-        if (!name.empty())
-          pItem->GetVideoInfoTag()->m_strSortTitle = name;
-        pItem->GetVideoInfoTag()->m_iSeason = iSeason;
-        pItem->GetVideoInfoTag()->m_iDbId = id;
-        pItem->GetVideoInfoTag()->m_iIdSeason = id;
-        pItem->GetVideoInfoTag()->m_type = MediaTypeSeason;
-        pItem->GetVideoInfoTag()->m_strPath = path;
-        pItem->GetVideoInfoTag()->m_strShowTitle = objTVShow->m_title;
-        pItem->GetVideoInfoTag()->m_iShowId = objTVShow->m_idTVShow;
-        pItem->GetVideoInfoTag()->m_strPlot = objTVShow->m_plot;
-        pItem->GetVideoInfoTag()->SetPremieredFromDBDate(objTVShow->m_premiered.m_date);
-        pItem->GetVideoInfoTag()->m_firstAired.SetFromULongLong(objSeason->m_firstAired.m_ulong_date);
-
-        pItem->GetVideoInfoTag()->m_firstAired.GetAsULongLong();
-        pItem->GetVideoInfoTag()->m_iUserRating = objSeason->m_userrating;
-        // season premiered date based on first episode airdate associated to the season
-        // tvshow premiered date is used as a fallback
-        if (pItem->GetVideoInfoTag()->m_firstAired.IsValid())
-          pItem->GetVideoInfoTag()->SetPremiered(pItem->GetVideoInfoTag()->m_firstAired);
-        else if (pItem->GetVideoInfoTag()->HasPremiered())
-          pItem->GetVideoInfoTag()->SetPremiered(pItem->GetVideoInfoTag()->GetPremiered());
-        else if (pItem->GetVideoInfoTag()->HasYear())
-          pItem->GetVideoInfoTag()->SetYear(pItem->GetVideoInfoTag()->GetYear());
-
-        for (auto& genre : objTVShow->m_genres)
-        {
-          if (genre.load())
-            pItem->GetVideoInfoTag()->m_genre.push_back(genre->m_name);
-        }
-
-        for (auto& studio : objTVShow->m_studios)
-        {
-          if (studio.load())
-            pItem->GetVideoInfoTag()->m_studio.push_back(studio->m_name);
-        }
-
-        pItem->GetVideoInfoTag()->m_strMPAARating = objTVShow->m_mpaa;
-        pItem->GetVideoInfoTag()->m_iIdShow = showId;
-
-        int totalSeasons = objTVShow->m_seasons.size() - 1; //Ignore the -1 Season
-        
-        ODBView_Season_Play_Count objPlayCount;
-        int watchedEpisodes = 0;
-        if (m_cdb.getDB()->query_one<ODBView_Season_Play_Count>(odb::query<ODBView_Season_Play_Count>::CODBSeason::idSeason == i->m_idSeason, objPlayCount))
-        {
-          watchedEpisodes = objPlayCount.playCount;
-        }
-        
-        ODBView_Season_Episode_Count objEpisodeCount;
-        int totalEpisodes = 0;
-        if (m_cdb.getDB()->query_one<ODBView_Season_Episode_Count>(odb::query<ODBView_Season_Episode_Count>::CODBSeason::idSeason == i->m_idSeason, objEpisodeCount))
-        {
-          totalEpisodes = objEpisodeCount.episodesTotal;
-        }
-        
-        ODBView_Episode_Total objTotalShowEpisodes;
-        int totalShowEpisodes = 0;
-        if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(odb::query<ODBView_Episode_Total>::CODBTVShow::idTVShow == objTVShow->m_idTVShow, objTotalShowEpisodes))
-        {
-          totalShowEpisodes = objTotalShowEpisodes.total;
-        }
-        
-        pItem->GetVideoInfoTag()->m_iEpisode = totalEpisodes;
-        pItem->SetProperty("totalseasons", totalSeasons);
-        pItem->SetProperty("totalshowepisodes", totalShowEpisodes);
-        pItem->SetProperty("totalepisodes", totalEpisodes);
-        pItem->SetProperty("numepisodes", totalEpisodes); // will be changed later to reflect watchmode setting
-        pItem->SetProperty("watchedepisodes", watchedEpisodes);
-        pItem->SetProperty("unwatchedepisodes", totalEpisodes - watchedEpisodes);
-        if (iSeason == 0)
-          pItem->SetProperty("isspecial", true);
-        pItem->GetVideoInfoTag()->SetPlayCount((totalEpisodes == watchedEpisodes) ? 1 : 0);
-        pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
-        
-        GetCast(objTVShow->m_actors, pItem->GetVideoInfoTag()->m_cast);
-        pItem->SetProperty("cast", pItem->GetVideoInfoTag()->GetCast());
-        pItem->SetProperty("castandrole", pItem->GetVideoInfoTag()->GetCast(true));
-        
-        GetSeasonTranslation(pItem->GetVideoInfoTag());
-
-        items.Add(pItem);
-        ++total;
-        gVideoDatabaseCache.addSeason(id, pItem, objSeason->m_updatedAt);
-      }
+      items.Add(pItem);
+      ++total;
     }
 
-    //TODO: Random sorting needs to be implemented
-
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
     {
       ODBView_Season_Total totals;
       if (m_cdb.getDB()->query_one<ODBView_Season_Total>(objQueryWO, totals))
-      {
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-      
-    }
 
     // cleanup
     if(odb_transaction)
@@ -10575,6 +10339,8 @@ bool CVideoDatabase::GetSeasonsByWhere(const std::string& strBaseDir, const Filt
   {
     CLog::Log(LOGERROR, "%s exception %s", __FUNCTION__, e.what());
   }
+
+  return false;
 }
 
 bool CVideoDatabase::GetSortedVideos(const MediaType &mediaType, const std::string& strBaseDir, const SortDescription &sortDescription, CFileItemList& items, const Filter &filter /* = Filter() */)
@@ -10738,138 +10504,60 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
 {
   try
   {
-    movieTime = 0;
-    castTime = 0;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    // parse the base path to get additional filters
+    int total = 0;
     CVideoDbUrl videoUrl;
-    Filter extFilter = filter;
+    typedef odb::query<ODBView_Movie_NoFilter> query;
+    std::string queryStr;
+
     if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
       return false;
 
-    std::string type = videoUrl.GetType();
-    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
-    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
 
-    typedef odb::query<ODBView_Movie> query;
-    query movie_query = optionalQueries;
-    bool hasTags = false;
+    // Convert URL options to smart playlist rules
+    // queryStr will hold the full where clause
+    AdjustQueryFromUrlOptions(queryStr, videoUrl);
 
-    for (auto option: options)
+    // Send the query to the database and add the "order by" and "limit" clause
+    odb::result<ODBView_Movie_NoFilter> res(m_cdb.getDB()->query<ODBView_Movie_NoFilter>(queryStr + SortUtils::SortODBMovieQuery<query>(sortDescription)));
+
+    // Gather more details for the resultset and populate the FileItemList
+    for (auto &r : res)
     {
-      if (option.first == "genreid")
-        movie_query = movie_query && query(query::genre::idGenre == option.second.asInteger());
-      else if (option.first == "genre")
-        movie_query = movie_query && query(query::genre::name.like(option.second.asString()));
-      else if (option.first == "countryid")
-        movie_query = movie_query && query(query::country::idCountry == option.second.asInteger());
-      else if (option.first == "country")
-        movie_query = movie_query && query(query::country::name.like(option.second.asString()));
-      else if (option.first == "studioid")
-        movie_query = movie_query && query(query::studio::idStudio == option.second.asInteger());
-      else if (option.first == "studio")
-        movie_query = movie_query && query(query::studio::name.like(option.second.asString()));
-      else if (option.first == "directorid")
-        movie_query = movie_query && query(query::director::idPerson == option.second.asInteger());
-      else if (option.first == "director")
-        movie_query = movie_query && query(query::director::name.like(option.second.asString()));
-      else if (option.first == "actorid")
-        movie_query = movie_query && query(query::actor::idPerson == option.second.asInteger());
-      else if (option.first == "actor")
-        movie_query = movie_query && query(query::actor::name.like(option.second.asString()));
-      else if (option.first == "setid")
-        movie_query = movie_query && query(query::set::idSet == option.second.asInteger());
-      else if (option.first == "set")
-        movie_query = movie_query && query(query::set::name.like(option.second.asString()));
-      else if (option.first == "year")
-        movie_query = movie_query && query(query::CODBMovie::premiered.year == option.second.asInteger());
-      else if (option.first == "tagid") {
-        movie_query = movie_query && query(query::tag::idTag == option.second.asInteger());
-        hasTags = true;
-      }
-      else if (option.first == "tag")
-        movie_query = movie_query && query(query::tag::name.like(option.second.asString()));
-      else if (option.first == "filter" || option.first == "xsp")
-      {
-        CSmartPlaylist xspFilter;
-        if (!xspFilter.LoadFromJson(option.second.asString()))
-          return false;
-
-        // check if the filter playlist matches the item type
-        if (xspFilter.GetType() == itemType)
-        {
-          std::set<std::string> playlists;
-          movie_query = movie_query && xspFilter.GetMovieWhereClause(playlists);
-        }
-        // remove the filter if it doesn't match the item type
-        else
-          videoUrl.RemoveOption(option.first);
-        
-        if (!hasTags && xspFilter.HasTagFilter())
-          hasTags = true;
-      }
-      CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-    }
-    
-    if (!hasTags) {
-      movie_query = movie_query && query(query::tag::idTag.is_null());
-    }
-
-    int total = 0;
-
-    //Store the query without limits and sorting for the later
-    query objQueryWO = movie_query;
-
-    movie_query = movie_query + SortUtils::SortODBMovieQuery<query>(sortDescription);
-
-    odb::result<ODBView_Movie> res(m_cdb.getDB()->query<ODBView_Movie>(movie_query));
-    for (odb::result<ODBView_Movie>::iterator i = res.begin(); i != res.end(); i++)
-    {
-      CVideoInfoTag movie = GetDetailsForMovie(i, getDetails);
+      CVideoInfoTag movie = GetDetailsForMovie<ODBView_Movie_NoFilter>(r, getDetails);
       if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
           g_passwordManager.bMasterUser ||
           g_passwordManager.IsDatabasePathUnlocked(movie.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
       {
         CFileItemPtr pItem(new CFileItem(movie));
-
         CVideoDbUrl itemUrl = videoUrl;
         std::string path = StringUtils::Format("%i", movie.m_iDbId);
+
         itemUrl.AppendPath(path);
         pItem->SetPath(itemUrl.ToString());
-
         pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED,movie.GetPlayCount() > 0);
         items.Add(pItem);
-
         ++total;
       }
     }
 
-    //TODO: Random sorting needs to be implemented
-
-    // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || (sortDescription.limitEnd != 0 && sortDescription.limitEnd != -1))
+    // If Limits are set, we need to query the total amount of items without limits
+    // This is used to give clients like json api, the total amount of movies
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
     {
-      ODBView_Movie_Total totals;
-      if (m_cdb.getDB()->query_one<ODBView_Movie_Total>(objQueryWO, totals))
-      {
+      ODBView_Movie_NoFilter_Total totals;
+      if (m_cdb.getDB()->query_one<ODBView_Movie_NoFilter_Total>(queryStr, totals))
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-    }
 
-    // cleanup
-    if(odb_transaction)
+    if (odb_transaction)
       odb_transaction->commit();
 
     return true;
@@ -10883,6 +10571,147 @@ bool CVideoDatabase::GetMoviesByWhere(const std::string& strBaseDir, const Filte
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
   return false;
+}
+
+void CVideoDatabase::AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_query, CVideoDbUrl& videoDbUrl)
+{
+  typedef odb::query<ODBView_Movie> query;
+  bool hasTags = false;
+  const CUrlOptions::UrlOptions& options = videoDbUrl.GetOptions();
+
+  for (auto option: options)
+  {
+    if (option.first == "genreid")
+      movie_query = movie_query && query(query::genre::idGenre == option.second.asInteger());
+    else if (option.first == "genre")
+      movie_query = movie_query && query(query::genre::name.like(option.second.asString()));
+    else if (option.first == "countryid")
+      movie_query = movie_query && query(query::country::idCountry == option.second.asInteger());
+    else if (option.first == "country")
+      movie_query = movie_query && query(query::country::name.like(option.second.asString()));
+    else if (option.first == "studioid")
+      movie_query = movie_query && query(query::studio::idStudio == option.second.asInteger());
+    else if (option.first == "studio")
+      movie_query = movie_query && query(query::studio::name.like(option.second.asString()));
+    else if (option.first == "directorid")
+      movie_query = movie_query && query(query::director::idPerson == option.second.asInteger());
+    else if (option.first == "director")
+      movie_query = movie_query && query(query::director::name.like(option.second.asString()));
+    else if (option.first == "actorid")
+      movie_query = movie_query && query(query::actor::idPerson == option.second.asInteger());
+    else if (option.first == "actor")
+      movie_query = movie_query && query(query::actor::name.like(option.second.asString()));
+    else if (option.first == "setid")
+      movie_query = movie_query && query(query::set::idSet == option.second.asInteger());
+    else if (option.first == "set")
+      movie_query = movie_query && query(query::set::name.like(option.second.asString()));
+    else if (option.first == "year")
+      movie_query = movie_query && query(query::CODBMovie::premiered.year == option.second.asInteger());
+    else if (option.first == "tagid") {
+      movie_query = movie_query && query(query::tag::idTag == option.second.asInteger());
+      hasTags = true;
+    }
+    else if (option.first == "tag")
+      movie_query = movie_query && query(query::tag::name.like(option.second.asString()));
+    else if (option.first == "filter" || option.first == "xsp")
+    {
+      CSmartPlaylist xspFilter;
+      if (xspFilter.LoadFromJson(option.second.asString()))
+      {
+        // check if the filter playlist matches the item type
+        if (xspFilter.GetType() == ((const CVideoDbUrl &)videoDbUrl).GetItemType())
+        {
+          std::set<std::string> playlists;
+          movie_query = movie_query && xspFilter.GetMovieWhereClause(playlists);
+        }
+        // remove the filter if it doesn't match the item type
+        else
+          videoDbUrl.RemoveOption(option.first);
+
+        if (!hasTags && xspFilter.HasTagFilter())
+          hasTags = true;
+      }
+    }
+
+    CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
+  }
+
+  if (!hasTags) {
+    movie_query = movie_query && query(query::tag::idTag.is_null());
+  }
+}
+
+void CVideoDatabase::AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVideoDbUrl& videoDbUrl)
+{
+  bool hasTags = false;
+  const CUrlOptions::UrlOptions& options = videoDbUrl.GetOptions();
+  std::string type = videoDbUrl.GetType();
+  std::string itemType = ((const CVideoDbUrl &)videoDbUrl).GetItemType();
+  std::string whereClause = "1=1 ";
+  std::string spq;
+
+  for (auto option: options)
+  {
+    if (option.first == "genreid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"genreid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "genre")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"genre\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "countryid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"countryid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "country")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"country\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "studioid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"studioid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "studio")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"studio\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "directorid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"directorid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "director")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"director\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "actorid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"actorid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "actor")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"actor\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "setid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"setid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "set")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"set\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "year")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"year\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "tagid")
+        spq = "{\"rules\":{\"and\":[{\"field\":\"tagid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "tag")
+        spq = "{\"rules\":{\"and\":[{\"field\":\"tag\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+    else if (option.first == "filter" || option.first == "xsp")
+      spq = option.second.asString();
+
+    CSmartPlaylist xspFilter;
+    if (xspFilter.LoadFromJson(spq))
+    {
+      // check if the filter playlist matches the item type
+      if (xspFilter.GetType() == itemType)
+      {
+        std::set<std::string> playlists;
+        whereClause += "AND ";
+        whereClause += xspFilter.GetWhereClause(*this, playlists);
+      }
+      // remove the filter if it doesn't match the item type
+      else
+        videoDbUrl.RemoveOption(option.first);
+
+      if (!hasTags && xspFilter.HasTagFilter())
+        hasTags = true;
+    }
+
+    CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
+  }
+
+  if (!hasTags) {
+    whereClause += " AND idTag IS NULL";
+  }
+
+  //strMovieQuery = baseQuery + whereClause;
+  strMovieQuery = whereClause;
 }
 
 bool CVideoDatabase::GetTvShowsNav(const std::string& strBaseDir, CFileItemList& items,
@@ -10917,143 +10746,60 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
 {
   try
   {
-    movieTime = 0;
+    int total = 0;
+    CVideoDbUrl videoDbUrl;
+    typedef odb::query<ODBView_TVShow> query;
+    std::string queryStr;
 
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    CVideoDbUrl videoUrl;
-    Filter extFilter = filter;
-    if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
+    if (!videoDbUrl.FromString(strBaseDir) || !videoDbUrl.IsValid())
       return false;
 
-    std::string type = videoUrl.GetType();
-    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
-    const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
 
-    typedef odb::query<ODBView_TVShow> query;
-    query tvshow_query = optionalQueries;
-    bool hasTags = false;
+    // Convert URL options to smart playlist rules
+    // queryStr will hold the full where clause
+    AdjustQueryFromUrlOptions(queryStr, videoDbUrl);
 
-    for (auto option: options)
+    // Send the query to the database and add the "order by" and "limit" clause
+    odb::result<ODBView_TVShow> res(m_cdb.getDB()->query<ODBView_TVShow>(queryStr + SortUtils::SortODBTVShowQuery<query>(sortDescription)));
+
+    // Gather more details for the resultset and populate the FileItemList
+    for (auto &r : res)
     {
-      if (option.first == "genreid")
-        tvshow_query += query(query::genre::idGenre == option.second.asInteger());
-      else if (option.first == "genre")
-        tvshow_query += query(query::genre::name.like(option.second.asString()));
-      else if (option.first == "studioid")
-        tvshow_query += query(query::studio::idStudio == option.second.asInteger());
-      else if (option.first == "studio")
-        tvshow_query += query(query::studio::name.like(option.second.asString()));
-      else if (option.first == "directorid")
-        tvshow_query += query(query::director::idPerson == option.second.asInteger());
-      else if (option.first == "director")
-        tvshow_query += query(query::director::name.like(option.second.asString()));
-      else if (option.first == "actorid")
-        tvshow_query += query(query::actor::idPerson == option.second.asInteger());
-      else if (option.first == "actor")
-        tvshow_query += query(query::actor::name.like(option.second.asString()));
-      else if (option.first == "year")
-        tvshow_query += query(query::CODBTVShow::premiered.year == option.second.asInteger());
-      else if (option.first == "tagid")
-      {
-        tvshow_query += query(query::tag::idTag == option.second.asInteger());
-        hasTags = true;
-      }
-      else if (option.first == "tag")
-        tvshow_query += query(query::tag::name.like(option.second.asString()));
-      else if (option.first == "filter" || option.first == "xsp")
-      {
-        CSmartPlaylist xspFilter;
-        if (!xspFilter.LoadFromJson(option.second.asString()))
-          return false;
+      CVideoInfoTag tvshow = GetDetailsForTvShow(r, getDetails);
+      CFileItemPtr pItem(new CFileItem(tvshow));
+      CVideoDbUrl itemUrl = videoDbUrl;
+      std::string path = StringUtils::Format("%i", tvshow.m_iDbId);
 
-        // check if the filter playlist matches the item type
-        if (xspFilter.GetType() == itemType)
-        {
-          std::set<std::string> playlists;
-          tvshow_query += xspFilter.GetTVShowWhereClause(playlists);
-        }
-        // remove the filter if it doesn't match the item type
-        else
-          videoUrl.RemoveOption(option.first);
+      itemUrl.AppendPath(path);
+      pItem->SetPath(itemUrl.ToString());
+      pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
+      pItem->m_dateTime = tvshow.GetPremiered();
+      pItem->SetProperty("totalseasons", tvshow.m_iSeason);
+      pItem->SetProperty("totalepisodes", tvshow.m_iEpisode);
+      pItem->SetProperty("numepisodes", tvshow.m_iEpisode); // will be changed later to reflect watchmode setting
+      pItem->SetProperty("watchedepisodes", tvshow.GetPlayCount());
+      pItem->SetProperty("unwatchedepisodes", tvshow.m_iEpisode - tvshow.GetPlayCount());
 
-        if (!hasTags && xspFilter.HasTagFilter())
-          hasTags = true;
-      }
-      CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-    }
-    
-    if (!hasTags)
-    {
-      tvshow_query = tvshow_query && query(query::tag::idTag.is_null());
+      items.Add(pItem);
+      ++total;
     }
 
-
-    int total = 0;
-    
-    //Store the query without limits and sorting for the later
-    query objQueryWO = tvshow_query;
-
-    tvshow_query = tvshow_query + SortUtils::SortODBTVShowQuery<query>(sortDescription);
-
-    odb::result<ODBView_TVShow> res(m_cdb.getDB()->query<ODBView_TVShow>(tvshow_query));
-    for (odb::result<ODBView_TVShow>::iterator i = res.begin(); i != res.end(); i++)
-    {
-      std::shared_ptr<CFileItem> cached = gVideoDatabaseCache.getTVShow(i->show->m_idTVShow, getDetails, i->show->m_updatedAt);
-      if (cached)
-      {
-        if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-            g_passwordManager.bMasterUser ||
-            g_passwordManager.IsDatabasePathUnlocked(cached->GetVideoInfoTag()->m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          items.Add(cached);
-          ++total;
-          continue;
-        }
-      }
-      
-      CVideoInfoTag tvshow = GetDetailsForTvShow(i, getDetails);
-      if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-          g_passwordManager.bMasterUser ||
-          g_passwordManager.IsDatabasePathUnlocked(tvshow.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-      {
-        CFileItemPtr pItem(new CFileItem(tvshow));
-
-        CVideoDbUrl itemUrl = videoUrl;
-        std::string path = StringUtils::Format("%i", tvshow.m_iDbId);
-        itemUrl.AppendPath(path);
-        pItem->SetPath(itemUrl.ToString());
-
-        pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, (pItem->GetVideoInfoTag()->GetPlayCount() > 0) && (pItem->GetVideoInfoTag()->m_iEpisode > 0));
-        items.Add(pItem);
-
-        ++total;
-        
-        gVideoDatabaseCache.addTVShow(i->show->m_idTVShow, pItem, getDetails, i->show->m_updatedAt);
-      }
-    }
-
-    //TODO: Random sorting needs to be implemented
-
-    // If Limits are set, we need to query the total amount of items again
+    // If Limits are set, we need to query the total amount of items without limits
+    // This is used to give clients like json api, the total amount of tvshows
     if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
     {
       ODBView_TVShow_Total totals;
-      if (m_cdb.getDB()->query_one<ODBView_TVShow_Total>(objQueryWO, totals))
-      {
+      if (m_cdb.getDB()->query_one<ODBView_TVShow_Total>(queryStr, totals))
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-    }
 
     // cleanup
     if(odb_transaction)
@@ -11122,24 +10868,25 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
 {
   try
   {
-    movieTime = 0;
-    castTime = 0;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    // parse the base path to get additional filters
+    int total = 0;
     CVideoDbUrl videoUrl;
-    Filter extFilter = filter;
+    typedef odb::query<ODBView_Episode> query;
+    query episode_query;
+    std::string strQuery;
+
     if (!videoUrl.FromString(strBaseDir) || !videoUrl.IsValid())
       return false;
 
-    std::string type = videoUrl.GetType();
-    std::string itemType = ((const CVideoDbUrl &)videoUrl).GetItemType();
     const CUrlOptions::UrlOptions& options = videoUrl.GetOptions();
 
-    typedef odb::query<ODBView_Episode> query;
-    query episode_query = optionalQueries;
+    // Create a database transaction, this is needed in order to use sessions
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+    // Create a session, this acts as a cache of persistent objects
+    // it ensures that loads of same objects (for example in GetDeatilsForMovie)
+    // come from cache and don't hit the db
+    odb::session s;
 
+    // Extract tvshow and season from url options
     int idShow = -1;
     auto option = options.find("tvshowid");
     if (option != options.end())
@@ -11150,52 +10897,15 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
     if (option != options.end())
       season = (int)option->second.asInteger();
 
+    // Convert URL options to smart playlist rules
+    // queryStr will hold the full where clause
+    AdjustQueryFromUrlOptions(strQuery, videoUrl);
+
+    // If we have tvshow and/or season in url options
+    // we change the query to have the needed where clause
     if (idShow > -1)
     {
-      bool condition = false;
-
-      for (auto option: options)
-      {
-        if (option.first == "directorid")
-          episode_query = episode_query && query(query::director::idPerson == option.second.asInteger());
-        else if (option.first == "director")
-          episode_query = episode_query && query(query::director::name.like(option.second.asString()));
-        else if (option.first == "actorid")
-          episode_query = episode_query && query(query::actor::idPerson == option.second.asInteger());
-        else if (option.first == "actor")
-          episode_query = episode_query && query(query::actor::name.like(option.second.asString()));
-        else if (option.first == "genre")
-          episode_query = episode_query && query(query::genre::name == option.second.asString());
-        else if (option.first == "genreid")
-          episode_query = episode_query && query(query::genre::idGenre == option.second.asInteger());
-        else if (option.first == "year")
-        {
-          condition = true;
-          episode_query = episode_query && query(query::CODBSeason::firstAired.year == option.second.asInteger());
-        }
-        else if (option.first == "filter" || option.first == "xsp")
-        {
-          CSmartPlaylist xspFilter;
-          if (!xspFilter.LoadFromJson(option.second.asString()))
-            return false;
-
-          // check if the filter playlist matches the item type
-          if (xspFilter.GetType() == itemType)
-          {
-            std::set<std::string> playlists;
-            episode_query = episode_query && xspFilter.GetEpisodeWhereClause(playlists);
-          }
-          // remove the filter if it doesn't match the item type
-          else
-            videoUrl.RemoveOption(option.first);
-        }
-        CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-      }
-
-
-
-      if (!condition)
-        episode_query = episode_query && query(query::CODBTVShow::idTVShow == idShow);
+      episode_query = episode_query && query(query::CODBTVShow::idTVShow == idShow);
 
       if (season > -1)
       {
@@ -11203,71 +10913,27 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
           episode_query = episode_query && query(query::CODBSeason::season == season);
         else
           episode_query = episode_query && query(query::CODBSeason::season == season ||
-                                                    query(query::CODBSeason::season == 0 &&
-                                                          query(query::CODBEpisode::sortSeason == 0 || query::CODBEpisode::sortSeason == season)
-                                                    )
-                                                 );
+                                           query(query::CODBSeason::season == 0 &&
+                                           query(query::CODBEpisode::sortSeason == 0 || query::CODBEpisode::sortSeason == season)));
       }
+
+      // In this case we need to append an "AND" in front of the
+      // other filters (this always works as strQuery will at least hold "1=1")
+      strQuery = " AND " + strQuery;
     }
-    else
-    {
-      for (auto option: options)
-      {
-        if (option.first == "directorid")
-          episode_query = episode_query && query(query::director::idPerson == option.second.asInteger());
-        else if (option.first == "director")
-          episode_query = episode_query && query(query::director::name.like(option.second.asString()));
-        else if (option.first == "year")
-          episode_query = episode_query && query(query::CODBSeason::firstAired.year == option.second.asInteger());
-        else if (option.first == "filter" || option.first == "xsp")
-        {
-          CSmartPlaylist xspFilter;
-          if (!xspFilter.LoadFromJson(option.second.asString()))
-            return false;
-
-          // check if the filter playlist matches the item type
-          if (xspFilter.GetType() == itemType)
-          {
-            std::set<std::string> playlists;
-            episode_query = episode_query && xspFilter.GetEpisodeWhereClause(playlists);
-          }
-          // remove the filter if it doesn't match the item type
-          else
-            videoUrl.RemoveOption(option.first);
-        }
-        CLog::Log(LOGDEBUG, "%s added filter for %s - %s", __FUNCTION__, option.first.c_str(), option.second.asString().c_str());
-      }
-    }
-
-    int total = 0;
-
-    //Store the query without limits and sorting for the later
-    query objQueryWO = episode_query;
-    
-    episode_query = episode_query + SortUtils::SortODBEpisodeQuery<query>(sortDescription);
 
     CLabelFormatter formatter("%H. %T", "");
 
-    odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>(episode_query));
-    for (odb::result<ODBView_Episode>::iterator i = res.begin(); i != res.end(); i++)
+    // Send the query to the database and add the "order by" and "limit" clause
+    odb::result<ODBView_Episode> res(m_cdb.getDB()->query<ODBView_Episode>(episode_query + strQuery + SortUtils::SortODBEpisodeQuery<query>(sortDescription)));
+    for (auto &r : res)
     {
       // This happens if you have a season with no episode
       // Make sure we don't crash
-      if (!i->episode)
+      if (!r.episode)
         continue;
-      std::shared_ptr<CFileItem> cached = gVideoDatabaseCache.getEpisode(i->episode->m_idEpisode, i->episode->m_updatedAt);
-      if (cached)
-      {
-        if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
-            g_passwordManager.bMasterUser ||
-            g_passwordManager.IsDatabasePathUnlocked(cached->GetVideoInfoTag()->m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          items.Add(cached);
-          continue;
-        }
-      }
-      
-      CVideoInfoTag episode = GetDetailsForEpisode(i, getDetails);
+
+      CVideoInfoTag episode = GetDetailsForEpisode(r, getDetails);
       if (m_profileManager.GetMasterProfile().getLockMode() == LOCK_MODE_EVERYONE ||
           g_passwordManager.bMasterUser ||
           g_passwordManager.IsDatabasePathUnlocked(episode.m_strPath, *CMediaSourceSettings::GetInstance().GetSources("video")))
@@ -11278,51 +10944,33 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
         CVideoDbUrl itemUrl = videoUrl;
         std::string path = StringUtils::Format("%i", episode.m_iDbId);
         if (appendFullShowPath && videoUrl.GetItemType() != "episodes")
-          path = StringUtils::Format("%lu/%i/%i", i->episode->m_idShow, episode.m_iSeason, episode.m_iDbId);
+          path = StringUtils::Format("%lu/%i/%i", r.episode->m_idShow, episode.m_iSeason, episode.m_iDbId);
         else
           path = StringUtils::Format("%i", episode.m_iDbId);
+
         itemUrl.AppendPath(path);
         pItem->SetPath(itemUrl.ToString());
 
         pItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, episode.GetPlayCount() > 0);
         pItem->m_dateTime = episode.m_firstAired;
-        
-        std::string cast = pItem->GetVideoInfoTag()->GetCast();
-        std::string castrole = pItem->GetVideoInfoTag()->GetCast(true);
-        
-        pItem->SetProperty("cast", pItem->GetVideoInfoTag()->GetCast());
-        pItem->SetProperty("castandrole", pItem->GetVideoInfoTag()->GetCast(true));
-        
-        items.Add(pItem);
-        gVideoDatabaseCache.addEpisode(i->episode->m_idEpisode, pItem, i->episode->m_updatedAt);
+        pItem->SetProperty("cast", episode.GetCast());
+        pItem->SetProperty("castandrole", episode.GetCast(true));
 
+        items.Add(pItem);
         ++total;
       }
     }
 
-    //TODO: Random sorting needs to be implemented
-
     // If Limits are set, we need to query the total amount of items again
-    if (sortDescription.limitStart != 0 || sortDescription.limitEnd != 0)
+    if (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0)
     {
       ODBView_Episode_Total totals;
-      if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(objQueryWO, totals))
-      {
+      if (m_cdb.getDB()->query_one<ODBView_Episode_Total>(episode_query, totals))
         items.SetProperty("total", totals.total);
-      }
-      else
-      {
-        // Fallback to set total by amount of items in the list
-        items.SetProperty("total", total);
-      }
     }
     else
-    {
-      // Store the total number of songs as a property based on the list length
       items.SetProperty("total", total);
-    }
 
-    // cleanup
     if(odb_transaction)
       odb_transaction->commit();
 
@@ -12292,9 +11940,6 @@ bool CVideoDatabase::GetMusicVideosByWhere(const std::string &baseDir, const Fil
 {
   try
   {
-    movieTime = 0;
-    castTime = 0;
-
     if (NULL == m_pDB.get()) return false;
     if (NULL == m_pDS.get()) return false;
 
@@ -12500,7 +12145,7 @@ void CVideoDatabase::GetMoviesByName(const std::string& strSearch, CFileItemList
     for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*i, i->section_foreign);
-      if(!i->m_file.load() || !i->m_file->m_path.load())
+      if(!i->m_file || !i->m_file->m_path.load())
         continue;
       if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
       {
@@ -12731,7 +12376,7 @@ void CVideoDatabase::GetMoviesByPlot(const std::string& strSearch, CFileItemList
     for (odb::result<CODBMovie>::iterator i = res.begin(); i != res.end(); i++)
     {
       m_cdb.getDB()->load(*i, i->section_foreign);
-      if(!i->m_file.load() || !i->m_file->m_path.load())
+      if(!i->m_file || !i->m_file->m_path.load())
         continue;
 
       if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
@@ -12743,16 +12388,11 @@ void CVideoDatabase::GetMoviesByPlot(const std::string& strSearch, CFileItemList
         }
       }
 
-      int setId = 0;
-      if(i->m_set.load())
-        setId = i->m_set->m_idSet;
-
       CFileItemPtr pItem(new CFileItem(i->m_title));
       std::string path = StringUtils::Format("videodb://movies/titles/%i", static_cast<int>(i->m_idMovie));
       pItem->SetPath(path);
       pItem->m_bIsFolder=false;
       items.Add(pItem);
-
     }
   }
   catch (std::exception& e)
@@ -12777,16 +12417,6 @@ void CVideoDatabase::GetMovieDirectorsByName(const std::string& strSearch, CFile
     odb::result<ODBView_Movie_Director> res(m_cdb.getDB()->query<ODBView_Movie_Director>(odb::query<ODBView_Movie_Director>::person::name.like(strModSearch)));
     for (odb::result<ODBView_Movie_Director>::iterator i = res.begin(); i != res.end(); i++)
     {
-      
-      if (m_profileManager.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE && !g_passwordManager.bMasterUser)
-      {
-        if (!g_passwordManager.IsDatabasePathUnlocked(i->m_path,
-                                                      *CMediaSourceSettings::GetInstance().GetSources("video")))
-        {
-          continue;
-        }
-      }
-
       std::string strDir = StringUtils::Format("%i/", static_cast<int>(i->person->m_idPerson));
       CFileItemPtr pItem(new CFileItem(i->person->m_name));
 
@@ -14672,76 +14302,6 @@ bool CVideoDatabase::SetVideoUserRating(int dbId, int rating, const MediaType& m
   return false;
 }
 
-bool CVideoDatabase::GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, bool force)
-{
-  bool ret = false;
-
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBMovie movie;
-      odb::result<CODBMovie> r (m_cdb.getDB()->query<CODBMovie>());
-      for (CODBMovie& movie : r)
-      {
-        tVideoInfoTagCacheMap::iterator it = movieCacheMap.find(movie.m_idMovie);
-        if (it != movieCacheMap.end())
-        {
-          it->second.m_item->SetTitle(movie.m_title);
-          it->second.m_item->SetSortTitle(movie.m_title);
-          it->second.m_item->SetPlot(movie.m_plot);
-        }
-      }
-    }
-    else
-    {
-      /*
-       Available Contexts:
-       movie.title
-       movie.plot
-       */
-      std::map<std::string, std::string> translations = GetTranslatedStrings();
-      for (auto& item : movieCacheMap)
-      {
-        std::stringstream ss;
-        ss << "movie." << item.second.m_item->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->SetTitle(it->second);
-          item.second.m_item->SetSortTitle(it->second);
-        }
-
-        ss.str("");
-        ss.clear();
-        ss << "movie." << item.second.m_item->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->SetPlot(it->second);
-      }
-    }
-
-    ret = true;
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-
-  return ret;
-}
-
 bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
 {
   bool ret = false;
@@ -14771,9 +14331,9 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
        movie.title
        movie.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot", details->m_dateAdded.GetAsULongLong());
     }
 
     ret = true;
@@ -14822,12 +14382,12 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
        season.title
        season.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
       
       // Also translate the TV Show elements in it
-      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot");
+      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
       
       if (details->m_iSeason == 0)
         details->m_strTitle = g_localizeStrings.Get(20381);
@@ -14844,162 +14404,6 @@ bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
   return false;
-}
-
-bool CVideoDatabase::GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tFileItemCacheMap& seasonCacheMap, tFileItemCacheMap& episodeCacheMap, bool force)
-{
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      // Translate TVShows to English
-      odb::result<CODBTVShow> r (m_cdb.getDB()->query<CODBTVShow>());
-      for (CODBTVShow& tvshow : r)
-      {
-        tFileItemCacheMap::iterator it = tvshowCacheMap.find(tvshow.m_idTVShow);
-        if (it != tvshowCacheMap.end())
-        {
-          it->second.m_item->GetVideoInfoTag()->SetTitle(tvshow.m_title);
-          it->second.m_item->GetVideoInfoTag()->SetSortTitle(tvshow.m_title);
-          it->second.m_item->GetVideoInfoTag()->SetPlot(tvshow.m_plot);
-        }
-      }
-
-      // Translate Seasons to English
-      odb::result<CODBSeason> r1 (m_cdb.getDB()->query<CODBSeason>());
-      for (CODBSeason& season : r1)
-      {
-        tFileItemCacheMap::iterator it = seasonCacheMap.find(season.m_idSeason);
-        if (it != seasonCacheMap.end())
-        {
-          it->second.m_item->GetVideoInfoTag()->SetTitle(season.m_name);
-          it->second.m_item->GetVideoInfoTag()->SetSortTitle(season.m_name);
-
-          tFileItemCacheMap::iterator itshow = tvshowCacheMap.find(it->second.m_item->GetVideoInfoTag()->m_iShowId);
-          if (itshow != tvshowCacheMap.end())
-          {
-            it->second.m_item->GetVideoInfoTag()->SetShowTitle(itshow->second.m_item->GetVideoInfoTag()->m_strShowTitle);
-            it->second.m_item->GetVideoInfoTag()->SetPlot(itshow->second.m_item->GetVideoInfoTag()->m_strPlot);
-          }
-        }
-      }
-
-      // Translate Episodes to English
-      odb::result<CODBEpisode> r2 (m_cdb.getDB()->query<CODBEpisode>());
-      for (CODBEpisode& episode : r2)
-      {
-        tFileItemCacheMap::iterator it = episodeCacheMap.find(episode.m_idEpisode);
-        if (it != episodeCacheMap.end())
-        {
-          it->second.m_item->GetVideoInfoTag()->SetTitle(episode.m_title);
-          it->second.m_item->GetVideoInfoTag()->SetSortTitle(episode.m_title);
-          it->second.m_item->GetVideoInfoTag()->SetPlot(episode.m_plot);
-        }
-      }
-    }
-    else
-    {
-      // Read all translations for the current active language
-      std::map<std::string, std::string> translations = GetTranslatedStrings();
-
-      // Translate TVShows elements
-      for (auto& item : tvshowCacheMap)
-      {
-        std::stringstream ss;
-        ss << "tvshow." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->GetVideoInfoTag()->SetTitle(it->second);
-          item.second.m_item->GetVideoInfoTag()->SetSortTitle(it->second);
-        }
-
-        ss.str("");
-        ss.clear();
-        ss << "tvshow." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->GetVideoInfoTag()->SetPlot(it->second);
-      }
-
-      // Translate Season elements
-      for (auto& item : seasonCacheMap)
-      {
-        std::stringstream ss;
-        ss << "tvshow." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->GetVideoInfoTag()->SetShowTitle(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "tvshow." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->GetVideoInfoTag()->SetPlot(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "season." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".title";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-        {
-          item.second.m_item->GetVideoInfoTag()->SetTitle(it->second);
-          item.second.m_item->GetVideoInfoTag()->SetSortTitle(it->second);
-        }
-
-        if (item.second.m_item->GetVideoInfoTag()->m_iSeason == 0)
-        {
-          item.second.m_item->GetVideoInfoTag()->SetTitle(g_localizeStrings.Get(20381));
-          item.second.m_item->GetVideoInfoTag()->SetSortTitle(g_localizeStrings.Get(20381));
-        }
-        else
-        {
-          item.second.m_item->GetVideoInfoTag()->SetTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->GetVideoInfoTag()->m_iSeason));
-          item.second.m_item->GetVideoInfoTag()->SetSortTitle(StringUtils::Format(g_localizeStrings.Get(20358).c_str(), item.second.m_item->GetVideoInfoTag()->m_iSeason));
-        }
-      }
-
-      // Translate Episode elements
-      for (auto& item : seasonCacheMap)
-      {
-        std::stringstream ss;
-        ss << "episode." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".title";
-        std::string key = ss.str();
-        std::map<std::string, std::string>::iterator it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->GetVideoInfoTag()->SetShowTitle(it->second);
-
-        ss.str("");
-        ss.clear();
-        ss << "episode." << item.second.m_item->GetVideoInfoTag()->m_iDbId << ".plot";
-        key = ss.str();
-        it = translations.find(key);
-        if (it != translations.end())
-          item.second.m_item->GetVideoInfoTag()->SetPlot(it->second);
-      }
-    }
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-  return true;
 }
 
 bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
@@ -15029,9 +14433,9 @@ bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
        tvshow.title
        tvshow.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
     }
   }
   catch (std::exception& e)
@@ -15078,10 +14482,10 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
        episode.title
        episode.plot
        */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title");
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot");
-      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title");
+      GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot", details->m_dateAdded.GetAsULongLong());
+      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
     }
   }
   catch (std::exception& e)
@@ -15095,35 +14499,14 @@ bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
   return false;
 }
 
-void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2)
+void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt)
 {
-  typedef odb::query<CODBTranslation> query;
-  
-  std::string lang = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
   std::string key = key1 + "." + std::to_string(id) + "." + key2;
-  
-  CODBTranslation objTranslation;
-  if (m_cdb.getDB()->query_one<CODBTranslation>(query::language == lang
-                                                && query::key == key
-                                                , objTranslation))
+  std::string newVar = gVideoDatabaseCache.getTranslation(key, updatedAt);
+  if (!newVar.empty())
   {
-    var = objTranslation.m_text;
+    var = newVar;
   }
-}
-
-std::map<std::string, std::string> CVideoDatabase::GetTranslatedStrings()
-{
-  typedef odb::query<CODBTranslation> query;
-  std::map<std::string, std::string> transmap;
-  std::string lang = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE).substr(18);
-
-  odb::result<CODBTranslation> r(m_cdb.getDB()->query<CODBTranslation>(query::language == lang));
-  for (CODBTranslation& translation : r)
-  {
-    transmap.insert(std::make_pair(translation.m_key, translation.m_text));
-  }
-
-  return transmap;
 }
 
 CVideoDatabaseCache& CVideoDatabase::getCache()
@@ -15133,10 +14516,5 @@ CVideoDatabaseCache& CVideoDatabase::getCache()
 
 std::string CVideoDatabase::GetMACAddress()
 {
-#if defined(HAS_LINUX_NETWORK) || defined(HAS_WIN32_NETWORK)
-  CNetworkInterface* iface = CServiceBroker::GetNetwork().GetFirstConnectedInterface();
-  if (iface)
-    return iface->GetMacAddress();
-#endif
-  return "";
+  return g_MacAddress;
 }

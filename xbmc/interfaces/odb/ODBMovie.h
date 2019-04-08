@@ -45,7 +45,9 @@
 #include "ODBDate.h"
 #include "ODBTVShow.h"
 #include "ODBFileStream.h"
+#include "ODBPlayCount.h"
 
+extern std::string g_MacAddress;
 
 PRAGMA_DB (model version(1, 1, open))
 
@@ -99,7 +101,12 @@ PRAGMA_DB (type("VARCHAR(255)"))
   std::string m_originalTitle;
   std::string m_thumbUrl_spoof;
   unsigned long m_updatedAt;
-  
+
+
+  std::shared_ptr<CODBBookmark> m_resumeBookmark;
+
+PRAGMA_DB (section(section_foreign))
+  std::vector< odb::lazy_shared_ptr<CODBSet> > m_sets;
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBFile> m_file;
 PRAGMA_DB (section(section_foreign))
@@ -127,11 +134,7 @@ PRAGMA_DB (section(section_foreign))
 PRAGMA_DB (section(section_foreign))
   odb::lazy_shared_ptr<CODBSet> m_set;
 PRAGMA_DB (section(section_foreign))
-  std::vector< odb::lazy_shared_ptr<CODBSet> > m_sets;
-PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBBookmark> > m_bookmarks;
-PRAGMA_DB (section(section_foreign))
-  odb::lazy_shared_ptr<CODBBookmark> m_resumeBookmark;
 PRAGMA_DB (section(section_foreign))
   std::vector< odb::lazy_shared_ptr<CODBUniqueID> > m_ids;
 PRAGMA_DB (section(section_foreign))
@@ -190,10 +193,16 @@ PRAGMA_DB (view \
   object(CODBFileStream = subtitlestreams: CODBMovie::m_file == subtitlestreams::m_file) \
   object(CODBLanguage = subtitlelanguage: subtitlestreams::m_language) \
   object(CODBRating = defaultRating: CODBMovie::m_defaultRating) \
+  object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress)
+  object(CODBPlayCount = playCount: CODBMovie::m_file == playCount::m_file && playCount::m_macAddress == g_MacAddress)
   query(distinct))
 struct ODBView_Movie
 {
   std::shared_ptr<CODBMovie> movie;
+  std::shared_ptr<CODBFile> fileView;
+  std::shared_ptr<CODBPath> pathView;
+  std::shared_ptr<CODBBookmark> resumeBookmark;
+  std::shared_ptr<CODBPlayCount> playCount;
 };
 
 PRAGMA_DB (view \
@@ -219,6 +228,40 @@ PRAGMA_DB (view \
            object(CODBLanguage = subtitlelanguage: subtitlestreams::m_language) \
            object(CODBRating = defaultRating: CODBMovie::m_defaultRating))
 struct ODBView_Movie_Total
+{
+  PRAGMA_DB (column("COUNT(DISTINCT(" + CODBMovie::m_idMovie + "))"))
+  unsigned int total;
+};
+
+PRAGMA_DB (view \
+  object(CODBMovie) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
+  object(CODBFile = fileView: CODBMovie::m_file) \
+  object(CODBPath = pathView: fileView::m_path) \
+  object(CODBRating = defaultRating: CODBMovie::m_defaultRating) \
+  object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress) \
+  object(CODBPlayCount = playCount: CODBMovie::m_file == playCount::m_file && playCount::m_macAddress == g_MacAddress)
+  query((?), distinct))
+struct ODBView_Movie_NoFilter
+{
+  std::shared_ptr<CODBMovie> movie;
+  std::shared_ptr<CODBBookmark> resumeBookmark;
+  std::shared_ptr<CODBPlayCount> playCount;
+  std::shared_ptr<CODBFile> fileView;
+  std::shared_ptr<CODBRating> defaultRating;
+  PRAGMA_DB (column(pathView::m_path))
+  std::string path;
+};
+
+PRAGMA_DB (view \
+  object(CODBMovie) \
+  object(CODBTag = tag: CODBMovie::m_tags) \
+  object(CODBFile = fileView: CODBMovie::m_file) \
+  object(CODBPath = pathView: fileView::m_path) \
+  object(CODBBookmark = resumeBookmark: CODBMovie::m_file == resumeBookmark::m_file && resumeBookmark::m_type == 1 && resumeBookmark::m_macAddress == g_MacAddress)
+  object(CODBPlayCount = playCount: CODBMovie::m_file == playCount::m_file && playCount::m_macAddress == g_MacAddress)
+  query((?), distinct))
+struct ODBView_Movie_NoFilter_Total
 {
   PRAGMA_DB (column("COUNT(DISTINCT(" + CODBMovie::m_idMovie + "))"))
   unsigned int total;
@@ -283,35 +326,21 @@ PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_directors) \
   object(CODBPerson = person inner: person_link::m_person) \
-  object(CODBFile = file inner: CODBMovie::m_file) \
-  object(CODBPath = path inner: file::m_path) \
-  object(CODBTag = tag: CODBMovie::m_tags) \
-  query(distinct))
+  object(CODBTag = tag: CODBMovie::m_tags))
 struct ODBView_Movie_Director
 {
   std::shared_ptr<CODBPerson> person;
-PRAGMA_DB (column(file::m_playCount))
-  unsigned int m_playCount;
-PRAGMA_DB (column(path::m_path))
-  std::string m_path;
 };
 
 PRAGMA_DB (view \
   object(CODBMovie) \
   object(CODBPersonLink = person_link inner: CODBMovie::m_actors) \
   object(CODBPerson = person inner: person_link::m_person) \
-  object(CODBFile = file inner: CODBMovie::m_file) \
-  object(CODBPath = path inner: file::m_path) \
   object(CODBArt: person::m_art) \
-  object(CODBTag = tag: CODBMovie::m_tags) \
-  query(distinct))
+  object(CODBTag = tag: CODBMovie::m_tags))
 struct ODBView_Movie_Actor
 {
   std::shared_ptr<CODBPerson> person;
-PRAGMA_DB (column(file::m_playCount))
-  unsigned int m_playCount;
-PRAGMA_DB (column(path::m_path))
-  std::string m_path;
 PRAGMA_DB (column(CODBArt::m_url))
   std::string m_art_url;
 };
@@ -367,6 +396,8 @@ PRAGMA_DB (view object(CODBMovie) \
   query(distinct))
 struct ODBView_Movie_Art
 {
+  PRAGMA_DB (column(CODBMovie::m_idMovie))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 
@@ -380,6 +411,15 @@ PRAGMA_DB (view \
 struct ODBView_MovieFileStreamLanguages
 {
   std::shared_ptr<CODBLanguage> language;
+};
+
+PRAGMA_DB (view \
+  object(CODBMovie) \
+  object(CODBSet = set inner: CODBMovie::m_sets))
+struct ODBView_Movie_Sets
+{
+  std::shared_ptr<CODBMovie> movie;
+  std::shared_ptr<CODBSet> set;
 };
 
 #endif /* ODBMOVIE_H */

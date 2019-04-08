@@ -887,10 +887,6 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBMovie::sortTitle + order;
   }
-  else if (sortDescription.sortBy == SortByGenre)
-  {
-    sortQuery = orderBy + query::genre::name + order;
-  }
   else if (sortDescription.sortBy == SortByYear)
   {
     sortQuery = orderBy + query::CODBMovie::premiered.year + order;
@@ -898,18 +894,6 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByTime)
   {
     sortQuery = orderBy + query::CODBMovie::runtime + order;
-  }
-  else if (sortDescription.sortBy == SortByFile)
-  {
-    sortQuery = orderBy + query::fileView::filename + order;
-  }
-  else if (sortDescription.sortBy == SortByPath)
-  {
-    sortQuery = orderBy + query::pathView::path + order;
-  }
-  else if (sortDescription.sortBy == SortByRating)
-  {
-    sortQuery = orderBy + query::defaultRating::rating + order;
   }
   else if (sortDescription.sortBy == SortByMPAA)
   {
@@ -919,21 +903,9 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBMovie::top250 + order;
   }
-  else if (sortDescription.sortBy == SortByVotes)
-  {
-    sortQuery = orderBy + query::defaultRating::votes + order;
-  }
   else if (sortDescription.sortBy == SortByPlaylistOrder)
   {
     //TODO: ???
-  }
-  else if (sortDescription.sortBy == SortByStudio)
-  {
-    sortQuery = orderBy + query::studio::name + order;
-  }
-  else if (sortDescription.sortBy == SortByCountry)
-  {
-    sortQuery = orderBy + query::country::name + order;
   }
   else if (sortDescription.sortBy == SortByLastPlayed)
   {
@@ -943,37 +915,17 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::fileView::dateAdded.ulong_date + order;
   }
-  else if (sortDescription.sortBy == SortByVideoResolution)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::videoWidth + order;
-  }
-  else if (sortDescription.sortBy == SortByAudioChannels)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::audioChannels + order;
-  }
-  else if (sortDescription.sortBy == SortByVideoCodec)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::videoCodec + order;
-  }
-  else if (sortDescription.sortBy == SortByAudioCodec)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::audioCodec + order;
-  }
-  else if (sortDescription.sortBy == SortByAudioLanguage)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::audioLanguage + order;
-  }
-  else if (sortDescription.sortBy == SortBySubtitleLanguage)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::subtitleLanguage + order;
-  }
-  else if (sortDescription.sortBy == SortByVideoAspectRatio)
-  {
-    sortQuery = orderBy + query::CODBStreamDetails::videoAspect + order;
-  }
   else if (sortDescription.sortBy == SortByPlaycount)
   {
     sortQuery = orderBy + query::fileView::playCount + order;
+  }
+  else if (sortDescription.sortBy == SortByRating)
+  {
+    sortQuery = orderBy + query::defaultRating::rating + order;
+  }
+  else if (sortDescription.sortBy == SortByVotes)
+  {
+    sortQuery = orderBy + query::defaultRating::votes + order;
   }
   else if (sortDescription.sortBy == SortByRandom)
   {
@@ -986,10 +938,9 @@ T SortUtils::SortODBMovieQuery(const SortDescription &sortDescription)
     sortQuery += limitQuery;
   }
   
-  
   return sortQuery;
 }
-template odb::query<ODBView_Movie> SortUtils::SortODBMovieQuery< odb::query<ODBView_Movie> >(const SortDescription&);
+template odb::query<ODBView_Movie_NoFilter> SortUtils::SortODBMovieQuery< odb::query<ODBView_Movie_NoFilter> >(const SortDescription&);
 
 template<typename T>
 T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
@@ -1035,10 +986,6 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBTVShow::sortTitle + order;
   }
-  else if (sortDescription.sortBy == SortByGenre)
-  {
-    sortQuery = orderBy + query::genre::name + order;
-  }
   else if (sortDescription.sortBy == SortByYear)
   {
     sortQuery = orderBy + query::CODBTVShow::premiered.year + order;
@@ -1047,10 +994,10 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBTVShow::runtime + order;
   }
-  else if (sortDescription.sortBy == SortByPath)
-  {
-    sortQuery = orderBy + query::path::path + order;
-  }
+  // else if (sortDescription.sortBy == SortByPath)
+  // {
+  //   sortQuery = orderBy + query::path::path + order;
+  // }
   else if (sortDescription.sortBy == SortByRating)
   {
     sortQuery = orderBy + query::defaultRating::rating + order;
@@ -1066,10 +1013,6 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByPlaylistOrder)
   {
     //TODO: ???
-  }
-  else if (sortDescription.sortBy == SortByStudio)
-  {
-    sortQuery = orderBy + query::studio::name + order;
   }
   else if (sortDescription.sortBy == SortByPlaycount)
   {
@@ -1194,10 +1137,6 @@ T SortUtils::SortODBEpisodeQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByTvShowTitle)
   {
     sortQuery = orderBy + query::CODBTVShow::title + order;
-  }
-  else if (sortDescription.sortBy == SortByStudio)
-  {
-    sortQuery = orderBy + query::studio::name + order;
   }
   else if (sortDescription.sortBy == SortByLastPlayed)
   {

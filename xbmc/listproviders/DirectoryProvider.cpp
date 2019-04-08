@@ -68,8 +68,11 @@ public:
   bool DoWork() override
   {
     CFileItemList items;
+
+    CLog::Log(LOGNOTICE, "CDirectoryJob::{0} - Get directory {1} started.", __FUNCTION__, m_url);
     if (CDirectory::GetDirectory(m_url, items, "", DIR_FLAG_DEFAULTS))
     {
+      CLog::Log(LOGNOTICE, "CDirectoryJob::{0} - Get directory {1} finished.", __FUNCTION__, m_url);
       // sort the items if necessary
       if (m_sort.sortBy != SortByNone)
         items.Sort(m_sort);
@@ -135,6 +138,8 @@ public:
       itemTypes.push_back(i->first);
     return itemTypes;
   }
+
+  std::string GetUrl() { return m_url; }
 private:
   std::string m_url;
   std::string m_target;
@@ -342,6 +347,8 @@ void CDirectoryProvider::OnJobComplete(unsigned int jobID, bool success, CJob *j
     static_cast<CDirectoryJob*>(job)->GetItemTypes(m_itemTypes);
     if (m_updateState == OK)
       m_updateState = DONE;
+
+    CLog::Log(LOGNOTICE, "CDirectoryJob::{0} - Get directory {1} finished successfully.", __FUNCTION__, static_cast<CDirectoryJob*>(job)->GetUrl());
   }
   m_jobID = 0;
 }

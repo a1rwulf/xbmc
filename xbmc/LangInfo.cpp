@@ -751,8 +751,9 @@ const std::string CLangInfo::GetDVDSubtitleLanguage() const
   return code;
 }
 
-const CLocale& CLangInfo::GetLocale() const
+const CLocale& CLangInfo::GetLocale()
 {
+  CSingleLock lock(m_mutex);
   LanguageResourcePtr language = GetLanguageAddon();
   if (language != NULL)
     return language->GetLocale();
@@ -765,8 +766,9 @@ const std::string& CLangInfo::GetRegionLocale() const
   return m_currentRegion->m_strRegionLocaleName;
 }
 
-const std::locale& CLangInfo::GetOriginalLocale() const
+const std::locale& CLangInfo::GetOriginalLocale()
 {
+  CSingleLock lock(m_mutex);
   return m_originalLocale;
 }
 
@@ -909,6 +911,8 @@ void CLangInfo::GetRegionNames(std::vector<std::string>& array)
 // If the region is not found the first available region is set.
 void CLangInfo::SetCurrentRegion(const std::string& strName)
 {
+  CSingleLock lock(m_mutex);
+
   ITMAPREGIONS it=m_regions.find(strName);
   if (it!=m_regions.end())
     m_currentRegion=&it->second;

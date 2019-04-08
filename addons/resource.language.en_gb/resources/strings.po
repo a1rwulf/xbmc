@@ -21588,3 +21588,36 @@ msgstr ""
 msgctxt "#39113"
 msgid "Center Mix Level in dB relative to metadata or default (-3 dB)"
 msgstr ""
+
+
+
+
+
+###############################
+# Omniyon custom translations #
+###############################
+
+#: /xml/MyMusicNav.xml
+msgctxt "#80000"
+msgid "Length"
+msgstr ""
+
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNode.cpp
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeAlbum.cpp
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeCompilations.cpp
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeRcentlyAdded.cpp
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeRcentlyPlayed.cpp
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeYearAlbum.cpp
+msgctxt "#80001"
+msgid "* All playlists"
+msgstr ""
+
+#: /xml/DialogVideoInfo.xml
+msgctxt "#80002"
+msgid "AUDIO"
+msgstr ""
+
+#: /xml/DialogVideoInfo.xml
+msgctxt "#80003"
+msgid "SUBTITLES"
+msgstr ""

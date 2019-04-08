@@ -47,3 +47,4 @@ std::map<std::string, std::string> CSpecialProtocol::m_pathMap;
 #endif
 
   CZipManager g_ZipManager;
+  std::string g_MacAddress;

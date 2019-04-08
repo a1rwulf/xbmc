@@ -3685,7 +3685,7 @@ bool CMusicDatabase::CleanupSongs(CGUIDialogProgress* progressDialog /*= nullptr
         if (!objSong.section_foreign.loaded())
           m_cdb.getDB()->load(objSong, objSong.section_foreign);
         
-        if (!objSong.m_file.load() || !objSong.m_file->m_path.load())
+        if (!objSong.m_file.load() || !objSong.m_file->m_path)
         {
           m_cdb.getDB()->erase(objSong);
           continue;
@@ -5442,7 +5442,6 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir, const Filte
     query objQuery;
     total = 0;
     Filter extFilter = filter;
-    SortDescription sorting = sortDescription;
     CMusicDbUrl musicUrl;
 
     if (!musicUrl.FromString(baseDir) || !musicUrl.IsValid())
@@ -6357,7 +6356,6 @@ bool CMusicDatabase::GetAlbumPaths(int idAlbum, std::vector<std::pair<std::strin
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    typedef odb::query<ODBView_GetAlbumPath> query;
 
     odb::result<ODBView_GetAlbumPath> res(m_cdb.getDB()->query<ODBView_GetAlbumPath>("SELECT DISTINCT "+odb::query<CODBPath>::path+", "+odb::query<CODBPath>::idPath+" FROM path" +
       " JOIN file" + " ON " + odb::query<CODBFile>::path + " = " + odb::query<CODBPath>::idPath +

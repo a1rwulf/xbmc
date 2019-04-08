@@ -96,8 +96,8 @@ static const translateField fields[] = {
   { "audiochannels",     FieldAudioChannels,           CDatabaseQueryRule::REAL_FIELD,     NULL,                                 false, 21444 },
   { "audiocodec",        FieldAudioCodec,              CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21446 },
   { "audiolanguage",     FieldAudioLanguage,           CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21447 },
-  { "streamaudiolang",   FieldStreamAudioLanguage,     CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  31540 },
-  { "streamsubtlang",    FieldStreamSubtitleLanguage,  CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  31541 },
+  { "streamaudiolang",   FieldStreamAudioLanguage,     CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  80002 },
+  { "streamsubtlang",    FieldStreamSubtitleLanguage,  CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 true,  80003 },
   { "audiocount",        FieldAudioCount,              CDatabaseQueryRule::REAL_FIELD,     StringValidation::IsPositiveInteger,  false, 21481 },
   { "subtitlecount",     FieldSubtitleCount,           CDatabaseQueryRule::REAL_FIELD,     StringValidation::IsPositiveInteger,  false, 21482 },
   { "subtitlelanguage",  FieldSubtitleLanguage,        CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 21448 },
@@ -115,7 +115,14 @@ static const translateField fields[] = {
   { "artisttype",        FieldArtistType,              CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 564 },
   { "gender",            FieldGender,                  CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 39025 },
   { "disambiguation",    FieldDisambiguation,          CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 39026 },
-  { "source",            FieldSource,                  CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  39030 }
+  { "source",            FieldSource,                  CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  39030 },
+  { "genreid",           FieldGenreId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  515 },
+  { "countryid",         FieldCountryId,               CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  574 },
+  { "studioid",          FieldStudioId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  572 },
+  { "directorid",        FieldDirectorId,              CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20339 },
+  { "actorid",           FieldActorId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20337 },
+  { "writerid",          FieldWriterId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20417 },
+  { "setid",             FieldSetId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20457 }
 };
 
 typedef struct
@@ -831,14 +838,14 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
   if (strType == "movies")
   {
     if (m_field == FieldInProgress)
-      return "movie_view.idFile " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
+      return "movie.file " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
     else if (m_field == FieldTrailer)
       return negate + GetField(m_field, strType) + "!= ''";
   }
   else if (strType == "episodes")
   {
     if (m_field == FieldInProgress)
-      return "episode_view.idFile " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
+      return "episode.file " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
   }
   else if (strType == "tvshows")
   {
@@ -846,7 +853,7 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
       return negate + " ("
                           "(tvshow_view.watchedcount > 0 AND tvshow_view.watchedcount < tvshow_view.totalCount) OR "
                           "(tvshow_view.watchedcount = 0 AND EXISTS "
-                            "(SELECT 1 FROM episode_view WHERE episode_view.idShow = " + GetField(FieldId, strType) + " AND episode_view.resumeTimeInSeconds > 0)"
+                            "(SELECT 1 FROM episode WHERE episode.idShow = " + GetField(FieldId, strType) + " AND episode.resumeTimeInSeconds > 0)"
                           ")"
                        ")";
   }
@@ -883,13 +890,83 @@ std::string CSmartPlaylistRule::FormatParameter(const std::string &operatorStrin
   return CDatabaseQueryRule::FormatParameter(operatorString, param, db, strType);
 }
 
-std::string CSmartPlaylistRule::FormatLinkQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter)
+std::string CSmartPlaylistRule::FormatLinkQuery(const char *field,
+                                                const char *table,
+                                                const MediaType& mediaType,
+                                                const std::string& mediaField,
+                                                const std::string& parameter,
+                                                const std::string& keyField)
 {
   // NOTE: no need for a PrepareSQL here, as the parameter has already been formatted
-  return StringUtils::Format(" EXISTS (SELECT 1 FROM %s_link"
-                             "         JOIN %s ON %s.%s_id=%s_link.%s_id"
-                             "         WHERE %s_link.media_id=%s AND %s.name %s AND %s_link.media_type = '%s')",
-                             field, table, table, table, field, table, field, mediaField.c_str(), table, parameter.c_str(), field, mediaType.c_str());
+  return StringUtils::Format(" EXISTS (SELECT 1 FROM `%s_%ss`"
+                             " INNER JOIN `%s` ON `%s_%ss`.`value` = `%s`.`%s`"
+                             " WHERE `%s_%ss`.`object_id` = %s AND `%s`.`%s` %s)",
+                             mediaType.c_str(),
+                             table,
+
+                             table,
+                             mediaType.c_str(),
+                             table,
+                             table,
+                             keyField,
+
+                             mediaType.c_str(),
+                             table,
+                             mediaField.c_str(),
+                             table,
+                             field,
+                             parameter.c_str());
+}
+
+std::string CSmartPlaylistRule::FormatLinkPersonQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter, const std::string& keyField)
+{
+  // NOTE: no need for a PrepareSQL here, as the parameter has already been formatted
+  return StringUtils::Format(" EXISTS (SELECT 1 FROM %s_%ss"
+                             " INNER JOIN person_link AS %s_link ON %s_%ss.value = %s_link.idPersonLink"
+                             " INNER JOIN person AS %s ON %s_link.person = %s.%s"
+                             "         WHERE %s_%ss.object_id = %s AND %s.%s %s)",
+                             mediaType.c_str(),
+                             table,
+
+                             table,
+                             mediaType.c_str(),
+                             table,
+                             table,
+
+                             table,
+                             table,
+                             table,
+                             keyField,
+
+                             mediaType.c_str(),
+                             table,
+                             mediaField.c_str(),
+                             table,
+                             field,
+                             parameter.c_str());
+}
+
+std::string CSmartPlaylistRule::FormatLinkStreamQuery(const char *field,
+                                                const char *table,
+                                                const MediaType& mediaType,
+                                                const std::string& mediaField,
+                                                const std::string& parameter,
+                                                const std::string& keyField)
+{
+  // NOTE: no need for a PrepareSQL here, as the parameter has already been formatted
+  return StringUtils::Format(" EXISTS (SELECT 1 FROM %s"
+                             " INNER JOIN language ON %s.language = language.idLanguage"
+                             " WHERE %s.file = %s.file AND %s.type = '%s' AND language.%s %s)",
+                             table,
+
+                             table,
+
+                             mediaType.c_str(),
+                             table,
+                             table,
+                             field,
+                             keyField,
+                             parameter.c_str());
 }
 
 odb::query<ODBView_Movie> CSmartPlaylistRule::FormatMovieWhereBetweenClause(const bool &negate,
@@ -1423,11 +1500,11 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::CODBTVShow::titleSearch_type_, std::string>(query::CODBTVShow::titleSearch, oper, prepared_string);
   }
-  else if (m_field == FieldGenre)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::genre::name_type_, std::string>(query::genre::name, oper, prepared_string);
-  }
+  // else if (m_field == FieldGenre)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::genre::name_type_, std::string>(query::genre::name, oper, prepared_string);
+  // }
   else if (m_field == FieldYear)
   {
     where_query = FormatODBParam<query, query::CODBTVShow::premiered_class_::year_type_, int>(query::CODBTVShow::premiered.year, oper, std::stoi(param));
@@ -1455,11 +1532,11 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   {
     where_query = FormatODBParam<query, query::defaultRating::votes_type_, int>(query::defaultRating::votes, oper, std::stoi(param));
   }
-  else if (m_field == FieldPath)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::path::path_type_, std::string>(query::path::path, oper, prepared_string);
-  }
+  // else if (m_field == FieldPath)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::path::path_type_, std::string>(query::path::path, oper, prepared_string);
+  // }
   else if (m_field == FieldSet)
   {
     //TODO: How?
@@ -1468,21 +1545,21 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   {
     //TODO: How?
   }
-  else if (m_field == FieldDirector)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
-  }
-  else if (m_field == FieldActor)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
-  }
-  else if (m_field == FieldStudio)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::studio::name_type_, std::string>(query::studio::name, oper, prepared_string);
-  }
+  // else if (m_field == FieldDirector)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
+  // }
+  // else if (m_field == FieldActor)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
+  // }
+  // else if (m_field == FieldStudio)
+  // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::studio::name_type_, std::string>(query::studio::name, oper, prepared_string);
+  // }
   else if (m_field == FieldLastPlayed)
   {
     //TODO: Operators need to be implemented, after a final date object has been defined for odb
@@ -1608,26 +1685,6 @@ odb::query<ODBView_Episode> CSmartPlaylistRule::FormatEpisodeWhereClause(const b
   {
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::genre::name_type_, std::string>(query::genre::name, oper, prepared_string);
-  }
-  else if (m_field == FieldDirector)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
-  }
-  else if (m_field == FieldActor)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
-  }
-  else if (m_field == FieldWriter)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::writingCredit::name_type_, std::string>(query::writingCredit::name, oper, prepared_string);
-  }
-  else if (m_field == FieldStudio)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::studio::name_type_, std::string>(query::studio::name, oper, prepared_string);
   }
   else if (m_field == FieldTag)
   {
@@ -2052,83 +2109,124 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
   }
   else if (strType == "movies")
   {
-    table = "movie_view";
+    table = "movie";
 
+    if (m_field == FieldGenreId)
+      query = negate + FormatLinkQuery("idGenre", "genre", MediaTypeMovie, GetField(FieldId, strType), parameter, "idGenre");
     if (m_field == FieldGenre)
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("name", "genre", MediaTypeMovie, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldDirectorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "director", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldDirector)
-      query = negate + FormatLinkQuery("director", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "director", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldActorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldActor)
-      query = negate + FormatLinkQuery("actor", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldWriterId)
+      query = negate + FormatLinkPersonQuery("idPerson", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldWriter)
-      query = negate + FormatLinkQuery("writer", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("writer", "actor", MediaTypeMovie, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldStudioId)
+      query = negate + FormatLinkQuery("idStudio", "studio", MediaTypeMovie, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldStudio)
-      query = negate + FormatLinkQuery("studio", "studio", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("studio", "studio", MediaTypeMovie, GetField(FieldId, strType), parameter, "idStudio");
+    else if (m_field == FieldCountryId)
+      query = negate + FormatLinkQuery("idCountry", "country", MediaTypeMovie, GetField(FieldId, strType), parameter, "idCountry");
     else if (m_field == FieldCountry)
-      query = negate + FormatLinkQuery("country", "country", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("country", "country", MediaTypeMovie, GetField(FieldId, strType), parameter, "idCountry");
     else if ((m_field == FieldLastPlayed || m_field == FieldDateAdded) && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " IS NULL OR " + GetField(m_field, strType) + parameter;
     else if (m_field == FieldTag)
-      query = negate + FormatLinkQuery("tag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("name", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+    else if (m_field == FieldTagId)
+      query = negate + FormatLinkQuery("idTag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+    else if (m_field == FieldSet)
+      query = negate + FormatLinkQuery("name", "set", MediaTypeMovie, GetField(FieldId, strType), parameter, "idSet");
+    else if (m_field == FieldSetId)
+      query = negate + FormatLinkQuery("idSet", "set", MediaTypeMovie, GetField(FieldId, strType), parameter, "idSet");
+    else if (m_field == FieldStreamAudioLanguage)
+      query = negate + FormatLinkStreamQuery("audio", "filestream", MediaTypeMovie, GetField(FieldId, strType), parameter, "name");
+    else if (m_field == FieldStreamSubtitleLanguage)
+      query = negate + FormatLinkStreamQuery("subtitle", "filestream", MediaTypeMovie, GetField(FieldId, strType), parameter, "name");
   }
   else if (strType == "musicvideos")
   {
-    table = "musicvideo_view";
+    table = "musicvideo";
 
     if (m_field == FieldGenre)
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeMusicVideo, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("genre", "genre", MediaTypeMusicVideo, GetField(FieldId, strType), parameter, "idGenre");
     else if (m_field == FieldArtist || m_field == FieldAlbumArtist)
-      query = negate + FormatLinkQuery("actor", "actor", MediaTypeMusicVideo, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("actor", "actor", MediaTypeMusicVideo, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldStudio)
-      query = negate + FormatLinkQuery("studio", "studio", MediaTypeMusicVideo, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("studio", "studio", MediaTypeMusicVideo, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldDirector)
-      query = negate + FormatLinkQuery("director", "actor", MediaTypeMusicVideo, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("director", "actor", MediaTypeMusicVideo, GetField(FieldId, strType), parameter, "idPerson");
     else if ((m_field == FieldLastPlayed || m_field == FieldDateAdded) && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " IS NULL OR " + GetField(m_field, strType) + parameter;
     else if (m_field == FieldTag)
-      query = negate + FormatLinkQuery("tag", "tag", MediaTypeMusicVideo, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("tag", "tag", MediaTypeMusicVideo, GetField(FieldId, strType), parameter, "idTag");
   }
   else if (strType == "tvshows")
   {
-    table = "tvshow_view";
-
-    if (m_field == FieldGenre)
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter);
+    table = "tvshow";
+    if (m_field == FieldGenreId)
+      query = negate + FormatLinkQuery("idGenre", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldGenre)
+      query = negate + FormatLinkQuery("name", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldDirectorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldDirector)
-      query = negate + FormatLinkQuery("director", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldActorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldActor)
-      query = negate + FormatLinkQuery("actor", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldStudioId)
+      query = negate + FormatLinkQuery("idStudio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldStudio)
-      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldMPAA)
       query = negate + " (" + GetField(m_field, strType) + parameter + ")";
+    else if (m_field == FieldTag)
+      query = negate + FormatLinkQuery("name", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+    else if (m_field == FieldTagId)
+      query = negate + FormatLinkQuery("idTag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
     else if ((m_field == FieldLastPlayed || m_field == FieldDateAdded) && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " IS NULL OR " + GetField(m_field, strType) + parameter;
     else if (m_field == FieldPlaycount)
       query = "CASE WHEN COALESCE(" + GetField(FieldNumberOfEpisodes, strType) + " - " + GetField(FieldNumberOfWatchedEpisodes, strType) + ", 0) > 0 THEN 0 ELSE 1 END " + parameter;
     else if (m_field == FieldTag)
-      query = negate + FormatLinkQuery("tag", "tag", MediaTypeTvShow, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("tag", "tag", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idTag");
   }
   else if (strType == "episodes")
   {
-    table = "episode_view";
+    table = "episode";
 
-    if (m_field == FieldGenre)
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
-    else if (m_field == FieldTag)
-      query = negate + FormatLinkQuery("tag", "tag", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
+    if (m_field == FieldGenreId)
+      query = negate + FormatLinkQuery("idGenre", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldGenre)
+      query = negate + FormatLinkQuery("name", "genre", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idGenre");
+    else if (m_field == FieldDirectorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldDirector)
-      query = negate + FormatLinkQuery("director", "actor", MediaTypeEpisode, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "director", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldActorId)
+      query = negate + FormatLinkPersonQuery("idPerson", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldActor)
-      query = negate + FormatLinkQuery("actor", "actor", MediaTypeEpisode, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkPersonQuery("name", "actor", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldStudioId)
+      query = negate + FormatLinkQuery("idStudio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
+    else if (m_field == FieldStudio)
+      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idStudio");
     else if (m_field == FieldWriter)
-      query = negate + FormatLinkQuery("writer", "actor", MediaTypeEpisode, GetField(FieldId, strType), parameter);
+      query = negate + FormatLinkQuery("writer", "actor", MediaTypeEpisode, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldTag)
+      query = negate + FormatLinkQuery("name", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+    else if (m_field == FieldTagId)
+      query = negate + FormatLinkQuery("idTag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
     else if ((m_field == FieldLastPlayed || m_field == FieldDateAdded) && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " IS NULL OR " + GetField(m_field, strType) + parameter;
-    else if (m_field == FieldStudio)
-      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
-    else if (m_field == FieldMPAA)
-      query = negate + " (" + GetField(m_field, strType) +  parameter + ")";
   }
   if (m_field == FieldVideoResolution)
     query = table + ".idFile" + negate + GetVideoResolutionQuery(param);

@@ -59,5 +59,14 @@ private:
 PRAGMA_DB (index member(m_name))
 };
 
+PRAGMA_DB (view object(CODBSet) \
+                object(CODBArt inner: CODBSet::m_artwork) \
+                query(distinct))
+struct ODBView_Set_Art
+{
+  PRAGMA_DB (column(CODBSet::m_idSet))
+  unsigned long id;
+  std::shared_ptr<CODBArt> art;
+};
 
 #endif /* ODBSET_H */

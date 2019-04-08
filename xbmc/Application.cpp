@@ -220,6 +220,8 @@ using KODI::MESSAGING::HELPERS::DialogResponse;
 
 #define MAX_FFWD_SPEED 5
 
+extern std::string g_MacAddress;
+
 //extern IDirectSoundRenderer* m_pAudioDecoder;
 CApplication::CApplication(void)
 :
@@ -860,6 +862,14 @@ bool CApplication::Initialize()
   if (!profileManager->UsingLoginScreen())
     CServiceBroker::GetServiceAddons().Start();
 
+  #if defined(HAS_LINUX_NETWORK) || defined(HAS_WIN32_NETWORK)
+  CNetworkInterface* iface = CServiceBroker::GetNetwork().GetFirstConnectedInterface();
+  if (iface)
+    g_MacAddress = iface->GetMacAddress();
+#elif
+  g_MacAddress = "";
+#endif
+
   CLog::Log(LOGNOTICE, "initialize done");
 
   // reset our screensaver (starts timers etc.)
@@ -1144,6 +1154,8 @@ void CApplication::ReloadSkin(bool confirm/*=false*/)
   // always go back to the home screen for the language change
   // otherwise we see various crashes in rendering cause skin unload
   // destroys the font, locale, etc.
+  // Stop playback if necessary to make sure it doesn't play in the background
+  CApplicationMessenger::GetInstance().SendMsg(TMSG_MEDIA_STOP);
   CServiceBroker::GetGUI()->GetWindowManager().ActivateWindow(WINDOW_HOME, {}, false, true);
 
   if (LoadSkin(newSkin))

@@ -403,7 +403,6 @@ public:
   public:
     std::string name;
     std::string thumb;
-    int playcount;
     int appearances;
   };
 
@@ -437,7 +436,7 @@ public:
   int AddMovie(const std::string& strFilenameAndPath); //ODB DONE
   int AddEpisode(int idShow, const std::string& strFilenameAndPath);
   
-  int GetPlayerPlayCount(const CODBFile& file);
+  int GetPlayerPlayCount(unsigned long fileId);
   void SetPlayerPlayCount(const CODBFile& file, int playcount);
 
   // editing functions
@@ -937,9 +936,19 @@ protected:
   int GetMatchingTvShow(const CVideoInfoTag &show);
 
   void DeleteStreamDetails(int idFile);
-  CVideoInfoTag GetDetailsForMovie(const odb::result<ODBView_Movie>::iterator record, int getDetails = VideoDbDetailsNone);
-  CVideoInfoTag GetDetailsForTvShow(const odb::result<ODBView_TVShow>::iterator record, int getDetails = VideoDbDetailsNone, CFileItem* item = NULL);
-  CVideoInfoTag GetDetailsForEpisode(const odb::result<ODBView_Episode>::iterator record, int getDetails = VideoDbDetailsNone);
+
+  template <class T>
+  CVideoInfoTag GetDetailsForMovie(const T record, int getDetails = VideoDbDetailsNone);
+
+  template <class T>
+  CVideoInfoTag GetDetailsForTvShow(const T record, int getDetails = VideoDbDetailsNone);
+
+  template <class T>
+  CVideoInfoTag GetDetailsForSeason(const T record, const CVideoInfoTag& tvshow, int getDetails = VideoDbDetailsNone);
+
+  template <class T>
+  CVideoInfoTag GetDetailsForEpisode(const T record, int getDetails = VideoDbDetailsNone);
+
   CVideoInfoTag GetDetailsForMusicVideo(std::unique_ptr<dbiplus::Dataset> &pDS, int getDetails = VideoDbDetailsNone);
   CVideoInfoTag GetDetailsForMusicVideo(const dbiplus::sql_record* const record, int getDetails = VideoDbDetailsNone);
   bool GetPeopleNav(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent = -1, const Filter &filter = Filter(), bool countOnly = false);
@@ -1026,46 +1035,21 @@ private:
    \param key1 One of: movie, tvshow, season, episode
    \param key2 One of: title, plot, 
    */
-  void GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2);
+  void GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt = 0);
+ 
+  void AdjustQueryFromUrlOptions(odb::query<ODBView_Movie>& movie_query, CVideoDbUrl& videoDbUrl);
+  void AdjustQueryFromUrlOptions(std::string& strMovieQuery, CVideoDbUrl& videoDbUrl);
 
-  /*! \brief Get all translations for the current set language
-   Reads into the database table "translation" with the current language.
-   \return a dictionary with the key from the db and the translated value
-   */
-  std::map<std::string, std::string> GetTranslatedStrings();
+  template <class T>
+  void FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art);
+
 public:
   bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
   bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);
   bool GetTVShowTranslation(CVideoInfoTag* details, bool force = false);
   bool GetEpisodeTranslation(CVideoInfoTag* details, bool force = false);
-
-  /*! \brief Translate VideoInfoTag items
-   Translates all items stored in movieCacheMap into the current
-   chosen language.
-   If the current langauge is the default language and force is not set,
-   nothing happens.
-   \param movieChacheMap A reference to the map that should be updated
-   \param force true = forcefully update languages, false = do nothing when default language is chosen
-   \return true when successful, false otherwise
-   */
-  bool GetMovieTranslations(tVideoInfoTagCacheMap& movieCacheMap, bool force = false);
-
-  /*! \brief Translate VideoInfoTag items
-   Translates all items stored in movieCacheMap into the current
-   chosen language.
-   If the current langauge is the default language and force is not set,
-   nothing happens.
-   Note that this method handles tvshows, seasons and episodes.
-   This design saves a lot of database hits.
-   \param tvshowCacheMap A reference to the tvshow map that should be updated
-   \param seasonCacheMap A reference to the season map that should be updated
-   \param episodeCacheMap A reference to the episode map that should be updated
-   \param force true = forcefully update languages, false = do nothing when default language is chosen
-   \return true when successful, false otherwise
-   */
-  bool GetTVShowTranslations(tFileItemCacheMap& tvshowCacheMap, tFileItemCacheMap& seasonCacheMap, tFileItemCacheMap& episodeCacheMap, bool force = false);
-
-  CVideoDatabaseCache& getCache();
   
+  CVideoDatabaseCache& getCache();
+
   std::string GetMACAddress();
 };

@@ -23,6 +23,7 @@
 
 #include <odb/core.hxx>
 #include <odb/lazy-ptr.hxx>
+#include <odb/session.hxx>
 
 #include <string>
 

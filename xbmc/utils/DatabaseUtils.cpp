@@ -148,39 +148,33 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
   else if (mediaType == MediaTypeMovie)
   {
     std::string result;
-    if (field == FieldId) return "movie_view.idMovie";
+    if (field == FieldId) return "movie.idMovie";
     else if (field == FieldTitle)
     {
       // We need some extra logic to get the title value if sorttitle isn't set
       if (queryPart == DatabaseQueryPartOrderBy)
-        result = StringUtils::Format("CASE WHEN length(movie_view.c%02d) > 0 THEN movie_view.c%02d ELSE movie_view.c%02d END", VIDEODB_ID_SORTTITLE, VIDEODB_ID_SORTTITLE, VIDEODB_ID_TITLE);
+        result = StringUtils::Format("CASE WHEN length(movie.sortTitle) > 0 THEN movie.sortTitle ELSE movie.title END");
       else
-        result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_TITLE);
+        result = StringUtils::Format("movie.title");
     }
-    else if (field == FieldPlot) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_PLOT);
-    else if (field == FieldPlotOutline) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_PLOTOUTLINE);
-    else if (field == FieldTagline) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_TAGLINE);
-    else if (field == FieldVotes) return "movie_view.votes";
-    else if (field == FieldRating) return "movie_view.rating";
-    else if (field == FieldWriter) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_CREDITS);
-    else if (field == FieldYear) return "movie_view.premiered";
-    else if (field == FieldSortTitle) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_SORTTITLE);
-    else if (field == FieldOriginalTitle) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_ORIGINALTITLE);
-    else if (field == FieldTime) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_RUNTIME);
-    else if (field == FieldMPAA) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_MPAA);
-    else if (field == FieldTop250) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_TOP250);
-    else if (field == FieldSet) return "movie_view.strSet";
-    else if (field == FieldGenre) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_GENRE);
-    else if (field == FieldDirector) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_DIRECTOR);
-    else if (field == FieldStudio) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_STUDIOS);
-    else if (field == FieldTrailer) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_TRAILER);
-    else if (field == FieldCountry) result = StringUtils::Format("movie_view.c%02d", VIDEODB_ID_COUNTRY);
-    else if (field == FieldFilename) return "movie_view.strFilename";
-    else if (field == FieldPath) return "movie_view.strPath";
-    else if (field == FieldPlaycount) return "movie_view.playCount";
-    else if (field == FieldLastPlayed) return "movie_view.lastPlayed";
-    else if (field == FieldDateAdded) return "movie_view.dateAdded";
-    else if (field == FieldUserRating) return "movie_view.userrating";
+    else if (field == FieldPlot) result = StringUtils::Format("movie.plot");
+    else if (field == FieldPlotOutline) result = StringUtils::Format("movie.plotoutline");
+    else if (field == FieldTagline) result = StringUtils::Format("movie.tagline");
+    else if (field == FieldVotes) return "movie.votes";
+    else if (field == FieldRating) return "movie.defaultRating";
+    else if (field == FieldWriter) result = StringUtils::Format("movie.credits");
+    else if (field == FieldYear) return "movie.premiered";
+    else if (field == FieldSortTitle) result = StringUtils::Format("movie.sortTitle");
+    else if (field == FieldOriginalTitle) result = StringUtils::Format("movie.originalTitle");
+    else if (field == FieldTime) result = StringUtils::Format("movie.runtime");
+    else if (field == FieldMPAA) result = StringUtils::Format("movie.mpaa");
+    else if (field == FieldTop250) result = StringUtils::Format("movie.top250");
+    else if (field == FieldSet) return "movie.set";
+    else if (field == FieldTrailer) result = StringUtils::Format("movie.trailer");
+    else if (field == FieldPlaycount) return "movie.playCount";
+    else if (field == FieldLastPlayed) return "movie.lastPlayed";
+    else if (field == FieldDateAdded) return "movie.dateAdded";
+    else if (field == FieldUserRating) return "movie.userrating";
 
     if (!result.empty())
       return result;
@@ -188,32 +182,24 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
   else if (mediaType == MediaTypeTvShow)
   {
     std::string result;
-    if (field == FieldId) return "tvshow_view.idShow";
+    if (field == FieldId) return "tvshow.idTVShow";
     else if (field == FieldTitle)
     {
       // We need some extra logic to get the title value if sorttitle isn't set
       if (queryPart == DatabaseQueryPartOrderBy)
-        result = StringUtils::Format("CASE WHEN length(tvshow_view.c%02d) > 0 THEN tvshow_view.c%02d ELSE tvshow_view.c%02d END", VIDEODB_ID_TV_SORTTITLE, VIDEODB_ID_TV_SORTTITLE, VIDEODB_ID_TV_TITLE);
+        result = StringUtils::Format("CASE WHEN length(tvshow.sortTitle) > 0 THEN tvshow.sortTitle ELSE tvshow.title END");
       else
-        result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_TITLE);
+        result = StringUtils::Format("tvshow.title");
     }
-    else if (field == FieldPlot) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_PLOT);
-    else if (field == FieldTvShowStatus) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_STATUS);
-    else if (field == FieldVotes) return "tvshow_view.votes";
-    else if (field == FieldRating) return "tvshow_view.rating";
-    else if (field == FieldYear) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_PREMIERED);
-    else if (field == FieldGenre) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_GENRE);
-    else if (field == FieldMPAA) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_MPAA);
-    else if (field == FieldStudio) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_STUDIOS);
-    else if (field == FieldSortTitle) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_SORTTITLE);
-    else if (field == FieldOriginalTitle) result = StringUtils::Format("tvshow_view.c%02d", VIDEODB_ID_TV_ORIGINALTITLE);
-    else if (field == FieldPath) return "tvshow_view.strPath";
-    else if (field == FieldDateAdded) return "tvshow_view.dateAdded";
-    else if (field == FieldLastPlayed) return "tvshow_view.lastPlayed";
-    else if (field == FieldSeason) return "tvshow_view.totalSeasons";
-    else if (field == FieldNumberOfEpisodes) return "tvshow_view.totalCount";
-    else if (field == FieldNumberOfWatchedEpisodes) return "tvshow_view.watchedcount";
-    else if (field == FieldUserRating) return "tvshow_view.userrating";
+    else if (field == FieldPlot) result = StringUtils::Format("tvshow.plot");
+    else if (field == FieldTvShowStatus) result = StringUtils::Format("tvshow.status");
+    else if (field == FieldRating) return "tvshow.defaultRating";
+    else if (field == FieldYear) result = StringUtils::Format("tvshow.premiered_date");
+    else if (field == FieldMPAA) result = StringUtils::Format("tvshow.mpaa");
+    else if (field == FieldSortTitle) result = StringUtils::Format("tvshow.sortTitle");
+    else if (field == FieldOriginalTitle) result = StringUtils::Format("tvshow.originalTitle");
+    else if (field == FieldDateAdded) return "tvshow.updatedAt";
+    else if (field == FieldUserRating) return "tvshow.userrating";
 
     if (!result.empty())
       return result;

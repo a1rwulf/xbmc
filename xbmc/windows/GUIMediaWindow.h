@@ -12,13 +12,14 @@
 #include "filesystem/DirectoryHistory.h"
 #include "filesystem/VirtualDirectory.h"
 #include "guilib/GUIWindow.h"
-#include "playlists/SmartPlayList.h"
 #include "view/GUIViewControl.h"
 
 #include <atomic>
 
+class CSmartPlaylist;
 class CFileItemList;
 class CGUIViewState;
+struct LABEL_MASKS;
 namespace
 {
 class CGetDirectoryItems;
@@ -209,7 +210,7 @@ protected:
   int m_iLastControl;
   std::string m_startDirectory;
 
-  CSmartPlaylist m_filter;
+  std::unique_ptr<CSmartPlaylist> m_filter;
   bool m_canFilterAdvanced;
   /*! \brief Contains the path used for filtering (including any active filter)
 
