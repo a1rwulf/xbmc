@@ -220,6 +220,9 @@ public:
   std::vector<std::string> m_country;
   std::vector<std::string> m_streamAudioLanguage;
   std::vector<std::string> m_streamSubtitleLanguage;
+  std::vector<unsigned long> m_genreIds;
+  std::vector<unsigned long> m_actorIds;
+  std::vector<unsigned long> m_directorIds;
   std::string m_strTagLine;
   std::string m_strPlotOutline;
   std::string m_strTrailer;

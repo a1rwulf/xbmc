@@ -953,7 +953,7 @@ protected:
   CVideoInfoTag GetDetailsForMusicVideo(const dbiplus::sql_record* const record, int getDetails = VideoDbDetailsNone);
   bool GetPeopleNav(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent = -1, const Filter &filter = Filter(), bool countOnly = false);
   bool GetNavCommon(const std::string& strBaseDir, CFileItemList& items, const char *type, int idContent=-1, const Filter &filter = Filter(), bool countOnly = false);
-  void GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >& personLinks, std::vector<SActorInfo> &cast);
+  void GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >& personLinks, std::shared_ptr<CVideoInfoTag> details);
   void GetTags(std::vector<odb::lazy_shared_ptr<CODBTag>>& vecTags, std::vector<std::string> &tags);
   void GetRatings(std::vector< odb::lazy_shared_ptr<CODBRating> >& vecRatings, RatingMap &ratings);
   void GetUniqueIDs(std::vector< odb::lazy_shared_ptr<CODBUniqueID> >& vecUniqueIDs, CVideoInfoTag& details);
@@ -1044,12 +1044,7 @@ private:
   void FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art);
 
 public:
-  bool GetMovieTranslation(CVideoInfoTag* details, bool force = false);
-  bool GetSeasonTranslation(CVideoInfoTag* details, bool force = false);
-  bool GetTVShowTranslation(CVideoInfoTag* details, bool force = false);
-  bool GetEpisodeTranslation(CVideoInfoTag* details, bool force = false);
-  
+  bool GetTranslation(const std::string& mediaType, CVideoInfoTag* details, int getDetails, time_t updatedAt);
   CVideoDatabaseCache& getCache();
-
   std::string GetMACAddress();
 };
