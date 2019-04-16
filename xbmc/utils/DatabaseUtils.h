@@ -141,7 +141,8 @@ typedef enum {
   FieldActorId,
   FieldWriterId,
   FieldSetId,
-  FieldMax
+  FieldMax,
+  FieldAlbumId,
 } Field;
 
 typedef std::set<Field> Fields;

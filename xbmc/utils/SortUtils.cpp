@@ -1385,14 +1385,6 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBSong::duration + order;
   }
-  else if (sortDescription.sortBy == SortByArtist)
-  {
-    sortQuery = orderBy + query::albumArist::name + order;
-  }
-  else if (sortDescription.sortBy == SortByArtistThenYear)
-  {
-    sortQuery = orderBy + query::albumArist::name + order + ", " + query::CODBSong::year + order;
-  }
   else if (sortDescription.sortBy == SortByAlbum)
   {
     sortQuery = orderBy + query::CODBAlbum::album + order;
@@ -1400,10 +1392,6 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByAlbumType)
   {
     sortQuery = orderBy + query::CODBAlbum::type + order;
-  }
-  else if (sortDescription.sortBy == SortByGenre)
-  {
-    sortQuery = orderBy + query::CODBGenre::name + order;
   }
   else if (sortDescription.sortBy == SortByPlaylistOrder)
   {

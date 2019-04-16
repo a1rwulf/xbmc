@@ -28,6 +28,11 @@
 class CFileItem;
 class CAlbum;
 
+namespace MUSIC_INFO
+{
+  class CMusicInfoTag;
+}
+
 template <typename T>
 class CMusicDatabaseCacheItem
 {
@@ -42,6 +47,7 @@ public:
 };
 
 typedef std::map<long, CMusicDatabaseCacheItem<CFileItem> > tFileItemCacheMap;
+typedef std::map<long, CMusicDatabaseCacheItem<MUSIC_INFO::CMusicInfoTag> > tMusicInfoTagCacheMap;
 
 typedef std::map<std::string, std::string> tArtTypeCacheType;
 typedef std::map<long, CMusicDatabaseCacheItem<tArtTypeCacheType> > tArtCacheMap;
@@ -63,11 +69,11 @@ public:
   CMusicDatabaseCache();
   virtual ~CMusicDatabaseCache();
   
-  void addSong(long id, std::shared_ptr<CFileItem>& item);
-  std::shared_ptr<CFileItem> getSong(long id);
+  void addSong(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
+  std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getSong(long id, int getDetails);
   
-  void addAlbum(long id, std::shared_ptr<CFileItem>& item);
-  std::shared_ptr<CFileItem> getAlbum(long id);
+  void addAlbum(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
+  std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getAlbum(long id, int getDetails);
   
   void addArtMap(long id, std::shared_ptr<tArtTypeCacheType>& item, std::string type);
   std::shared_ptr<tArtTypeCacheType> getArtMap(long id, std::string type);
@@ -84,8 +90,8 @@ public:
   void addArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
   std::shared_ptr<std::vector<ArtForThumbLoader> > getArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist);
 private:
-  tFileItemCacheMap m_fileItemCacheMap;
-  tFileItemCacheMap m_albumCacheMap;
+  tMusicInfoTagCacheMap m_songCacheMap;
+  tMusicInfoTagCacheMap m_albumCacheMap;
   tArtTypeCacheMap m_ArtCacheMap;
   tArtTypeCacheMap m_ArtistArtMapCacheMap;
   tArtistArtTypeCacheMap m_ArtistArtCacheMap;

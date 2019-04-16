@@ -122,7 +122,8 @@ static const translateField fields[] = {
   { "directorid",        FieldDirectorId,              CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20339 },
   { "actorid",           FieldActorId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20337 },
   { "writerid",          FieldWriterId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20417 },
-  { "setid",             FieldSetId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20457 }
+  { "setid",             FieldSetId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20457 },
+  { "albumid",           FieldAlbumId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  558 }
 };
 
 typedef struct
@@ -1551,10 +1552,10 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   //   where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
   // }
   // else if (m_field == FieldActor)
-  // {
-  //   std::string prepared_string = FormatODBString(oper, param);
-  //   where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
-  // }
+  // {FieldAlbum
+  //  FieldAlbum
+  //  FieldAlbum
+  // }FieldAlbum
   // else if (m_field == FieldStudio)
   // {
   //   std::string prepared_string = FormatODBString(oper, param);
@@ -1892,13 +1893,8 @@ odb::query<ODBView_Album> CSmartPlaylistRule::FormatAlbumWhereClause( const bool
   query where_query;
   
   CLog::Log(LOGDEBUG, "%s - param: %s - type: %s - operator: %i", __FUNCTION__, param.c_str(), strType.c_str(), oper);
-  
-  if (m_field == FieldGenre)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBGenre::name_type_, std::string>(query::CODBGenre::name, oper, prepared_string);
-  }
-  else if (m_field == FieldAlbum)
+
+  if (m_field == FieldAlbum)
   {
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::CODBAlbum::album_type_, std::string>(query::CODBAlbum::album, oper, prepared_string);
@@ -1946,7 +1942,7 @@ odb::query<ODBView_Album> CSmartPlaylistRule::FormatAlbumWhereClause( const bool
   {
     //TODO: How?
   }
-  
+
   if (negate)
     return !where_query;
   else
@@ -1963,20 +1959,10 @@ odb::query<ODBView_Song> CSmartPlaylistRule::FormatSongWhereClause( const bool &
   
   CLog::Log(LOGDEBUG, "%s - param: %s - type: %s - operator: %i", __FUNCTION__, param.c_str(), strType.c_str(), oper);
   
-  if (m_field == FieldGenre)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBGenre::name_type_, std::string>(query::CODBGenre::name, oper, prepared_string);
-  }
-  else if (m_field == FieldAlbum)
+  if (m_field == FieldAlbum)
   {
     std::string prepared_string = FormatODBString(oper, param);
     where_query = FormatODBParam<query, query::CODBAlbum::album_type_, std::string>(query::CODBAlbum::album, oper, prepared_string);
-  }
-  else if (m_field == FieldArtist || m_field == FieldAlbumArtist)
-  {
-    std::string prepared_string = FormatODBString(oper, param);
-    where_query = FormatODBParam<query, query::CODBPerson::name_type_, std::string>(query::CODBPerson::name, oper, prepared_string);
   }
   else if (m_field == FieldTitle)
   {
@@ -2061,27 +2047,37 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
   std::string table;
   if (strType == "songs")
   {
-    table = "songview";
+    table = "song";
 
     if (m_field == FieldGenre)
-      query = negate + " EXISTS (SELECT 1 FROM song_genre, genre WHERE song_genre.idSong = " + GetField(FieldId, strType) + " AND song_genre.idGenre = genre.idGenre AND genre.strGenre" + parameter + ")";
+      query = negate + " EXISTS (SELECT 1 FROM song_genre, genre WHERE song_genres.object_id = " + GetField(FieldId, strType) + " AND song_genres.`value` = genre.idGenre AND genre.name" + parameter + ")";
     else if (m_field == FieldArtist)
-      query = negate + " EXISTS (SELECT 1 FROM song_artist, artist WHERE song_artist.idSong = " + GetField(FieldId, strType) + " AND song_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
+      query = negate + " EXISTS (SELECT 1 FROM song_artists, artist WHERE song_artists.object_id = " + GetField(FieldId, strType) + " AND song_artists.`value` = artist.idArtist AND artist.name" + parameter + ")";
     else if (m_field == FieldAlbumArtist)
-      query = negate + " EXISTS (SELECT 1 FROM album_artist, artist WHERE album_artist.idAlbum = " + table + ".idAlbum AND album_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
+      query = negate + " EXISTS (SELECT 1 FROM album_artists, artist WHERE album_artists.object_id = " + table + ".idAlbum AND album_artists.`value` = artist.idArtist AND artist.name" + parameter + ")";
+    else if (m_field == FieldAlbum)
+      query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.name" + parameter + ")";
+    else if (m_field == FieldAlbumId)
+      query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.idAlbum" + parameter + ")";
     else if (m_field == FieldLastPlayed && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " is NULL or " + GetField(m_field, strType) + parameter;
   }
   else if (strType == "albums")
   {
-    table = "albumview";
+    table = "album";
 
-    if (m_field == FieldGenre)
-      query = negate + " EXISTS (SELECT 1 FROM song, song_genre, genre WHERE song.idAlbum = " + GetField(FieldId, strType) + " AND song.idSong = song_genre.idSong AND song_genre.idGenre = genre.idGenre AND genre.strGenre" + parameter + ")";
+    if (m_field == FieldGenreId)
+      query = negate + " EXISTS (SELECT 1 FROM song, song_genres, genre WHERE song.album = " + GetField(FieldId, strType) + " AND song.idSong = song_genres.object_id AND song_genres.`value` = genre.idGenre AND genre.idGenre" + parameter + ")";
+    else if (m_field == FieldGenre)
+      query = negate + " EXISTS (SELECT 1 FROM song, song_genres, genre WHERE song.album = " + GetField(FieldId, strType) + " AND song.idSong = song_genres.object_id AND song_genres.`value` = genre.idGenre AND genre.name" + parameter + ")";
+    else if (m_field == FieldAlbum)
+      query = negate + " EXISTS (SELECT 1 FROM album as filteralbum WHERE filteralbum.idAlbum = " + GetField(FieldId, strType) + " AND " + GetField(FieldAlbum, strType) + " " + parameter + ")";
+    else if (m_field == FieldAlbumId)
+      query = negate + " EXISTS (SELECT 1 FROM album as filteralbum WHERE filteralbum.idAlbum = " + GetField(FieldId, strType) + " AND " + GetField(FieldAlbumId, strType) + " " + parameter + ")";
     else if (m_field == FieldArtist)
-      query = negate + " EXISTS (SELECT 1 FROM song, song_artist, artist WHERE song.idAlbum = " + GetField(FieldId, strType) + " AND song.idSong = song_artist.idSong AND song_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
+      query = negate + " EXISTS (SELECT 1 FROM song, song_artists, artist WHERE song.idAlbum = " + GetField(FieldId, strType) + " AND song.idSong = song_artists.object_id AND song_artists.`value` = artist.idArtist AND artist.name" + parameter + ")";
     else if (m_field == FieldAlbumArtist)
-      query = negate + " EXISTS (SELECT 1 FROM album_artist, artist WHERE album_artist.idAlbum = " + GetField(FieldId, strType) + " AND album_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
+      query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeAlbum, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldPath)
       query = negate + " EXISTS (SELECT 1 FROM song JOIN path on song.idpath = path.idpath WHERE song.idAlbum = " + GetField(FieldId, strType) + " AND path.strPath" + parameter + ")";
     else if (m_field == FieldLastPlayed && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))

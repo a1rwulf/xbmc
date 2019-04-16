@@ -28,6 +28,13 @@
 #include <odb/odb_gen/ODBSong.h>
 #include <odb/odb_gen/ODBSong_odb.h>
 
+enum MusicDbDetails
+{
+  MusicDbDetailsNone     = 0x00,
+  MusicDbDetailsGenre    = 0x01,
+  MusicDbDetailsAll      = 0xFF
+};
+
 class CArtist;
 class CFileItem;
 
@@ -41,6 +48,11 @@ class CODBPersonLink;
 class ODBView_Album;
 class ODBView_Music_Genres;
 class ODBPlaylist;
+
+namespace MUSIC_INFO
+{
+  class CMusicInfoTag;
+}
 
 namespace dbiplus
 {
@@ -301,6 +313,13 @@ public:
    \return true if the album is retrieved, false otherwise.
    */
   bool GetAlbum(int idAlbum, CAlbum& album, bool getSongs = true);
+
+  template <class T>
+  MUSIC_INFO::CMusicInfoTag GetDetailsForAlbum(const T record, int getDetails = MusicDbDetailsNone);
+
+  template <class T>
+  MUSIC_INFO::CMusicInfoTag GetDetailsForSong(const T record, int getDetails = MusicDbDetailsNone);
+
   std::shared_ptr<CODBAlbum> GetODBAlbum(int idAlbum);
   std::shared_ptr<CODBAlbum> UpdateAlbum(int idAlbum,
     const std::string& strAlbum, 
@@ -523,7 +542,6 @@ public:
   bool GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist,int idAlbum, int idPlaylist, const SortDescription &sortDescription = SortDescription());
   bool GetSongsByYear(const std::string& baseDir, CFileItemList& items, int year);
   bool GetSongsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription());
-  bool GetSongsFullByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool artistData = false);
   bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, VECALBUMS& albums, int& total, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetArtistsByWhere(const std::string& strBaseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
@@ -554,6 +572,8 @@ public:
   template <typename T> T GetODBFilterArtists(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterAlbums(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
   template <typename T> T GetODBFilterSongs(CDbUrl &musicUrl, Filter &filter, SortDescription &sorting);
+
+  void AdjustQueryFromUrlOptions(std::string& strQuery, CMusicDbUrl& videoDbUrl);
 
   /////////////////////////////////////////////////
   // Scraper

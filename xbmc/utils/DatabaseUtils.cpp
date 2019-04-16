@@ -50,24 +50,24 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
 
   if (mediaType == MediaTypeAlbum)
   {
-    if (field == FieldId) return "albumview.idAlbum";
-    else if (field == FieldAlbum) return "albumview.strAlbum";
-    else if (field == FieldArtist || field == FieldAlbumArtist) return "albumview.strArtists";
-    else if (field == FieldGenre) return "albumview.strGenre";
-    else if (field == FieldYear) return "albumview.iYear";
-    else if (field == FieldMoods) return "albumview.strMoods";
-    else if (field == FieldStyles) return "albumview.strStyles";
-    else if (field == FieldThemes) return "albumview.strThemes";
-    else if (field == FieldReview) return "albumview.strReview";
-    else if (field == FieldMusicLabel) return "albumview.strLabel";
-    else if (field == FieldAlbumType) return "albumview.strType";
-    else if (field == FieldCompilation) return "albumview.bCompilation";
-    else if (field == FieldRating) return "albumview.fRating";
-    else if (field == FieldVotes) return "albumview.iVotes";
-    else if (field == FieldUserRating) return "albumview.iUserrating";
-    else if (field == FieldDateAdded) return "albumview.dateAdded";
-    else if (field == FieldPlaycount) return "albumview.iTimesPlayed";
-    else if (field == FieldLastPlayed) return "albumview.lastPlayed";
+    if (field == FieldId) return "album.idAlbum";
+    else if (field == FieldAlbum) return "album.album";
+    else if (field == FieldArtist || field == FieldAlbumArtist) return "album.artists";
+    else if (field == FieldGenre) return "album.genreString";
+    else if (field == FieldYear) return "album.year";
+    else if (field == FieldMoods) return "album.moods";
+    else if (field == FieldStyles) return "album.styles";
+    else if (field == FieldThemes) return "album.themes";
+    else if (field == FieldReview) return "album.review";
+    else if (field == FieldMusicLabel) return "album.label";
+    else if (field == FieldAlbumType) return "album.type";
+    else if (field == FieldCompilation) return "album.compilation";
+    else if (field == FieldRating) return "album.rating";
+    else if (field == FieldVotes) return "album.votes";
+    else if (field == FieldUserRating) return "album.userrating";
+    else if (field == FieldDateAdded) return "album.dateAdded";
+    else if (field == FieldPlaycount) return "album.iTimesPlayed";
+    else if (field == FieldLastPlayed) return "album.lastPlayed";
   }
   else if (mediaType == MediaTypePlaylist)
   {
@@ -81,26 +81,21 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
   }
   else if (mediaType == MediaTypeSong)
   {
-    if (field == FieldId) return "songview.idSong";
-    else if (field == FieldTitle) return "songview.strTitle";
-    else if (field == FieldTrackNumber) return "songview.iTrack";
-    else if (field == FieldTime) return "songview.iDuration";
-    else if (field == FieldYear) return "songview.iYear";
-    else if (field == FieldFilename) return "songview.strFilename";
-    else if (field == FieldPlaycount) return "songview.iTimesPlayed";
-    else if (field == FieldStartOffset) return "songview.iStartOffset";
-    else if (field == FieldEndOffset) return "songview.iEndOffset";
-    else if (field == FieldLastPlayed) return "songview.lastPlayed";
-    else if (field == FieldRating) return "songview.rating";
-    else if (field == FieldVotes) return "songview.votes";
-    else if (field == FieldUserRating) return "songview.userrating";
-    else if (field == FieldComment) return "songview.comment";
-    else if (field == FieldMoods) return "songview.mood";
-    else if (field == FieldAlbum) return "songview.strAlbum";
-    else if (field == FieldPath) return "songview.strPath";
-    else if (field == FieldArtist || field == FieldAlbumArtist) return "songview.strArtists";
-    else if (field == FieldGenre) return "songview.strGenre";
-    else if (field == FieldDateAdded) return "songview.dateAdded";
+    if (field == FieldId) return "song.idSong";
+    else if (field == FieldTitle) return "song.title";
+    else if (field == FieldTrackNumber) return "song.track";
+    else if (field == FieldTime) return "song.duration";
+    else if (field == FieldYear) return "song.year";
+    else if (field == FieldStartOffset) return "song.startoffset";
+    else if (field == FieldEndOffset) return "song.endoffset";
+    else if (field == FieldRating) return "song.rating";
+    else if (field == FieldVotes) return "song.votes";
+    else if (field == FieldUserRating) return "song.userrating";
+    else if (field == FieldComment) return "song.comment";
+    else if (field == FieldMoods) return "song.mood";
+    else if (field == FieldAlbum) return "song.album";
+    else if (field == FieldArtist || field == FieldAlbumArtist) return "song.artistDisp";
+    else if (field == FieldGenre) return "song.genreString";
   }
   else if (mediaType == MediaTypeArtist)
   {
