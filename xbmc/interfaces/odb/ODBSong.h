@@ -127,7 +127,7 @@ PRAGMA_DB (view object(CODBSong) \
            object(CODBPersonLink inner: CODBAlbum::m_artists) \
            object(CODBPerson inner: CODBPersonLink::m_person) \
            object(CODBRole: CODBPersonLink::m_role) \
-           query((?) + "GROUP BY idAlbum", distinct) )
+           query((?), distinct))
 struct ODBView_Album
 {
   std::shared_ptr<CODBAlbum> album;

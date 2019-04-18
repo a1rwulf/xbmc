@@ -3568,6 +3568,7 @@ bool CMusicDatabase::SearchAlbums(const std::string& search, CFileItemList &albu
     if (search.size() >= MIN_FULL_SEARCH_LENGTH)
       query = query || odb::query<ODBView_Album>::CODBAlbum::album.like("% "+search+"%");
 
+    query = query + " GROUP BY idAlbum ";
     query = query + "LIMIT 1000";
     
     for (auto &r : m_cdb.getDB()->query<ODBView_Album>(query))
@@ -4848,7 +4849,7 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     // Check if we are actually interested in the items
     if (!countOnly)
     {
-      odb::result<ODBView_Album> res(m_cdb.getDB()->query<ODBView_Album>(queryStr + SortUtils::SortODBAlbumQuery<query>(sortDescription)));
+      odb::result<ODBView_Album> res(m_cdb.getDB()->query<ODBView_Album>(queryStr + " GROUP BY idAlbum " + SortUtils::SortODBAlbumQuery<query>(sortDescription)));
       if (res.begin() == res.end())
         return true;
 
