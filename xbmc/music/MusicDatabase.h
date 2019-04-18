@@ -543,7 +543,6 @@ public:
   bool GetSongsByYear(const std::string& baseDir, CFileItemList& items, int year);
   bool GetSongsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription());
   bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
-  bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, VECALBUMS& albums, int& total, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetArtistsByWhere(const std::string& strBaseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetRandomSong(CFileItem* item, int& idSong, odb::query<ODBView_Song> objQuery);
   int GetSongsCount(odb::query<ODBView_Song_Count> query = odb::query<ODBView_Song_Count>());
