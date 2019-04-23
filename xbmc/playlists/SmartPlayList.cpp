@@ -2056,7 +2056,7 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
     else if (m_field == FieldAlbumArtist)
       query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeSong, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldAlbum)
-      query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.name" + parameter + ")";
+      query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.album" + parameter + ")";
     else if (m_field == FieldAlbumId)
       query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.idAlbum" + parameter + ")";
     else if (m_field == FieldLastPlayed && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
