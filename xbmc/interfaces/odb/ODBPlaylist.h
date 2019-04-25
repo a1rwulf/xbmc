@@ -71,6 +71,16 @@ struct ODBView_Playlist_Total
   unsigned int total;
 };
 
+PRAGMA_DB (view object(CODBPlaylist) \
+                object(CODBArt: CODBPlaylist::m_artwork) \
+                query(distinct))
+struct ODBView_Playlist_Art
+{
+  PRAGMA_DB (column(CODBPlaylist::m_idPlaylist))
+  unsigned long id;
+  std::shared_ptr<CODBArt> art;
+};
+
 #ifdef ODB_COMPILER
 #include "ODBSong.h"
 #endif

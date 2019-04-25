@@ -8826,7 +8826,8 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int pl
 {
   try
   {
-    if (songId <= 0 && albumId <= 0 && artistId <= 0 && playlistId <= 0) return false;
+    if (songId <= 0 && albumId <= 0 && artistId <= 0 && playlistId <= 0)
+      return false;
 
     std::shared_ptr<std::vector<ArtForThumbLoader> > cached = gMusicDatabaseCache.getArtThumbLoader(songId, albumId, artistId, playlistId, bPrimaryArtist);
     if (cached)
@@ -8835,77 +8836,56 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int pl
       return !art.empty();
     }
 
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    
     if (albumId > 0)
     {
-      typedef odb::query<CODBAlbum> query;
-      CODBAlbum objAlbum;
-      if (m_cdb.getDB()->query_one<CODBAlbum>(query::idAlbum == albumId, objAlbum))
+      std::map<std::string, std::string> tmpartmap;
+      FillCacheAndGetArt<ODBView_Album_Art>(albumId, MediaTypeAlbum, tmpartmap);
+      for (auto& i: tmpartmap)
       {
-        if (!objAlbum.section_foreign.loaded())
-          m_cdb.getDB()->load(objAlbum, objAlbum.section_foreign);
-        for (auto& i: objAlbum.m_artwork)
-        {
-          if (i.load())
-          {
-            ArtForThumbLoader artitem;
-            artitem.artType = i->m_type;
-            artitem.mediaType = MediaTypeAlbum;
-            artitem.prefix = "";
-            artitem.url = i->m_url;
-
-            art.emplace_back(artitem);
-          }
-        }
+        ArtForThumbLoader artitem;
+        artitem.artType = i.first;
+        artitem.mediaType = MediaTypeAlbum;
+        artitem.prefix = "";
+        artitem.url = i.second;
+        art.emplace_back(artitem);
       }
     }
-    
+
     if (songId > 0)
     {
-      typedef odb::query<CODBSong> query;
-      CODBSong objSong;
-      if (m_cdb.getDB()->query_one<CODBSong>(query::idSong == songId, objSong))
+      std::map<std::string, std::string> tmpartmap;
+      FillCacheAndGetArt<ODBView_Song_Art>(songId, MediaTypeSong, tmpartmap);
+      for (auto& i: tmpartmap)
       {
-        if (!objSong.section_foreign.loaded())
-          m_cdb.getDB()->load(objSong, objSong.section_foreign);
-        for (auto& i: objSong.m_artwork)
-        {
-          if (i.load())
-          {
-            ArtForThumbLoader artitem;
-            artitem.artType = i->m_type;
-            artitem.mediaType = MediaTypeSong;
-            artitem.prefix = "";
-            artitem.url = i->m_url;
+        ArtForThumbLoader artitem;
+        artitem.artType = i.first;
+        artitem.mediaType = MediaTypeSong;
+        artitem.prefix = "";
+        artitem.url = i.second;
 
-            art.emplace_back(artitem);
-          }
-        }
+        art.emplace_back(artitem);
       }
     }
-    
+
     if (artistId > 0)
     {
-      typedef odb::query<CODBPerson> query;
-      CODBPerson objPerson;
-      if (m_cdb.getDB()->query_one<CODBPerson>(query::idPerson == artistId, objPerson))
+      std::map<std::string, std::string> tmpartmap;
+      FillCacheAndGetArt<ODBView_Person_Art>(artistId, MediaTypeArtist, tmpartmap);
+      for (auto& i: tmpartmap)
       {
-        if (objPerson.m_art.load())
-        {
-          ArtForThumbLoader artitem;
-          artitem.artType = objPerson.m_art->m_type;
-          artitem.mediaType = MediaTypeArtist;
-          artitem.prefix = "";
-          artitem.url = objPerson.m_art->m_url;
+        ArtForThumbLoader artitem;
+        artitem.artType = i.first;
+        artitem.mediaType = MediaTypeArtist;
+        artitem.prefix = "";
+        artitem.url = i.second;
 
-          art.emplace_back(artitem);
-        }
+        art.emplace_back(artitem);
       }
     }
 
     if (artistId >= 0)
     {
+      std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
       // Artist ID unknown, so lookup album artist for albums and songs
       if (albumId > 0)
       {
@@ -8978,26 +8958,17 @@ bool CMusicDatabase::GetArtForItem(int songId, int albumId, int artistId, int pl
 
     if (playlistId >= 0)
     {
-      typedef odb::query<CODBPlaylist> query;
-      CODBPlaylist objPlaylist;
-      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == playlistId, objPlaylist))
+      std::map<std::string, std::string> tmpartmap;
+      FillCacheAndGetArt<ODBView_Playlist_Art>(playlistId, MediaTypePlaylist, tmpartmap);
+      for (auto& i: tmpartmap)
       {
-        if (!objPlaylist.playlist_art.loaded())
-          m_cdb.getDB()->load(objPlaylist, objPlaylist.playlist_art);
+        ArtForThumbLoader artitem;
+        artitem.artType = i.first;
+        artitem.mediaType = MediaTypePlaylist;
+        artitem.prefix = "";
+        artitem.url = i.second;
 
-        for (auto& i: objPlaylist.m_artwork)
-        {
-          if (i.load())
-          {
-            ArtForThumbLoader artitem;
-            artitem.artType = i->m_type;
-            artitem.mediaType = MediaTypePlaylist;
-            artitem.prefix = "";
-            artitem.url = i->m_url;
-
-            art.emplace_back(artitem);
-          }
-        }
+        art.emplace_back(artitem);
       }
     }
 
@@ -9030,64 +9001,13 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     if (mediaType == MediaTypeAlbum)
-    {
-      typedef odb::query<CODBAlbum> query;
-      CODBAlbum objAlbum;
-      if (m_cdb.getDB()->query_one<CODBAlbum>(query::idAlbum == mediaId, objAlbum))
-      {
-        if (!objAlbum.section_foreign.loaded())
-          m_cdb.getDB()->load(objAlbum, objAlbum.section_foreign);
-        for (auto& i: objAlbum.m_artwork)
-        {
-          if (i.load())
-          {
-            art.insert(make_pair(i->m_type, i->m_url));
-          }
-        }
-      }
-    }
+      FillCacheAndGetArt<ODBView_Album_Art>(mediaId, mediaType, art);
     else if (mediaType == MediaTypeSong)
-    {
-      typedef odb::query<CODBSong> query;
-      CODBSong objSong;
-      if (m_cdb.getDB()->query_one<CODBSong>(query::idSong == mediaId, objSong))
-      {
-        if (!objSong.section_foreign.loaded())
-          m_cdb.getDB()->load(objSong, objSong.section_foreign);
-        for (auto& i: objSong.m_artwork)
-        {
-          if (i.load())
-          {
-            art.insert(make_pair(i->m_type, i->m_url));
-          }
-        }
-      }
-    }
+      FillCacheAndGetArt<ODBView_Song_Art>(mediaId, mediaType, art);
     else if (mediaType == MediaTypeArtist)
-    {
-      typedef odb::query<CODBPerson> query;
-      CODBPerson objPerson;
-      if (m_cdb.getDB()->query_one<CODBPerson>(query::idPerson == mediaId, objPerson))
-      {
-        if (objPerson.m_art.load())
-          art.insert(make_pair(objPerson.m_art->m_type, objPerson.m_art->m_url));
-      }
-    }
+      FillCacheAndGetArt<ODBView_Person_Art>(mediaId, mediaType, art);
     else if (mediaType == MediaTypePlaylist)
-    {
-      typedef odb::query<CODBPlaylist> query;
-      CODBPlaylist objPlaylist;
-      if (m_cdb.getDB()->query_one<CODBPlaylist>(query::idPlaylist == mediaId, objPlaylist))
-      {
-        for (auto& i: objPlaylist.m_artwork)
-        {
-          if (i.load())
-          {
-            art.insert(make_pair(i->m_type, i->m_url));
-          }
-        }
-      }
-    }
+      FillCacheAndGetArt<ODBView_Playlist_Art>(mediaId, mediaType, art);
     else
     {
       CLog::Log(LOGERROR, "%s(%d) map unknown media type - %s", __FUNCTION__, mediaId, mediaType.c_str());
@@ -9109,7 +9029,6 @@ bool CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, st
   }
   return false;
 }
-
 
 std::string CMusicDatabase::GetArtForItem(int mediaId, const std::string &mediaType, const std::string &artType)
 {
@@ -9258,6 +9177,46 @@ bool CMusicDatabase::RemoveArtForItem(int mediaId, const MediaType & mediaType, 
     result &= RemoveArtForItem(mediaId, mediaType, i);
   
   return result;
+}
+
+template <class T>
+void CMusicDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art)
+{
+  auto cachedItem = gMusicDatabaseCache.getArtMap(mediaId, mediaType);
+  if (cachedItem)
+  {
+    art = *cachedItem;
+    return;
+  }
+
+  std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+
+  std::map<unsigned int, std::map<std::string, std::string> > idartsmap;
+  for (auto& i: m_cdb.getDB()->query<T>())
+  {
+      auto artmap = idartsmap.find(i.id);
+      if (artmap != idartsmap.end())
+      {
+        auto &artItem = artmap->second;
+        artItem.insert(std::make_pair(i.art->m_type, i.art->m_url));
+      }
+      else
+      {
+        std::map<std::string, std::string> artItem;
+        artItem.insert(std::make_pair(i.art->m_type, i.art->m_url));
+        idartsmap.insert(std::make_pair(i.id, artItem));
+      }
+
+      if (i.id == static_cast<unsigned long>(mediaId))
+        art.insert(make_pair(i.art->m_type, i.art->m_url));
+  }
+
+  for (auto &at : idartsmap)
+  {
+    std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
+    *artItem = at.second;
+    gMusicDatabaseCache.addArtMap(at.first, artItem, mediaType);
+  }
 }
 
 template <typename T>

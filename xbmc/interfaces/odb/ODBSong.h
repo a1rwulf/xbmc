@@ -189,6 +189,8 @@ PRAGMA_DB (view object(CODBSong) \
                 query(distinct))
 struct ODBView_Song_Art
 {
+  PRAGMA_DB (column(CODBSong::m_idSong))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 

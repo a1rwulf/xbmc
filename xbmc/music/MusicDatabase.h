@@ -744,6 +744,9 @@ private:
   CArtistCredit GetArtistCreditFromODBObject(std::shared_ptr<CODBPersonLink> objPersonLinks);
   CMusicRole GetArtistRoleFromODBObject(std::shared_ptr<CODBPersonLink> objArtist);
 
+  template <class T>
+  void FillCacheAndGetArt(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art);
+
   /*! \brief Updates the dateAdded field in the song table for the file
   with the given songId and the given path based on the files modification date
   \param objFile odb object of the file
