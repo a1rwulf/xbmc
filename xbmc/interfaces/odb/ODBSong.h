@@ -185,7 +185,7 @@ struct ODBView_Song_Album_Artist
 };
 
 PRAGMA_DB (view object(CODBSong) \
-                object(CODBArt: CODBSong::m_artwork) \
+                object(CODBArt inner: CODBSong::m_artwork) \
                 query(distinct))
 struct ODBView_Song_Art
 {
