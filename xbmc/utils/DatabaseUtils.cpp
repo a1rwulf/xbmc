@@ -202,30 +202,28 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
   else if (mediaType == MediaTypeEpisode)
   {
     std::string result;
-    if (field == FieldId) return "episode_view.idEpisode";
-    else if (field == FieldTitle) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_TITLE);
-    else if (field == FieldPlot) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_PLOT);
-    else if (field == FieldVotes) return "episode_view.votes";
-    else if (field == FieldRating) return "episode_view.rating";
-    else if (field == FieldWriter) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_CREDITS);
-    else if (field == FieldAirDate) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_AIRED);
-    else if (field == FieldTime) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_RUNTIME);
-    else if (field == FieldDirector) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_DIRECTOR);
-    else if (field == FieldSeason) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_SEASON);
-    else if (field == FieldEpisodeNumber) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_EPISODE);
-    else if (field == FieldUniqueId) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_IDENT_ID);
-    else if (field == FieldEpisodeNumberSpecialSort) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_SORTEPISODE);
-    else if (field == FieldSeasonSpecialSort) result = StringUtils::Format("episode_view.c%02d", VIDEODB_ID_EPISODE_SORTSEASON);
-    else if (field == FieldFilename) return "episode_view.strFilename";
-    else if (field == FieldPath) return "episode_view.strPath";
-    else if (field == FieldPlaycount) return "episode_view.playCount";
-    else if (field == FieldLastPlayed) return "episode_view.lastPlayed";
-    else if (field == FieldDateAdded) return "episode_view.dateAdded";
-    else if (field == FieldTvShowTitle) return "episode_view.strTitle";
-    else if (field == FieldYear) return "episode_view.premiered";
-    else if (field == FieldMPAA) return "episode_view.mpaa";
-    else if (field == FieldStudio) return "episode_view.strStudio";
-    else if (field == FieldUserRating) return "episode_view.userrating";
+    if (field == FieldId) return "episode.idEpisode";
+    else if (field == FieldTitle) result = StringUtils::Format("episode.title");
+    else if (field == FieldPlot) result = StringUtils::Format("episode.plot");
+    else if (field == FieldVotes) return "episode.votes";
+    else if (field == FieldRating) return "episode.defaultRating";
+    else if (field == FieldAirDate) result = StringUtils::Format("episode.aired_date");
+    else if (field == FieldTime) result = StringUtils::Format("episode.runtime");
+    else if (field == FieldSeason) result = StringUtils::Format("episode.season");
+    else if (field == FieldEpisodeNumber) result = StringUtils::Format("episode.episode");
+    else if (field == FieldUniqueId) result = StringUtils::Format("episode.uniqueid");
+    else if (field == FieldEpisodeNumberSpecialSort) result = StringUtils::Format("episode.sortSeason");
+    else if (field == FieldSeasonSpecialSort) result = StringUtils::Format("episode.sortEpisode");
+    else if (field == FieldFilename) return "episode.strFilename";
+    else if (field == FieldPath) return "episode.strPath";
+    else if (field == FieldPlaycount) return "episode.playCount";
+    else if (field == FieldLastPlayed) return "episode.lastPlayed";
+    else if (field == FieldDateAdded) return "episode.dateAdded";
+    else if (field == FieldTvShowTitle) return "episode.strTitle";
+    else if (field == FieldYear) return "episode.premiered";
+    else if (field == FieldMPAA) return "episode.mpaa";
+    else if (field == FieldStudio) return "episode.strStudio";
+    else if (field == FieldUserRating) return "episode.userrating";
 
     if (!result.empty())
       return result;
