@@ -150,7 +150,7 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
       if (queryPart == DatabaseQueryPartOrderBy)
         result = StringUtils::Format("CASE WHEN length(movie.sortTitle) > 0 THEN movie.sortTitle ELSE movie.title END");
       else
-        result = StringUtils::Format("movie.title");
+        result = StringUtils::Format("CASE WHEN length(movie.titleSearch) > 0 THEN movie.titleSearch ELSE movie.title END");
     }
     else if (field == FieldPlot) result = StringUtils::Format("movie.plot");
     else if (field == FieldPlotOutline) result = StringUtils::Format("movie.plotoutline");
@@ -184,7 +184,7 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
       if (queryPart == DatabaseQueryPartOrderBy)
         result = StringUtils::Format("CASE WHEN length(tvshow.sortTitle) > 0 THEN tvshow.sortTitle ELSE tvshow.title END");
       else
-        result = StringUtils::Format("tvshow.title");
+        result = StringUtils::Format("CASE WHEN length(tvshow.titleSearch) > 0 THEN tvshow.titleSearch ELSE tvshow.title END");
     }
     else if (field == FieldPlot) result = StringUtils::Format("tvshow.plot");
     else if (field == FieldTvShowStatus) result = StringUtils::Format("tvshow.status");
@@ -203,7 +203,8 @@ std::string DatabaseUtils::GetField(Field field, const MediaType &mediaType, Dat
   {
     std::string result;
     if (field == FieldId) return "episode.idEpisode";
-    else if (field == FieldTitle) result = StringUtils::Format("episode.title");
+    else if (field == FieldTitle)
+      result = StringUtils::Format("CASE WHEN length(episode.titleSearch) > 0 THEN episode.titleSearch ELSE episode.title END");
     else if (field == FieldPlot) result = StringUtils::Format("episode.plot");
     else if (field == FieldVotes) return "episode.votes";
     else if (field == FieldRating) return "episode.defaultRating";
