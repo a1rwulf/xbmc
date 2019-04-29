@@ -1552,10 +1552,10 @@ odb::query<ODBView_TVShow> CSmartPlaylistRule::FormatTVShowWhereClause(const boo
   //   where_query = FormatODBParam<query, query::director::name_type_, std::string>(query::director::name, oper, prepared_string);
   // }
   // else if (m_field == FieldActor)
-  // {FieldAlbum
-  //  FieldAlbum
-  //  FieldAlbum
-  // }FieldAlbum
+ // {
+  //   std::string prepared_string = FormatODBString(oper, param);
+  //   where_query = FormatODBParam<query, query::actor::name_type_, std::string>(query::actor::name, oper, prepared_string);
+  // }
   // else if (m_field == FieldStudio)
   // {
   //   std::string prepared_string = FormatODBString(oper, param);
