@@ -631,8 +631,8 @@ bool CPartyModeManager::AddInitialSongs(std::vector< std::pair<int,int > > &song
       sqlWhereMusic[sqlWhereMusic.size() - 1] = ')'; // replace the last comma with closing bracket
       CMusicDatabase database;
       database.Open();
-      database.GetSongsFullByWhere("musicdb://songs/", CDatabase::Filter(sqlWhereMusic),
-                                   items, SortDescription(), true);
+      database.GetSongsByWhere("musicdb://songs/", CDatabase::Filter(sqlWhereMusic),
+                                   items, SortDescription());
     }
     if (sqlWhereVideo.size() > 19)
     {

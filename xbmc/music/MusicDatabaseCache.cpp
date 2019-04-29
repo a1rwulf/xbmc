@@ -32,59 +32,65 @@ CMusicDatabaseCache::~CMusicDatabaseCache()
   
 }
 
-void CMusicDatabaseCache::addSong(long id, std::shared_ptr<CFileItem>& item)
+void CMusicDatabaseCache::addSong(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails)
 {
   if (!item)
     return;
-  
-  CMusicDatabaseCacheItem<CFileItem> cacheItem;
-  cacheItem.m_getDetails = 0;
+
+  CMusicDatabaseCacheItem<MUSIC_INFO::CMusicInfoTag> cacheItem;
+  cacheItem.m_getDetails = getDetails;
   cacheItem.m_item = item;
-  
+
   CSingleLock lock(m_mutex);
-  m_fileItemCacheMap.insert(std::make_pair(id, cacheItem));
+  m_songCacheMap.insert(std::make_pair(id, cacheItem));
 }
 
-std::shared_ptr<CFileItem> CMusicDatabaseCache::getSong(long id)
+std::shared_ptr<MUSIC_INFO::CMusicInfoTag> CMusicDatabaseCache::getSong(long id, int getDetails)
 {
   CSingleLock lock(m_mutex);
-  tFileItemCacheMap ::iterator it = m_fileItemCacheMap.find(id);
-  
-  if (it != m_fileItemCacheMap.end())
+  tMusicInfoTagCacheMap ::iterator it = m_songCacheMap.find(id);
+
+  if (it != m_songCacheMap.end())
   {
     // If we do not have enough details, delete the item
-    if (it->second.m_getDetails < 0)
+    if (it->second.m_getDetails < getDetails)
     {
-      m_fileItemCacheMap.erase(it);
+      m_songCacheMap.erase(it);
       return nullptr;
     }
-    
+
     return it->second.m_item;
   }
-  
+
   return nullptr;
 }
 
-void CMusicDatabaseCache::addAlbum(long id, std::shared_ptr<CFileItem>& item)
+void CMusicDatabaseCache::addAlbum(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails)
 {
   if (!item)
     return;
   
-  CMusicDatabaseCacheItem<CFileItem> cacheItem;
-  cacheItem.m_getDetails = 0;
+  CMusicDatabaseCacheItem<MUSIC_INFO::CMusicInfoTag> cacheItem;
+  cacheItem.m_getDetails = getDetails;
   cacheItem.m_item = item;
   
   CSingleLock lock(m_mutex);
   m_albumCacheMap.insert(std::make_pair(id, cacheItem));
 }
 
-std::shared_ptr<CFileItem> CMusicDatabaseCache::getAlbum(long id)
+std::shared_ptr<MUSIC_INFO::CMusicInfoTag> CMusicDatabaseCache::getAlbum(long id, int getDetails)
 {
   CSingleLock lock(m_mutex);
-  tFileItemCacheMap ::iterator it = m_albumCacheMap.find(id);
+  tMusicInfoTagCacheMap::iterator it = m_albumCacheMap.find(id);
   
   if (it != m_albumCacheMap.end())
   {
+    if (it->second.m_getDetails < getDetails)
+    {
+      m_albumCacheMap.erase(it);
+      return nullptr;
+    }
+
     return it->second.m_item;
   }
   

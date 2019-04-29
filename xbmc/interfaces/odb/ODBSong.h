@@ -98,13 +98,6 @@ private:
 
 PRAGMA_DB (view object(CODBSong) \
                 object(CODBAlbum: CODBSong::m_album) \
-                object(CODBPersonLink inner: CODBSong::m_artists) \
-                object(CODBPerson inner: CODBPersonLink::m_person) \
-                object(CODBRole: CODBPersonLink::m_role) \
-                object(CODBPersonLink = albumArtistLink: CODBAlbum::m_artists) \
-                object(CODBPerson = albumArist: albumArtistLink::m_person) \
-                object(CODBRole = albumArtistRole: albumArtistLink::m_role) \
-                object(CODBGenre: CODBAlbum::m_genres) \
                 object(CODBFile: CODBSong::m_file) \
                 object(CODBPath: CODBFile::m_path) \
                 object(CODBPlaylist: CODBPlaylist::m_songs) \
@@ -112,17 +105,13 @@ PRAGMA_DB (view object(CODBSong) \
 struct ODBView_Song
 {
   std::shared_ptr<CODBSong> song;
+  std::shared_ptr<CODBAlbum> album;
+  std::shared_ptr<CODBPath> path;
+  std::shared_ptr<CODBFile> file;
 };
 
 PRAGMA_DB (view object(CODBSong) \
            object(CODBAlbum: CODBSong::m_album) \
-           object(CODBPersonLink inner: CODBSong::m_artists) \
-           object(CODBPerson inner: CODBPersonLink::m_person) \
-           object(CODBRole: CODBPersonLink::m_role) \
-           object(CODBPersonLink = albumArtistLink: CODBAlbum::m_artists) \
-           object(CODBPerson = albumArist: albumArtistLink::m_person) \
-           object(CODBRole = albumArtistRole: albumArtistLink::m_role) \
-           object(CODBGenre: CODBAlbum::m_genres) \
            object(CODBFile: CODBSong::m_file) \
            object(CODBPath: CODBFile::m_path) \
            object(CODBPlaylist: CODBPlaylist::m_songs))
@@ -134,17 +123,24 @@ struct ODBView_Song_Total
 
 PRAGMA_DB (view object(CODBSong) \
            object(CODBAlbum inner: CODBSong::m_album) \
+           object(CODBFile inner: CODBSong::m_file) \
            object(CODBPersonLink inner: CODBAlbum::m_artists) \
            object(CODBPerson inner: CODBPersonLink::m_person) \
            object(CODBRole: CODBPersonLink::m_role) \
-           object(CODBPersonLink = songArtistLink: CODBSong::m_artists) \
-           object(CODBPerson = songArist: songArtistLink::m_person) \
-           object(CODBRole = songArtistRole: songArtistLink::m_role) \
-           object(CODBGenre: CODBAlbum::m_genres) \
-           query(distinct) )
+           query((?), distinct))
 struct ODBView_Album
 {
   std::shared_ptr<CODBAlbum> album;
+  std::shared_ptr<CODBPerson> albumArtist;
+
+  PRAGMA_DB (column("MAX(" + CODBFile::m_lastPlayed.m_ulong_date + ")"))
+  unsigned long lastPlayedULong;
+
+  PRAGMA_DB (column("COUNT(" + CODBFile::m_playCount + ")"))
+  unsigned int watchedCount;
+
+  PRAGMA_DB (column("MAX(" + CODBFile::m_dateAdded.m_ulong_date + ")"))
+  unsigned long dateAddedULong;
 };
 
 PRAGMA_DB (view object(CODBSong) \
@@ -193,6 +189,8 @@ PRAGMA_DB (view object(CODBSong) \
                 query(distinct))
 struct ODBView_Song_Art
 {
+  PRAGMA_DB (column(CODBSong::m_idSong))
+  unsigned long id;
   std::shared_ptr<CODBArt> art;
 };
 

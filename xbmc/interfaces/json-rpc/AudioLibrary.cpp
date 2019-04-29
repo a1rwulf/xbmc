@@ -219,23 +219,11 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
     return InvalidParams;
 
   int total;
-  VECALBUMS albums;
-  if (!musicdatabase.GetAlbumsByWhere(musicUrl.ToString(), CDatabase::Filter(), albums, total, sorting))
+  CFileItemList items;
+  if (!musicdatabase.GetAlbumsByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting))
     return InternalError;
 
-  CFileItemList items;
-  items.Reserve(albums.size());
-  for (unsigned int index = 0; index < albums.size(); index++)
-  {
-    CMusicDbUrl itemUrl = musicUrl;
-    std::string path = StringUtils::Format("%li/", albums[index].idAlbum);
-    itemUrl.AppendPath(path);
-
-    CFileItemPtr pItem;
-    FillAlbumItem(albums[index], itemUrl.ToString(), pItem);
-    items.Add(pItem);
-  }
-
+  total = items.GetProperty("total").asInteger();
   //Get song genres (genreIDs and/or genre strings)
   JSONRPC_STATUS ret = GetAdditionalAlbumDetails(parameterObject, items, musicdatabase);
   if (ret != OK)
@@ -360,7 +348,7 @@ JSONRPC_STATUS CAudioLibrary::GetSongs(const std::string &method, ITransportLaye
   }
 
   CFileItemList items;
-  if (!musicdatabase.GetSongsFullByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting, artistData))
+  if (!musicdatabase.GetSongsByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting))
     return InternalError;
 
   JSONRPC_STATUS ret = GetAdditionalSongDetails(parameterObject, items, musicdatabase);
