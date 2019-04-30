@@ -220,8 +220,11 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
 
   int total;
   CFileItemList items;
-  if (!musicdatabase.GetAlbumsByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting))
+  if (!musicdatabase.GetAlbumsByWhere(musicUrl.ToString(), CDatabase::Filter(), items, sorting, MusicDbDetailsAll))
     return InternalError;
+
+  for (auto &i : items)
+    musicdatabase.SetAlbumPropertiesFromFileItem(*i);
 
   total = items.GetProperty("total").asInteger();
   //Get song genres (genreIDs and/or genre strings)

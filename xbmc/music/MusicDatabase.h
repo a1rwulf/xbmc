@@ -542,7 +542,7 @@ public:
   bool GetSongsNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idArtist,int idAlbum, int idPlaylist, const SortDescription &sortDescription = SortDescription());
   bool GetSongsByYear(const std::string& baseDir, CFileItemList& items, int year);
   bool GetSongsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription());
-  bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
+  bool GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription = SortDescription(), int getDetais = MusicDbDetailsNone, bool countOnly = false);
   bool GetArtistsByWhere(const std::string& strBaseDir, const Filter &filter, CFileItemList& items, const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetRandomSong(CFileItem* item, int& idSong, odb::query<ODBView_Song> objQuery);
   int GetSongsCount(odb::query<ODBView_Song_Count> query = odb::query<ODBView_Song_Count>());
@@ -718,6 +718,8 @@ public:
 
 std::string GetLibraryLastUpdated();
 void SetLibraryLastUpdated();
+
+void SetAlbumPropertiesFromFileItem(CFileItem& item);
 
 protected:
   std::map<std::string, int> m_genreCache;

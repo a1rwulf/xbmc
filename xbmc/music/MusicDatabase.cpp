@@ -4822,10 +4822,10 @@ bool CMusicDatabase::GetAlbumsNav(const std::string& strBaseDir, CFileItemList& 
   if (idArtist > 0)
     musicUrl.AddOption("artistid", idArtist);
 
-  return GetAlbumsByWhere(musicUrl.ToString(), filter, items, sortDescription, countOnly);
+  return GetAlbumsByWhere(musicUrl.ToString(), filter, items, sortDescription, MusicDbDetailsNone, countOnly);
 }
 
-bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription /* = SortDescription() */, bool countOnly /* = false */)
+bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &filter, CFileItemList &items, const SortDescription &sortDescription /* = SortDescription() */, int getDetails /* = MusicDbDetailsNone*/,bool countOnly /* = false */)
 {
   try
   {
@@ -4855,7 +4855,7 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
 
       for (auto &r : res)
       {
-        CMusicInfoTag details = GetDetailsForAlbum(r);
+        CMusicInfoTag details = GetDetailsForAlbum(r, getDetails);
 
         CMusicDbUrl itemUrl = musicUrl;
         std::string path = StringUtils::Format("%lu/", r.album->m_idAlbum);
@@ -4865,6 +4865,7 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
         CFileItemPtr pItem(new CFileItem(details));
         pItem->SetPath(itemUrl.ToString());
         pItem->SetIconImage("DefaultAlbumCover.png");
+        pItem->m_bIsAlbum = true;
         items.Add(pItem);
         ++total;
       }
@@ -8681,6 +8682,30 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
   if (album.iVotes > 0)
     item.SetProperty("album_votes", album.iVotes);
   item.SetProperty("album_releasetype", CAlbum::ReleaseTypeToString(album.releaseType));
+}
+
+void CMusicDatabase::SetAlbumPropertiesFromFileItem(CFileItem& item)
+{
+  const std::string itemSeparator = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator;
+
+  item.SetProperty("album_description", item.GetMusicInfoTag()->GetTitle());
+  // item.SetProperty("album_theme", StringUtils::Join(album.themes, itemSeparator));
+  // item.SetProperty("album_theme_array", album.themes);
+  item.SetProperty("album_mood", item.GetMusicInfoTag()->GetMood());
+  // item.SetProperty("album_mood_array", album.moods);
+  // item.SetProperty("album_style", StringUtils::Join(album.styles, itemSeparator));
+  // item.SetProperty("album_style_array", album.styles);
+  item.SetProperty("album_type", item.GetMusicInfoTag()->GetType());
+  item.SetProperty("album_label", item.GetMusicInfoTag()->GetRecordLabel());
+  item.SetProperty("album_artist", item.GetMusicInfoTag()->GetAlbumArtist());
+  // item.SetProperty("album_artist_array", album.GetAlbumArtist());
+  item.SetProperty("album_genre", item.GetMusicInfoTag()->GetGenre());
+  // item.SetProperty("album_genre_array", album.genre);
+  item.SetProperty("album_title", item.GetMusicInfoTag()->GetTitle());
+  item.SetProperty("album_rating", item.GetMusicInfoTag()->GetRating());
+  item.SetProperty("album_userrating", item.GetMusicInfoTag()->GetUserrating());
+  item.SetProperty("album_votes", item.GetMusicInfoTag()->GetVotes());
+  item.SetProperty("album_releasetype", item.GetMusicInfoTag()->GetAlbumReleaseType());
 }
 
 void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)

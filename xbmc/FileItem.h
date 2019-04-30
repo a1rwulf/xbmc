@@ -538,6 +538,9 @@ public:
   int m_iHasLock; // 0 - no lock 1 - lock, but unlocked 2 - locked
   int m_iBadPwdCount;
 
+  bool m_bIsAlbum;
+  bool m_bIsPlaylist;
+
   void SetCueDocument(const CCueDocumentPtr& cuePtr);
   void LoadEmbeddedCue();
   bool HasCueDocument() const;
@@ -580,8 +583,6 @@ private:
   std::shared_ptr<const ADDON::IAddon> m_addonInfo;
   KODI::GAME::CGameInfoTag* m_gameInfoTag;
   EventPtr m_eventLogEntry;
-  bool m_bIsAlbum;
-  bool m_bIsPlaylist;
 
   CCueDocumentPtr m_cueDocument;
 };
