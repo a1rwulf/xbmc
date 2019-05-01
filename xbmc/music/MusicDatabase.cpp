@@ -8689,11 +8689,11 @@ void CMusicDatabase::SetAlbumPropertiesFromFileItem(CFileItem& item)
   const std::string itemSeparator = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator;
 
   item.SetProperty("album_description", item.GetMusicInfoTag()->GetTitle());
-  // item.SetProperty("album_theme", StringUtils::Join(album.themes, itemSeparator));
+  item.SetProperty("album_theme", "");
   // item.SetProperty("album_theme_array", album.themes);
   item.SetProperty("album_mood", item.GetMusicInfoTag()->GetMood());
   // item.SetProperty("album_mood_array", album.moods);
-  // item.SetProperty("album_style", StringUtils::Join(album.styles, itemSeparator));
+  item.SetProperty("album_style", "");
   // item.SetProperty("album_style_array", album.styles);
   item.SetProperty("album_type", item.GetMusicInfoTag()->GetType());
   item.SetProperty("album_label", item.GetMusicInfoTag()->GetRecordLabel());
