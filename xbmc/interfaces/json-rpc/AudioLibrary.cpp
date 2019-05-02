@@ -232,6 +232,12 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
   if (ret != OK)
     return ret;
 
+  for (auto& i : items)
+  {
+    CVariant artistidObj(CVariant::VariantTypeArray);
+    i->SetProperty("artistid", artistidObj);
+  }
+
   int size = items.Size();
   if (total > size)
     size = total;
