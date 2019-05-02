@@ -9356,6 +9356,9 @@ bool CVideoDatabase::GetSetsByWhere(const std::string& strBaseDir, const Filter 
     for (auto & r : res)
     {
       CVideoInfoTag::SetInfo tmp;
+      if (!r.set)
+        continue;
+
       tmp.id = r.set->m_idSet;
       tmp.title = r.set->m_name;
       tmp.overview  = r.set->m_overview;
