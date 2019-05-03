@@ -5908,6 +5908,11 @@ int CMusicDatabase::GetSchemaVersion() const
 
 int CMusicDatabase::GetMusicNeedsTagScan()
 {
+  // Always return 0, as we don't want to ever get the
+  // popup that a music scan is needed
+  // Our database is filled by a thirdparty system
+  return 0;
+
   try
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
