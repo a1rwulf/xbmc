@@ -37,12 +37,6 @@ private:
   int m_fd{-1};
 };
 
-CVaapiProxy::~CVaapiProxy()
-{
-  close(m_fd);
-  m_fd = -1;
-}
-
 VADisplay CVaapiProxy::GetVADisplay()
 {
   return vaGetDisplayDRM(m_fd);
