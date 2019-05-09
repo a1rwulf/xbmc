@@ -1699,7 +1699,7 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat &format, AudioSettings &sett
     if (m_settings.config == AE_CONFIG_FIXED)
     {
       format.m_sampleRate = m_settings.samplerate;
-      format.m_dataFormat = AE_FMT_FLOAT;
+      format.m_dataFormat = AE_FMT_S16NE;
       CLog::Log(LOGINFO, "CActiveAE::ApplySettings - Forcing samplerate to %d", format.m_sampleRate);
     }
 
