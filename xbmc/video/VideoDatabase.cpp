@@ -5981,15 +5981,22 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
     if (record.movie->m_basePath.load() && record.movie->m_basePath->m_parentPath.load())
       details->m_parentPathID = record.movie->m_basePath->m_parentPath->m_idPath;
 
-    for (auto set: record.movie->m_sets)
+    try
     {
-      if (set.load())
+      for (auto set: record.movie->m_sets)
       {
-        details->m_set.id = set->m_idSet;
-        details->m_set.title = set->m_name;
-        details->m_set.overview  = set->m_overview;
-        details->m_sets.push_back(details->m_set);
+        if (set.load())
+        {
+          details->m_set.id = set->m_idSet;
+          details->m_set.title = set->m_name;
+          details->m_set.overview  = set->m_overview;
+          details->m_sets.push_back(details->m_set);
+        }
       }
+    }
+    catch(odb::object_not_persistent& e)
+    {
+      CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
     }
 
     if (record.movie->m_set.load())
