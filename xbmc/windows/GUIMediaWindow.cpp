@@ -407,7 +407,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
       {
         if (m_guiState.get())
         {
-          m_guiState->SetCurrentSortMethod(SortBy::SortByLabel);
+          m_guiState->SetCurrentSortMethod(SortBy::SortByChannel);
           m_guiState->SetNextSortOrder();
           UpdateFileList();
         }
