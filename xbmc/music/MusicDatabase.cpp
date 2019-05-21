@@ -9224,21 +9224,24 @@ void CMusicDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType,
   std::map<unsigned int, std::map<std::string, std::string> > idartsmap;
   for (auto& i: m_cdb.getDB()->query<T>())
   {
+      std::string type = i.art != nullptr ? i.art->m_type : "thumb";
+      std::string url = i.art != nullptr ? i.art->m_url : "";
+
       auto artmap = idartsmap.find(i.id);
       if (artmap != idartsmap.end())
       {
         auto &artItem = artmap->second;
-        artItem.insert(std::make_pair(i.art->m_type, i.art->m_url));
+        artItem.insert(std::make_pair(type, url));
       }
       else
       {
         std::map<std::string, std::string> artItem;
-        artItem.insert(std::make_pair(i.art->m_type, i.art->m_url));
+        artItem.insert(std::make_pair(type, url));
         idartsmap.insert(std::make_pair(i.id, artItem));
       }
 
       if (i.id == static_cast<unsigned long>(mediaId))
-        art.insert(make_pair(i.art->m_type, i.art->m_url));
+        art.insert(make_pair(type, url));
   }
 
   for (auto &at : idartsmap)
