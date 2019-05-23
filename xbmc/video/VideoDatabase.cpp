@@ -5913,7 +5913,11 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
 {
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getMovie(record.movie->m_idMovie, getDetails, record.movie->m_updatedAt);
   if (det)
+  {
+    // Translate necessary fields, even if the item comes from the cache
+    GetTranslation(MediaTypeMovie, det.get(), getDetails, record.movie->m_updatedAt);
     return *det;
+  }
 
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
@@ -6033,6 +6037,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
       if (genre.load())
       {
         details->m_genre.emplace_back(genre->m_name);
+        details->m_genreIds.emplace_back(genre->m_idGenre);
       }
     }
 
@@ -6066,6 +6071,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
           info.thumbUrl.ParseEpisodeGuide(info.thumb);
         }
 
+        details->m_actorIds.emplace_back(i->m_person->m_idPerson);
         details->m_cast.emplace_back(std::move(info));
       }
 
@@ -6077,6 +6083,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
         if (!i->m_person.load())
           continue;
 
+        details->m_directorIds.emplace_back(i->m_person->m_idPerson);
         details->m_director.emplace_back(i->m_person->m_name);
       }
 
@@ -6150,7 +6157,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMovie(const T record, int getDetails 
     details->m_parsedDetails = getDetails;
   }
 
-  GetMovieTranslation(details.get());
+  GetTranslation(MediaTypeMovie, details.get(), getDetails, record.movie->m_updatedAt);
 
   gVideoDatabaseCache.addMovie(record.movie->m_idMovie, details, getDetails, record.movie->m_updatedAt);
   return *details;
@@ -6161,7 +6168,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
 {
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getTVShow(record.show->m_idTVShow, getDetails, record.show->m_updatedAt);
   if (det)
-      return *det;
+  {
+    GetTranslation(MediaTypeTvShow, det.get(), getDetails, record.show->m_updatedAt);
+    return *det;
+  }
 
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
@@ -6201,6 +6211,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
       if (genre.load())
       {
         details->m_genre.emplace_back(genre->m_name);
+        details->m_genreIds.emplace_back(genre->m_idGenre);
       }
     }
 
@@ -6241,7 +6252,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
 
     if (getDetails & VideoDbDetailsCast)
     {
-      GetCast(record.show->m_actors, details->m_cast);
+      GetCast(record.show->m_actors, details);
     }
 
     if (getDetails & VideoDbDetailsTag)
@@ -6259,7 +6270,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
     details->SetPlayCount((details->m_iEpisode <= details->GetPlayCount()) ? 1 : 0);
   }
 
-  GetTVShowTranslation(details.get());
+  GetTranslation(MediaTypeTvShow, details.get(), getDetails, record.show->m_updatedAt);
 
   gVideoDatabaseCache.addTVShow(record.show->m_idTVShow, details, getDetails, record.show->m_updatedAt);
   return *details;
@@ -6270,7 +6281,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
 {
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getSeason(record.season->m_idSeason, getDetails, record.season->m_updatedAt);
   if (det)
-      return *det;
+  {
+    GetTranslation(MediaTypeSeason, det.get(), getDetails, record.season->m_updatedAt);
+    return *det;
+  }
 
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
 
@@ -6315,6 +6329,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
   if (getDetails)
   {
     details->m_genre = tvshow.m_genre;
+    details->m_genreIds = tvshow.m_genreIds;
     details->m_studio = tvshow.m_studio;
 
     ODBView_Season_Episode_Count objEpisodeCount;
@@ -6322,10 +6337,11 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
       details->m_iEpisode = objEpisodeCount.episodesTotal;
 
     if (getDetails & VideoDbDetailsCast)
-      GetCast(record.show->m_actors, details->m_cast);
+      GetCast(record.show->m_actors, details);
   }
 
-  GetSeasonTranslation(details.get());
+  GetTranslation(MediaTypeSeason, details.get(), getDetails, record.season->m_updatedAt);
+
   gVideoDatabaseCache.addSeason(id, details, getDetails, record.season->m_updatedAt);
   return *details;
 }
@@ -6335,7 +6351,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetail
 {
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getEpisode(record.episode->m_idEpisode, record.episode->m_updatedAt);
   if (det)
-      return *det;
+  {
+    GetTranslation(MediaTypeEpisode, det.get(), getDetails, record.episode->m_updatedAt);
+    return *det;
+  }
 
   CVideoInfoTag tvshow = GetDetailsForTvShow(record, getDetails);
   std::shared_ptr<CVideoInfoTag> details(new CVideoInfoTag());
@@ -6375,9 +6394,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetail
   details->m_iSpecialSortEpisode = record.episode->m_sortEpisode;
 
   details->m_genre = tvshow.m_genre;
+  details->m_genreIds = tvshow.m_genreIds;
   details->m_studio = tvshow.m_studio;
-  GetCast(record.episode->m_actors, details->m_cast);
-  GetCast(record.show->m_actors, details->m_cast);
+  GetCast(record.episode->m_actors, details);
+  GetCast(record.show->m_actors, details);
 
   for (odb::lazy_shared_ptr<CODBPersonLink> link: record.episode->m_credits)
   {
@@ -6425,6 +6445,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetail
     if (!i->m_person.load())
       continue;
 
+    details->m_directorIds.emplace_back(i->m_person->m_idPerson);
     details->m_director.emplace_back(i->m_person->m_name);
   }
 
@@ -6493,7 +6514,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForEpisode(const T record, int getDetail
     details->m_parsedDetails = getDetails;
   }
 
-  GetEpisodeTranslation(details.get());
+  GetTranslation(MediaTypeEpisode, details.get(), getDetails, record.episode->m_updatedAt);
+
   gVideoDatabaseCache.addEpisode(record.episode->m_idEpisode, details, getDetails, record.episode->m_updatedAt);
 
   return *details;
@@ -6546,7 +6568,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForMusicVideo(const dbiplus::sql_record*
   return details;
 }
 
-void CVideoDatabase::GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >& personLinks, std::vector<SActorInfo> &cast)
+void CVideoDatabase::GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >& personLinks, std::shared_ptr<CVideoInfoTag> details)
 {
   try
   {
@@ -6558,7 +6580,7 @@ void CVideoDatabase::GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >
         SActorInfo info;
         info.strName = person->m_name;
         bool found = false;
-        for (const auto &i : cast)
+        for (const auto &i : details->m_cast)
         {
           if (i.strName == info.strName)
           {
@@ -6576,7 +6598,8 @@ void CVideoDatabase::GetCast(std::vector< odb::lazy_shared_ptr<CODBPersonLink> >
             info.thumb = person->m_art->m_url;
             info.thumbUrl.ParseEpisodeGuide(info.thumb);
           }
-          cast.emplace_back(std::move(info));
+          details->m_actorIds.emplace_back(person->m_idPerson);
+          details->m_cast.emplace_back(std::move(info));
         }
       }
     }
@@ -14312,38 +14335,51 @@ bool CVideoDatabase::SetVideoUserRating(int dbId, int rating, const MediaType& m
   return false;
 }
 
-bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
+bool CVideoDatabase::GetTranslation(const std::string& mediaType, CVideoInfoTag* details, int getDetails, time_t updatedAt)
 {
   bool ret = false;
 
   try
   {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-    
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
+    GetTranslatedString(details->m_iDbId, details->m_strTitle, mediaType, "title", updatedAt);
+    GetTranslatedString(details->m_iDbId, details->m_strSortTitle, mediaType, "title", updatedAt);
+    GetTranslatedString(details->m_iDbId, details->m_strPlot, mediaType, "plot", updatedAt);
+
+    if (mediaType == MediaTypeSeason || mediaType == MediaTypeEpisode)
     {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBMovie movie;
-      if (m_cdb.getDB()->query_one<CODBMovie>(odb::query<CODBMovie>::idMovie == details->m_iDbId, movie))
+      // Also translate the TV Show elements in seasons and episodes
+      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title", updatedAt);
+      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot", updatedAt);
+
+      // Special handling for seasons
+      if (mediaType == MediaTypeSeason)
       {
-        details->SetTitle(movie.m_title);
-        details->SetSortTitle(movie.m_title);
-        details->SetPlot(movie.m_plot);
+        if (details->m_iSeason == 0)
+          details->m_strTitle = g_localizeStrings.Get(20381);
+        else
+          details->m_strTitle = StringUtils::Format(g_localizeStrings.Get(20358).c_str(), details->m_iSeason);
       }
     }
-    else
+
+    size_t i = 0;
+    for (auto genreId : details->m_genreIds)
     {
-      /*
-       Available Contexts:
-       movie.title
-       movie.plot
-       */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "movie", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "movie", "plot", details->m_dateAdded.GetAsULongLong());
+      if (i < details->m_genre.size())
+        GetTranslatedString(genreId, details->m_genre[i++], "genre", "name", updatedAt);
+    }
+
+    i = 0;
+    for (auto actorId : details->m_actorIds)
+    {
+      if (i < details->m_cast.size())
+        GetTranslatedString(actorId, details->m_cast[i++].strName, "actor", "name", updatedAt);
+    }
+
+    i = 0;
+    for (auto directorId : details->m_directorIds)
+    {
+      if (i < details->m_director.size())
+        GetTranslatedString(directorId, details->m_director[i++], "director", "name", updatedAt);
     }
 
     ret = true;
@@ -14357,156 +14393,6 @@ bool CVideoDatabase::GetMovieTranslation(CVideoInfoTag* details, bool force)
     CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
   return ret;
-}
-
-bool CVideoDatabase::GetSeasonTranslation(CVideoInfoTag* details, bool force)
-{
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-    
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBSeason season;
-      if (m_cdb.getDB()->query_one<CODBSeason>(odb::query<CODBSeason>::idSeason == details->m_iDbId, season))
-      {
-        details->SetTitle(season.m_name);
-        details->SetSortTitle(season.m_name);
-      }
-      
-      CODBTVShow show;
-      if (m_cdb.getDB()->query_one<CODBTVShow>(odb::query<CODBTVShow>::idTVShow == details->m_iShowId, show))
-      {
-        details->SetShowTitle(show.m_title);
-        details->SetPlot(show.m_plot);
-      }
-    }
-    else
-    {
-      /*
-       Available Contexts:
-       season.title
-       season.plot
-       */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "season", "title", details->m_dateAdded.GetAsULongLong());
-      
-      // Also translate the TV Show elements in it
-      GetTranslatedString(details->m_iShowId, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iShowId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
-      
-      if (details->m_iSeason == 0)
-        details->m_strTitle = g_localizeStrings.Get(20381);
-      else
-        details->m_strTitle = StringUtils::Format(g_localizeStrings.Get(20358).c_str(), details->m_iSeason);
-    }
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-  return false;
-}
-
-bool CVideoDatabase::GetTVShowTranslation(CVideoInfoTag* details, bool force)
-{
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-    
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBTVShow show;
-      if (m_cdb.getDB()->query_one<CODBTVShow>(odb::query<CODBTVShow>::idTVShow == details->m_iDbId, show))
-      {
-        details->SetTitle(show.m_title);
-        details->SetPlot(show.m_plot);
-        details->SetSortTitle(show.m_title);
-      }
-    }
-    else
-    {
-      /*
-       Available Contexts:
-       tvshow.title
-       tvshow.plot
-       */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "tvshow", "plot", details->m_dateAdded.GetAsULongLong());
-    }
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-  return false;
-}
-
-bool CVideoDatabase::GetEpisodeTranslation(CVideoInfoTag* details, bool force)
-{
-  try
-  {
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT && force == false)
-      return true;
-    
-    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
-    
-    if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE) == LANGUAGE_DEFAULT)
-    {
-      // Default Language English is not stored in the translation table, need to get it from the object itself
-      CODBEpisode episode;
-      if (m_cdb.getDB()->query_one<CODBEpisode>(odb::query<CODBEpisode>::idEpisode == details->m_iDbId, episode))
-      {
-        details->SetTitle(episode.m_title);
-        details->SetPlot(episode.m_plot);
-        details->SetSortTitle(episode.m_title);
-      }
-      
-      CODBTVShow tvshow;
-      if (m_cdb.getDB()->query_one<CODBTVShow>(odb::query<CODBTVShow>::idTVShow == details->m_iIdShow, tvshow))
-      {
-        details->m_strShowTitle = tvshow.m_title;
-      }
-    }
-    else
-    {
-      /*
-       Available Contexts:
-       episode.title
-       episode.plot
-       */
-      GetTranslatedString(details->m_iDbId, details->m_strTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strSortTitle, "episode", "title", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iDbId, details->m_strPlot, "episode", "plot", details->m_dateAdded.GetAsULongLong());
-      GetTranslatedString(details->m_iIdShow, details->m_strShowTitle, "tvshow", "title", details->m_dateAdded.GetAsULongLong());
-    }
-  }
-  catch (std::exception& e)
-  {
-    CLog::Log(LOGERROR, "%s failed - %s", __FUNCTION__, e.what());
-  }
-  catch (...)
-  {
-    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
-  }
-  return false;
 }
 
 void CVideoDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt)
