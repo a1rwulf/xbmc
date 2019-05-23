@@ -6995,7 +6995,8 @@ void CVideoDatabase::FillCacheAndGetArt(int mediaId, const MediaType &mediaType,
   {
     std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
     *artItem = at.second;
-    gVideoDatabaseCache.addArtMap(at.first, artItem, mediaType);
+    if (mediaType != MediaTypeVideoCollection)
+      gVideoDatabaseCache.addArtMap(at.first, artItem, mediaType);
   }
 }
 
@@ -7049,7 +7050,8 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
     
     std::shared_ptr<std::map<std::string, std::string> > artItem (new std::map<std::string, std::string>);
     *artItem = art;
-    gVideoDatabaseCache.addArtMap(mediaId, artItem, mediaType);
+    if (mediaType != MediaTypeVideoCollection)
+      gVideoDatabaseCache.addArtMap(mediaId, artItem, mediaType);
 
     return !art.empty();
   }
