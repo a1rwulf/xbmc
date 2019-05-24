@@ -983,15 +983,19 @@ bool CPVRManager::CreateChannelEpgs(void)
 
 void CPVRManager::UpdateLastWatched(const CPVRChannelPtr &channel, const CDateTime& time)
 {
-  time_t iTime;
-  time.GetAsTime(iTime);
+  //! @todo - PVR crash
+  // Needs to be enabled again when we do not stop PVR manager
+  // anymore on PVR.Scan
 
-  channel->SetLastWatched(iTime);
+  // time_t iTime;
+  // time.GetAsTime(iTime);
 
-  // update last watched timestamp for group
-  CPVRChannelGroupPtr group(GetPlayingGroup(channel->IsRadio()));
-  group->SetLastWatched(iTime);
+  // channel->SetLastWatched(iTime);
 
-  /* update last played group */
-  m_channelGroups->SetLastPlayedGroup(group);
+  // // update last watched timestamp for group
+  // CPVRChannelGroupPtr group(GetPlayingGroup(channel->IsRadio()));
+  // group->SetLastWatched(iTime);
+
+  // /* update last played group */
+  // m_channelGroups->SetLastPlayedGroup(group);
 }
