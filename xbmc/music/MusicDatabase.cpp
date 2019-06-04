@@ -4917,7 +4917,22 @@ bool CMusicDatabase::GetSongsByWhere(const std::string &baseDir, const Filter &f
 
     AdjustQueryFromUrlOptions(queryStr, musicUrl);
 
-    for (auto &r : m_cdb.getDB()->query<ODBView_Song>(queryStr + SortUtils::SortODBSongQuery<query>(sortDescription)))
+    // Special sorting for playlists
+    SortDescription sd = sortDescription;
+    bool isPlaylistQuery = false;
+    for (auto option: musicUrl.GetOptions())
+    {
+      if (option.first == "playlistid")
+        isPlaylistQuery = true;
+    }
+
+    if (isPlaylistQuery)
+    {
+      sd.sortBy = SortByPlaylistOrder;
+      sd.sortOrder = SortOrderAscending;
+    }
+
+    for (auto &r : m_cdb.getDB()->query<ODBView_Song>(queryStr + SortUtils::SortODBSongQuery<query>(sd)))
     {
       CMusicInfoTag details = GetDetailsForSong(r, MusicDbDetailsAll);
 

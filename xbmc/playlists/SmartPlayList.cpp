@@ -2061,7 +2061,7 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
     else if (m_field == FieldAlbumId)
       query = negate + " EXISTS (SELECT 1 FROM song s, album a WHERE a.idAlbum = s.album AND s.idSong = " + GetField(FieldId, strType) + " AND a.idAlbum" + parameter + ")";
     else if (m_field == FieldPlaylistId)
-      query = negate + " EXISTS (SELECT 1 FROM song s, playlist_songs ps, playlist p WHERE " + GetField(FieldId, strType) + " = s.idSong AND s.idSong = ps.`value` AND ps.object_id = p.idPlaylist AND p.idPlaylist" + parameter + ")";
+      query = negate + " playlist.idPlaylist" + parameter;
     else if (m_field == FieldLastPlayed && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " is NULL or " + GetField(m_field, strType) + parameter;
   }
