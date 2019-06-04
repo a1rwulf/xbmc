@@ -10246,9 +10246,6 @@ MUSIC_INFO::CMusicInfoTag CMusicDatabase::GetDetailsForSong(const T record, int 
 
   if (getDetails)
   {
-    if (!record.song->section_foreign.loaded())
-      m_cdb.getDB()->load(*(record.song), record.song->section_foreign);
-
     if (!record.song->m_artistDisp.empty())
     {
       details->SetArtistDesc(record.song->m_artistDisp);
@@ -10256,6 +10253,9 @@ MUSIC_INFO::CMusicInfoTag CMusicDatabase::GetDetailsForSong(const T record, int 
     }
     else
     {
+      if (!record.song->section_foreign.loaded())
+        m_cdb.getDB()->load(*(record.song), record.song->section_foreign);
+
       std::vector<std::string> artists;
       for (auto artist : record.song->m_artists)
       {
