@@ -10250,6 +10250,7 @@ MUSIC_INFO::CMusicInfoTag CMusicDatabase::GetDetailsForSong(const T record, int 
     {
       details->SetArtistDesc(record.song->m_artistDisp);
       details->SetArtistSort(record.song->m_artistSort);
+      details->SetArtist(record.song->m_artistDisp);
     }
     else
     {
