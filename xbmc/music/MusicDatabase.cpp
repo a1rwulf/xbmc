@@ -10183,6 +10183,9 @@ void CMusicDatabase::AdjustQueryFromUrlOptions(std::string& strQuery, CMusicDbUr
     else if (option.first == "role")
       spq = "{\"rules\":{\"and\":[{\"field\":\"role\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
 
+    else if (option.first == "playlistid")
+      spq = "{\"rules\":{\"and\":[{\"field\":\"playlistid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
+
     else if (option.first == "tagid")
     {
       spq = "{\"rules\":{\"and\":[{\"field\":\"tagid\",\"operator\":\"is\",\"value\":[\"" + option.second.asString() + "\"]}]},\"type\":\"" + type +"\"}";
