@@ -1318,12 +1318,16 @@ T SortUtils::SortODBAlbumQuery(const SortDescription &sortDescription)
   {
     sortQuery = orderBy + query::CODBAlbum::album + order;
   }
+  else if (sortDescription.sortBy == SortByArtist)
+  {
+    sortQuery = orderBy + query::CODBAlbum::artistDisp + order;
+  }
   else
   {
     //For all other unsupported cases just add the limit
     sortQuery += limitQuery;
   }
-  
+
   return sortQuery;
 }
 
@@ -1384,6 +1388,10 @@ T SortUtils::SortODBSongQuery(const SortDescription &sortDescription)
   else if (sortDescription.sortBy == SortByTime)
   {
     sortQuery = orderBy + query::CODBSong::duration + order;
+  }
+  else if (sortDescription.sortBy == SortByArtist)
+  {
+    sortQuery = orderBy + query::CODBSong::artistDisp + order;
   }
   else if (sortDescription.sortBy == SortByAlbum)
   {
