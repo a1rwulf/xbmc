@@ -2761,9 +2761,10 @@ odb::query<ODBView_Playlist> CSmartPlaylistRuleCombination::GetPlaylistWhereClau
   return playlist_query;
 }
 
-std::string CSmartPlaylistRuleCombination::GetWhereClause(const CDatabase &db, const std::string& strType, std::set<std::string> &referencedPlaylists) const
+std::string CSmartPlaylistRuleCombination::GetWhereClause(const CDatabase &db, const std::string& strType, std::set<std::string> &referencedPlaylists)
 {
   std::string rule;
+  m_hasTagRule = false;
 
   // translate the combinations into SQL
   for (CDatabaseQueryRuleCombinations::const_iterator it = m_combinations.begin(); it != m_combinations.end(); ++it)
@@ -2820,6 +2821,9 @@ std::string CSmartPlaylistRuleCombination::GetWhereClause(const CDatabase &db, c
       currentRule = m_type == CombinationAnd ? "'1'" : "'0'";
     rule += currentRule;
     rule += ")";
+
+    if (!m_hasTagRule && (*it)->HasTagRule())
+      m_hasTagRule = true;
   }
 
   return rule;
@@ -3267,7 +3271,7 @@ odb::query<ODBView_Playlist> CSmartPlaylist::GetPlaylistWhereClause(std::set<std
   return m_ruleCombination.GetPlaylistWhereClause(GetType(), referencedPlaylists);
 }
 
-std::string CSmartPlaylist::GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists) const
+std::string CSmartPlaylist::GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists)
 {
   return m_ruleCombination.GetWhereClause(db, GetType(), referencedPlaylists);
 }

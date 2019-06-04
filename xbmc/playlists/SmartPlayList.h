@@ -185,7 +185,7 @@ public:
 
   std::string GetWhereClause(const CDatabase &db,
                              const std::string& strType,
-                             std::set<std::string> &referencedPlaylists) const;
+                             std::set<std::string> &referencedPlaylists);
   void GetVirtualFolders(const std::string& strType,
                          std::vector<std::string> &virtualFolders) const;
 
@@ -267,7 +267,7 @@ public:
    \param referencedPlaylists a set of playlists to know when we reach a cycle
    \param needWhere whether we need to prepend the where clause with "WHERE "
    */
-  std::string GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists) const;
+  std::string GetWhereClause(const CDatabase &db, std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Movie> GetMovieWhereClause(std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_TVShow> GetTVShowWhereClause(std::set<std::string> &referencedPlaylists);
   odb::query<ODBView_Episode> GetEpisodeWhereClause(std::set<std::string> &referencedPlaylists);
