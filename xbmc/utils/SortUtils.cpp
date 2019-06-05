@@ -948,6 +948,7 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   typedef T query;
   
   query sortQuery;
+  sortQuery = "GROUP BY " + query::CODBTVShow::idTVShow;
   
   std::string limitQuery;
   
@@ -980,19 +981,19 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   
   if (sortDescription.sortBy == SortByTitle)
   {
-    sortQuery = orderBy + query::CODBTVShow::title + order;
+    sortQuery += orderBy + query::CODBTVShow::title + order;
   }
   else if (sortDescription.sortBy == SortBySortTitle)
   {
-    sortQuery = orderBy + query::CODBTVShow::sortTitle + order;
+    sortQuery += orderBy + query::CODBTVShow::sortTitle + order;
   }
   else if (sortDescription.sortBy == SortByYear)
   {
-    sortQuery = orderBy + query::CODBTVShow::premiered.year + order;
+    sortQuery += orderBy + query::CODBTVShow::premiered.year + order;
   }
   else if (sortDescription.sortBy == SortByTime)
   {
-    sortQuery = orderBy + query::CODBTVShow::runtime + order;
+    sortQuery += orderBy + query::CODBTVShow::runtime + order;
   }
   // else if (sortDescription.sortBy == SortByPath)
   // {
@@ -1000,15 +1001,15 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   // }
   else if (sortDescription.sortBy == SortByRating)
   {
-    sortQuery = orderBy + query::defaultRating::rating + order;
+    sortQuery += orderBy + query::defaultRating::rating + order;
   }
   else if (sortDescription.sortBy == SortByMPAA)
   {
-    sortQuery = orderBy + query::CODBTVShow::mpaa + order;
+    sortQuery += orderBy + query::CODBTVShow::mpaa + order;
   }
   else if (sortDescription.sortBy == SortByVotes)
   {
-    sortQuery = orderBy + query::defaultRating::votes + order;
+    sortQuery += orderBy + query::defaultRating::votes + order;
   }
   else if (sortDescription.sortBy == SortByPlaylistOrder)
   {
@@ -1025,7 +1026,7 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   }
   else if (sortDescription.sortBy == SortByTvShowStatus)
   {
-    sortQuery = orderBy + query::CODBTVShow::status + order;
+    sortQuery += orderBy + query::CODBTVShow::status + order;
   }
   else if (sortDescription.sortBy == SortByNumberOfEpisodes)
   {
@@ -1037,7 +1038,11 @@ T SortUtils::SortODBTVShowQuery(const SortDescription &sortDescription)
   }
   else if (sortDescription.sortBy == SortByTvShowTitle)
   {
-    sortQuery = orderBy + query::CODBTVShow::title + order;
+    sortQuery += orderBy + query::CODBTVShow::title + order;
+  }
+  else if (sortDescription.sortBy == SortByDateAdded)
+  {
+    sortQuery += orderBy + query::CODBFile::dateAdded.ulong_date + order;
   }
   else
   {
@@ -1203,7 +1208,7 @@ T SortUtils::SortODBSeasonQuery(const SortDescription &sortDescription)
 {
   typedef T query;
   
-  query sortQuery;
+  query sortQuery = "GROUP BY" + query::CODBSeason::idSeason;
   
   std::string limitQuery;
   

@@ -141,7 +141,7 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBSeason inner: CODBTVShow::m_seasons) \
                 object(CODBEpisode inner: CODBSeason::m_episodes) \
                 object(CODBFile inner: CODBEpisode::m_file) \
-                query((?) + "GROUP BY" + CODBTVShow::m_idTVShow, distinct))
+                query((?), distinct))
 struct ODBView_TVShow
 {
   std::shared_ptr<CODBTVShow> show;
@@ -173,7 +173,7 @@ PRAGMA_DB (view object(CODBTVShow) \
                 object(CODBSeason inner: CODBTVShow::m_seasons) \
                 object(CODBEpisode inner: CODBSeason::m_episodes) \
                 object(CODBFile inner: CODBEpisode::m_file) \
-                query((?) + "GROUP BY" + CODBSeason::m_idSeason, distinct))
+                query((?), distinct))
 struct ODBView_Season
 {
   std::shared_ptr<CODBTVShow> show;
