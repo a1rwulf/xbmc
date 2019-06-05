@@ -2056,19 +2056,16 @@ void CGUIMediaWindow::OnFilterItems(const std::string &filter)
   if (filterUrl.HasOption("filter"))
     filterOption = filterUrl.GetOption("filter");
 
-  // apply the "filter" option to any folder item so that
-  // the filter can be passed down to the sub-directory
+  // YC: We don't want to keep filters for subfolders
+  // That's why we don't add the filter on folder items
+  // We remove it if necessary
   for (int index = 0; index < m_vecItems->Size(); index++)
   {
     CFileItemPtr pItem = m_vecItems->Get(index);
-    // if the item is a folder we need to copy the path of
-    // the filtered item to be able to keep the applied filters
     if (pItem->m_bIsFolder)
     {
       CURL itemUrl(pItem->GetPath());
-      if (!filterOption.empty())
-        itemUrl.SetOption("filter", filterOption);
-      else
+      if (filterOption.empty())
         itemUrl.RemoveOption("filter");
       pItem->SetPath(itemUrl.Get());
     }
