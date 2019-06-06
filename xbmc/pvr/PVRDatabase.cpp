@@ -761,7 +761,7 @@ bool CPVRDatabase::Persist(CPVRChannel &channel, bool bCommit)
         "VALUES (%i, %i, %i, %i, %i, %i, '%s', '%s', %i, %i, '%s', %u, %i, %i, %i)",
         channel.UniqueID(), (channel.IsRadio() ? 1 :0), (channel.IsHidden() ? 1 : 0), (channel.IsUserSetIcon() ? 1 : 0), (channel.IsUserSetName() ? 1 : 0), (channel.IsLocked() ? 1 : 0),
         channel.IconPath().c_str(), channel.ChannelName().c_str(), 0, (channel.EPGEnabled() ? 1 : 0), channel.EPGScraper().c_str(), static_cast<unsigned int>(channel.LastWatched()), channel.ClientID(),
-        channel.EpgID(), channel.ChannelNumber().GetChannelNumber());
+        channel.EpgID(), strValue.c_str());
   }
   else
   {
