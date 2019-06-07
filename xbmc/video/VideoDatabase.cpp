@@ -6310,6 +6310,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
   details->m_type = MediaTypeSeason;
   details->m_strShowTitle = tvshow.m_strTitle;
   details->m_iShowId = tvshow.m_iDbId;
+  details->m_iIdShow = tvshow.m_iDbId;
   details->m_strPlot = tvshow.m_strPlot;
   details->m_premiered = tvshow.m_premiered;
   details->m_firstAired.SetFromULongLong(record.season->m_firstAired.m_ulong_date);
