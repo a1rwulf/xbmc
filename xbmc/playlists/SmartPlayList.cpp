@@ -2188,9 +2188,9 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
     else if (m_field == FieldMPAA)
       query = negate + " (" + GetField(m_field, strType) + parameter + ")";
     else if (m_field == FieldTag)
-      query = negate + FormatLinkQuery("name", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+      query = negate + FormatLinkQuery("name", "tag", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idTag");
     else if (m_field == FieldTagId)
-      query = negate + FormatLinkQuery("idTag", "tag", MediaTypeMovie, GetField(FieldId, strType), parameter, "idTag");
+      query = negate + FormatLinkQuery("idTag", "tag", MediaTypeTvShow, GetField(FieldId, strType), parameter, "idTag");
     else if ((m_field == FieldLastPlayed || m_field == FieldDateAdded) && (m_operator == OPERATOR_LESS_THAN || m_operator == OPERATOR_BEFORE || m_operator == OPERATOR_NOT_IN_THE_LAST))
       query = GetField(m_field, strType) + " IS NULL OR " + GetField(m_field, strType) + parameter;
     else if (m_field == FieldPlaycount)
