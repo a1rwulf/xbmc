@@ -499,7 +499,7 @@ void CTCPServer::Deinitialize()
 CTCPServer::CTCPClient::CTCPClient()
 {
   m_new = true;
-  m_announcementflags = ANNOUNCEMENT::ANNOUNCE_ALL;
+  m_announcementflags = ANNOUNCEMENT::ANNOUNCE_ALL_BUT_PLAYLIST;
   m_socket = INVALID_SOCKET;
   m_beginBrackets = 0;
   m_endBrackets = 0;
