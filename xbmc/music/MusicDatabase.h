@@ -54,6 +54,11 @@ namespace MUSIC_INFO
   class CMusicInfoTag;
 }
 
+namespace MUSICDBCACHE
+{
+  class CMusicDatabaseCache;
+}
+
 namespace dbiplus
 {
   class field_value;
@@ -721,6 +726,8 @@ void SetLibraryLastUpdated();
 
 void SetAlbumPropertiesFromFileItem(CFileItem& item);
 
+MUSICDBCACHE::CMusicDatabaseCache& getCache();
+
 protected:
   std::map<std::string, int> m_genreCache;
   std::map<std::string, std::shared_ptr<CODBPath>> m_pathCache;
@@ -780,6 +787,8 @@ private:
   returns true when successfuly done
   */
   bool MigrateSources();
+
+  void GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt);
 
   bool m_translateBlankArtist;
 

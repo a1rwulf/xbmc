@@ -33,70 +33,97 @@ namespace MUSIC_INFO
   class CMusicInfoTag;
 }
 
-template <typename T>
-class CMusicDatabaseCacheItem
+namespace MUSICDBCACHE
 {
-public:
-  CMusicDatabaseCacheItem()
+  template <typename T>
+  class CMusicDatabaseCacheItem
   {
-    m_getDetails = 0;
-  }
-  
-  int m_getDetails;
-  std::shared_ptr<T> m_item;
-};
+  public:
+    CMusicDatabaseCacheItem()
+    {
+      m_getDetails = 0;
+    }
 
-typedef std::map<long, CMusicDatabaseCacheItem<CFileItem> > tFileItemCacheMap;
-typedef std::map<long, CMusicDatabaseCacheItem<MUSIC_INFO::CMusicInfoTag> > tMusicInfoTagCacheMap;
+    int m_getDetails;
+    std::shared_ptr<T> m_item;
+  };
 
-typedef std::map<std::string, std::string> tArtTypeCacheType;
-typedef std::map<long, CMusicDatabaseCacheItem<tArtTypeCacheType> > tArtCacheMap;
-typedef std::map<std::string, tArtCacheMap> tArtTypeCacheMap;
+  class CMusicDatabaseTranslationItem
+  {
+  public:
+    CMusicDatabaseTranslationItem()
+    {
+      m_updatedAt = 0;
+    }
 
-typedef std::pair<std::string, std::string> tArtistArtTypeCacheType;
-typedef std::map<long, CMusicDatabaseCacheItem<tArtistArtTypeCacheType> > tArtistArtCacheMap;
-typedef std::map<std::string, tArtistArtCacheMap> tArtistArtTypeCacheMap;
+    uint64_t m_updatedAt;
+    std::string m_language;
+    std::string m_text;
+  };
 
-typedef std::map<int, std::shared_ptr<std::vector<ArtForThumbLoader> > > tArtThumbLoaderType;
-typedef std::map<bool,tArtThumbLoaderType>   tArtThumbLoaderType_a;
-typedef std::map<int, tArtThumbLoaderType_a> tArtThumbLoaderType_b;
-typedef std::map<int, tArtThumbLoaderType_b> tArtThumbLoaderType_c;
-typedef std::map<int, tArtThumbLoaderType_c> tArtThumbLoaderTypeMap;
+  typedef std::map<long, CMusicDatabaseCacheItem<CFileItem> > tFileItemCacheMap;
+  typedef std::map<long, CMusicDatabaseCacheItem<MUSIC_INFO::CMusicInfoTag> > tMusicInfoTagCacheMap;
 
-class CMusicDatabaseCache
-{
-public:
-  CMusicDatabaseCache();
-  virtual ~CMusicDatabaseCache();
-  
-  void addSong(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
-  std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getSong(long id, int getDetails);
-  
-  void addAlbum(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
-  std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getAlbum(long id, int getDetails);
-  
-  void addArtMap(long id, std::shared_ptr<tArtTypeCacheType>& item, std::string type);
-  std::shared_ptr<tArtTypeCacheType> getArtMap(long id, std::string type);
-  
-  void addArtistArtMap(long id, std::shared_ptr<tArtTypeCacheType>& item, std::string type);
-  std::shared_ptr<tArtTypeCacheType> getArtistArtMap(long id, std::string type);
-  
-  void addArtistArt(long id, std::shared_ptr<tArtistArtTypeCacheType>& item, std::string type);
-  std::shared_ptr<tArtistArtTypeCacheType> getArtistArt(long id, std::string type);
-  
-  void addArtist(long id, std::shared_ptr<CFileItem>& item);
-  std::shared_ptr<CFileItem> getArtist(long id);
+  typedef std::map<std::string, std::string> tArtTypeCacheType;
+  typedef std::map<long, CMusicDatabaseCacheItem<tArtTypeCacheType> > tArtCacheMap;
+  typedef std::map<std::string, tArtCacheMap> tArtTypeCacheMap;
 
-  void addArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
-  std::shared_ptr<std::vector<ArtForThumbLoader> > getArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist);
-private:
-  tMusicInfoTagCacheMap m_songCacheMap;
-  tMusicInfoTagCacheMap m_albumCacheMap;
-  tArtTypeCacheMap m_ArtCacheMap;
-  tArtTypeCacheMap m_ArtistArtMapCacheMap;
-  tArtistArtTypeCacheMap m_ArtistArtCacheMap;
-  tFileItemCacheMap m_ArtistCacheMap;
-  tArtThumbLoaderTypeMap m_ArtThumbLoaderCacheMap;
-  
-  CCriticalSection m_mutex;
-};
+  typedef std::pair<std::string, std::string> tArtistArtTypeCacheType;
+  typedef std::map<long, CMusicDatabaseCacheItem<tArtistArtTypeCacheType> > tArtistArtCacheMap;
+  typedef std::map<std::string, tArtistArtCacheMap> tArtistArtTypeCacheMap;
+
+  typedef std::map<int, std::shared_ptr<std::vector<ArtForThumbLoader> > > tArtThumbLoaderType;
+  typedef std::map<bool,tArtThumbLoaderType>   tArtThumbLoaderType_a;
+  typedef std::map<int, tArtThumbLoaderType_a> tArtThumbLoaderType_b;
+  typedef std::map<int, tArtThumbLoaderType_b> tArtThumbLoaderType_c;
+  typedef std::map<int, tArtThumbLoaderType_c> tArtThumbLoaderTypeMap;
+
+  typedef std::map<std::string, CMusicDatabaseTranslationItem> tTranslationCacheMap;
+
+  class CMusicDatabaseCache
+  {
+  public:
+    CMusicDatabaseCache();
+    virtual ~CMusicDatabaseCache();
+
+    void addSong(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
+    std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getSong(long id, int getDetails);
+
+    void addAlbum(long id, std::shared_ptr<MUSIC_INFO::CMusicInfoTag>& item, int getDetails);
+    std::shared_ptr<MUSIC_INFO::CMusicInfoTag> getAlbum(long id, int getDetails);
+
+    void addArtMap(long id, std::shared_ptr<tArtTypeCacheType>& item, std::string type);
+    std::shared_ptr<tArtTypeCacheType> getArtMap(long id, std::string type);
+
+    void addArtistArtMap(long id, std::shared_ptr<tArtTypeCacheType>& item, std::string type);
+    std::shared_ptr<tArtTypeCacheType> getArtistArtMap(long id, std::string type);
+
+    void addArtistArt(long id, std::shared_ptr<tArtistArtTypeCacheType>& item, std::string type);
+    std::shared_ptr<tArtistArtTypeCacheType> getArtistArt(long id, std::string type);
+
+    void addArtist(long id, std::shared_ptr<CFileItem>& item);
+    std::shared_ptr<CFileItem> getArtist(long id);
+
+    void addArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist, std::vector<ArtForThumbLoader> &art);
+    std::shared_ptr<std::vector<ArtForThumbLoader> > getArtThumbLoader(int songId, int albumId, int artistId, int playlistId, bool bPrimaryArtist);
+
+    std::string getTranslation(std::string key, uint64_t updatedAt);
+    void languageChange();
+
+  private:
+    void setCurrentLanguage();
+    void loadTranslations();
+
+    tMusicInfoTagCacheMap m_songCacheMap;
+    tMusicInfoTagCacheMap m_albumCacheMap;
+    tArtTypeCacheMap m_ArtCacheMap;
+    tArtTypeCacheMap m_ArtistArtMapCacheMap;
+    tArtistArtTypeCacheMap m_ArtistArtCacheMap;
+    tFileItemCacheMap m_ArtistCacheMap;
+    tArtThumbLoaderTypeMap m_ArtThumbLoaderCacheMap;
+    tTranslationCacheMap m_TranslationCacheMap;
+
+    std::string m_language;
+    CCriticalSection m_mutex;
+  };
+}

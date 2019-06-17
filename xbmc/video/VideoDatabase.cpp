@@ -9396,6 +9396,8 @@ bool CVideoDatabase::GetSetsByWhere(const std::string& strBaseDir, const Filter 
       tmp.title = r.set->m_name;
       tmp.overview  = r.set->m_overview;
 
+      GetTranslatedString(tmp.id, tmp.title, MediaTypeVideoCollection, "name", 0);
+
       auto item = setmap.find(r.movie->m_idMovie);
       if (item != setmap.end())
       {
