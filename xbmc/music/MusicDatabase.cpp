@@ -86,7 +86,7 @@ using namespace CDDB;
 using namespace MEDIA_DETECT;
 #endif
 
-CMusicDatabaseCache gMusicDatabaseCache;
+MUSICDBCACHE::CMusicDatabaseCache gMusicDatabaseCache;
 
 static void AnnounceRemove(const std::string& content, int id)
 {
@@ -5135,6 +5135,8 @@ bool CMusicDatabase::GetPlaylistsByWhere(const std::string &baseDir,
         pl.idPlaylist =  playlist.playlist->m_idPlaylist;
         pl.strPlaylist = playlist.playlist->m_name;
         pl.m_updatedAt.SetFromUTCDateTime(playlist.playlist->m_updatedAt);
+
+        GetTranslatedString(pl.idPlaylist, pl.strPlaylist, MediaTypePlaylist, "name", playlist.playlist->m_updatedAt);
 
         CMusicDbUrl itemUrl = musicUrl;
         std::string path = StringUtils::Format("{}/", pl.idPlaylist);
@@ -10328,4 +10330,19 @@ MUSIC_INFO::CMusicInfoTag CMusicDatabase::GetDetailsForSong(const T record, int 
   gMusicDatabaseCache.addSong(record.song->m_idSong, details, getDetails);
 
   return *details;
+}
+
+void CMusicDatabase::GetTranslatedString(unsigned long id, std::string& var, std::string key1, std::string key2, uint64_t updatedAt)
+{
+  std::string key = key1 + "." + std::to_string(id) + "." + key2;
+  std::string newVar = gMusicDatabaseCache.getTranslation(key, updatedAt);
+  if (!newVar.empty())
+  {
+    var = newVar;
+  }
+}
+
+MUSICDBCACHE::CMusicDatabaseCache& CMusicDatabase::getCache()
+{
+  return gMusicDatabaseCache;
 }
