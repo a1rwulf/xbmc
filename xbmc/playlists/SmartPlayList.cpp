@@ -124,7 +124,8 @@ static const translateField fields[] = {
   { "writerid",          FieldWriterId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20417 },
   { "setid",             FieldSetId,                   CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  20457 },
   { "albumid",           FieldAlbumId,                 CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  558 },
-  { "playlistid",        FieldPlaylistId,              CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  559 }
+  { "playlistid",        FieldPlaylistId,              CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  559 },
+  { "artistid",          FieldArtistId,                CDatabaseQueryRule::NUMERIC_FIELD,  NULL,                                 true,  557 }
 };
 
 typedef struct
@@ -2054,6 +2055,8 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
       query = negate + " EXISTS (SELECT 1 FROM song_genres, genre WHERE song_genres.object_id = " + GetField(FieldId, strType) + " AND song_genres.`value` = genre.idGenre AND genre.name" + parameter + ")";
     else if (m_field == FieldArtist)
       query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeSong, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldArtistId)
+      query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeSong, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldAlbumArtist)
       query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeSong, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldAlbum)
@@ -2079,6 +2082,8 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
       query = negate + " EXISTS (SELECT 1 FROM album as filteralbum WHERE filteralbum.idAlbum = " + GetField(FieldId, strType) + " AND " + GetField(FieldAlbumId, strType) + " " + parameter + ")";
     else if (m_field == FieldArtist)
       query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeAlbum, GetField(FieldId, strType), parameter, "idPerson");
+    else if (m_field == FieldArtistId)
+      query = negate + FormatLinkPersonQuery("idPerson", "artist", MediaTypeAlbum, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldAlbumArtist)
       query = negate + FormatLinkPersonQuery("name", "artist", MediaTypeAlbum, GetField(FieldId, strType), parameter, "idPerson");
     else if (m_field == FieldPath)
