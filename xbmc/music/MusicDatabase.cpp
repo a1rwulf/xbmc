@@ -4858,14 +4858,15 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
         CMusicInfoTag details = GetDetailsForAlbum(r, getDetails);
 
         CMusicDbUrl itemUrl = musicUrl;
-        std::string path = StringUtils::Format("%lu/", r.album->m_idAlbum);
-        itemUrl.AppendPath(path);
+        std::string path = StringUtils::Format("musicdb://albums/%lu/", r.album->m_idAlbum);
+        itemUrl.FromString(path);
 
         details.SetURL(itemUrl.ToString());
         CFileItemPtr pItem(new CFileItem(details));
         pItem->SetPath(itemUrl.ToString());
         pItem->SetIconImage("DefaultAlbumCover.png");
         pItem->m_bIsAlbum = true;
+        pItem->m_bIsFolder = true;
         items.Add(pItem);
         ++total;
       }
