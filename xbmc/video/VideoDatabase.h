@@ -502,6 +502,9 @@ public:
   std::string GetStudioById(int id); //ODB DONE
   std::string GetTvShowTitleById(int id);
   std::string GetMusicVideoAlbumById(int id);
+
+  int GetGenreIdByName(const std::string& genrename);
+
   int GetTvShowForEpisode(int idEpisode);
   int GetSeasonForEpisode(int idEpisode);
 

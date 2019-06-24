@@ -8628,6 +8628,11 @@ bool CVideoDatabase::GetGenresNav(const std::string& strBaseDir, CFileItemList& 
       {
         int id = i->m_idGenre;
         std::string str = i->m_name;
+        std::string translated_genre;
+        GetTranslatedString(id, translated_genre, "genre", "name", 0);
+        if (!translated_genre.empty())
+          str = translated_genre;
+
         int playCount = i->m_playCount; //TODO: Figure out where / why this is needed and if this value is correct
 
         // was this already found?
@@ -11098,10 +11103,21 @@ std::string CVideoDatabase::GetGenreById(int id)
   {
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
-    CODBGenre odbObj;
-    if (m_cdb.getDB()->query_one<CODBGenre>(odb::query<CODBGenre>::idGenre == id, odbObj))
+    CODBTranslation odbObj;
+    std::string key = "genre." + std::to_string(id) + ".name";
+    std::string lang = StringUtils::Tokenize(CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE), ".")[2];
+    if (m_cdb.getDB()->query_one<CODBTranslation>(odb::query<CODBTranslation>::key == key &&
+                                                  odb::query<CODBTranslation>::language == lang, odbObj))
     {
-      returnVal = odbObj.m_name;
+      returnVal = odbObj.m_text;
+    }
+    else
+    {
+      CODBGenre odbGenre;
+      if (m_cdb.getDB()->query_one<CODBGenre>(odb::query<CODBGenre>::idGenre == id, odbGenre))
+      {
+        returnVal = odbGenre.m_name;
+      }
     }
 
     if(odb_transaction)
@@ -14423,4 +14439,41 @@ CVideoDatabaseCache& CVideoDatabase::getCache()
 std::string CVideoDatabase::GetMACAddress()
 {
   return g_MacAddress;
+}
+
+int CVideoDatabase::GetGenreIdByName(const std::string& genrename)
+{
+  int returnVal;
+  try
+  {
+    std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
+
+    CODBTranslation odbObj;
+    std::string lang = StringUtils::Tokenize(CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_LOCALE_LANGUAGE), ".")[2];
+    if (m_cdb.getDB()->query_one<CODBTranslation>(odb::query<CODBTranslation>::key.like("genre%") &&
+                                                  odb::query<CODBTranslation>::text == genrename &&
+                                                  odb::query<CODBTranslation>::language == lang, odbObj))
+    {
+      returnVal = std::stoi(StringUtils::Tokenize(odbObj.m_key, ".")[1]);
+    }
+    else
+    {
+      CODBGenre odbGenre;
+      if (m_cdb.getDB()->query_one<CODBGenre>(odb::query<CODBGenre>::name == genrename, odbGenre))
+      returnVal = odbGenre.m_idGenre;
+    }
+
+    if(odb_transaction)
+      odb_transaction->commit();
+  }
+  catch (std::exception& e)
+  {
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+
+  return returnVal;
 }

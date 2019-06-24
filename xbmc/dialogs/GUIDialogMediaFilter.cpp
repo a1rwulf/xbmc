@@ -50,7 +50,7 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "movies",       FieldInProgress,    575,    SettingType::Integer, "toggle", "",         CDatabaseQueryRule::OPERATOR_FALSE },
   { "movies",       FieldYear,          562,    SettingType::Integer, "range",  "integer",  CDatabaseQueryRule::OPERATOR_BETWEEN },
   //{ "movies",       FieldTag,           20459,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
-  { "movies",       FieldGenre,         515,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
+  { "movies",       FieldGenreId,         515,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   { "movies",       FieldActor,         20337,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   { "movies",       FieldDirector,      20339,  SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   //{ "movies",       FieldStudio,        572,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
@@ -260,9 +260,19 @@ void CGUIDialogMediaFilter::OnSettingChanged(std::shared_ptr<const CSetting> set
       if (filter.rule == NULL)
         filter.rule = AddRule(filter.field, filter.ruleOperator);
 
-      filter.rule->m_parameter.clear();
-      for (std::vector<CVariant>::const_iterator itValue = values.begin(); itValue != values.end(); ++itValue)
-        filter.rule->m_parameter.push_back(itValue->asString());
+      if (filter.field == FieldGenreId)
+      {
+        CVideoDatabase videodb;
+        filter.rule->m_parameter.clear();
+        for (std::vector<CVariant>::const_iterator itValue = values.begin(); itValue != values.end(); ++itValue)
+          filter.rule->m_parameter.push_back(std::to_string(videodb.GetGenreIdByName(itValue->asString())));
+      }
+      else
+      {
+        filter.rule->m_parameter.clear();
+        for (std::vector<CVariant>::const_iterator itValue = values.begin(); itValue != values.end(); ++itValue)
+          filter.rule->m_parameter.push_back(itValue->asString());
+      }
     }
     else
       remove = true;
@@ -361,7 +371,7 @@ void CGUIDialogMediaFilter::SetupView()
     localizedMediaId = 132;
   else if (m_mediaType == "songs")
     localizedMediaId = 134;
-  
+
   //Do not use
   localizedMediaId = -1;
 
@@ -448,6 +458,16 @@ void CGUIDialogMediaFilter::InitializeSettings()
       if (filter.rule != NULL && !filter.rule->m_parameter.empty())
       {
         values = StringUtils::Split(filter.rule->GetParameter(), DATABASEQUERY_RULE_VALUE_SEPARATOR);
+
+        if (filter.field == FieldGenreId)
+        {
+          std::vector<std::string> translated_values;
+          CVideoDatabase videodb;
+          for (auto val : values)
+            translated_values.emplace_back(videodb.GetGenreById(std::stoi(val)));
+          values = translated_values;
+        }
+
         if (values.size() == 1 && values.at(0).empty())
           values.erase(values.begin());
       }
@@ -668,7 +688,7 @@ int CGUIDialogMediaFilter::GetItems(const Filter &filter, std::vector<std::strin
     else if (m_mediaType == "musicvideos")
       type = VIDEODB_CONTENT_MUSICVIDEOS;
 
-    if (filter.field == FieldGenre)
+    if (filter.field == FieldGenreId)
       videodb.GetGenresNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
     else if (filter.field == FieldActor || filter.field == FieldArtist)
       videodb.GetActorsNav(tmpUrl.ToString(), selectItems, type, dbfilter, countOnly);
