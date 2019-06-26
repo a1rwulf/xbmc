@@ -2474,7 +2474,7 @@ bool CVideoDatabase::GetFileInfo(const std::string& strFilenameAndPath, CVideoIn
                              m_pDS->fv("bookmark.playerState").get_asString());
       */
       details.m_iFileId = odbFile.m_idFile;
-      if (odbFile.m_path)
+      if (odbFile.m_path.load())
           details.m_strPath = odbFile.m_path->m_path;
       std::string strFileName = odbFile.m_filename;
       ConstructPath(details.m_strFileNameAndPath, details.m_strPath, strFileName);
