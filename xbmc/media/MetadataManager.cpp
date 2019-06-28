@@ -10,6 +10,7 @@
 
 #include "URL.h"
 #include "dbwrappers/Database.h"
+#include "providers/ApiMetadataProvider.h"
 #include "providers/DatabaseMetadataProvider.h"
 #include "providers/MetadataProvider.h"
 
@@ -18,7 +19,9 @@ using namespace METADATA;
 CMetadataManager::CMetadataManager()
 {
   std::shared_ptr<IMetadataProvider> dbprovider(new CDatabaseMetadataProvider());
+  std::shared_ptr<IMetadataProvider> apiprovider(new CApiMetadataProvider("http://omniyon.local:10101"));
   AddProvider("commondb", dbprovider);
+  AddProvider("oam", apiprovider);
 }
 
 void CMetadataManager::AddProvider(const std::string& name,
