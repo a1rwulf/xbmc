@@ -83,6 +83,11 @@ namespace PVR
     bool DeleteEpg(const CPVREpgPtr &epg, bool bDeleteFromDatabase = false);
 
     /*!
+     * @brief Delete all EPG tables from this container.
+     */
+    void DeleteEpg();
+
+    /*!
      * @brief Process a notification from an observable.
      * @param obs The observable that sent the update.
      * @param msg The update message.

@@ -1459,6 +1459,12 @@ namespace PVR
     return selectedHook->first->CallMenuHook(selectedHook->second, CFileItemPtr()) == PVR_ERROR_NO_ERROR;
   }
 
+  void CPVRGUIActions::ClearEPG()
+  {
+    CPVREpgContainer& epgContainer = CServiceBroker::GetPVRManager().EpgContainer();
+    epgContainer.DeleteEpg();
+  }
+
   bool CPVRGUIActions::ResetPVRDatabase(bool bResetEPGOnly)
   {
     CLog::Log(LOGNOTICE,"CPVRGUIActions - %s - clearing the PVR database", __FUNCTION__);

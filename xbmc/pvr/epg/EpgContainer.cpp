@@ -611,6 +611,15 @@ bool CPVREpgContainer::DeleteEpg(const CPVREpgPtr &epg, bool bDeleteFromDatabase
   return true;
 }
 
+void CPVREpgContainer::DeleteEpg()
+{
+  CSingleLock lock(m_critSection);
+  for (const auto &epgEntry : m_epgIdToEpgMap)
+    epgEntry.second->Clear();
+  for (const auto& epgEntry : m_channelUidToEpgMap)
+    epgEntry.second->Clear();
+}
+
 bool CPVREpgContainer::IgnoreDB() const
 {
   return m_settings.GetBoolValue(CSettings::SETTING_EPG_IGNOREDBFORCLIENT);

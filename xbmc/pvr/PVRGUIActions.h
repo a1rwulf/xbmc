@@ -402,6 +402,11 @@ namespace PVR
      */
     void OnPlaybackStopped(const CFileItemPtr &item);
 
+    /*!
+     * @brief Remove all EPG entries
+     */
+    void ClearEPG();
+
   private:
     CPVRGUIActions(const CPVRGUIActions&) = delete;
     CPVRGUIActions const& operator=(CPVRGUIActions const&) = delete;
