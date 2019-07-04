@@ -241,6 +241,7 @@ JSONRPC_STATUS CPVROperations::Scan(const std::string &method, ITransportLayer *
   if (!CServiceBroker::GetPVRManager().IsStarted())
     return FailedToExecute;
 
+  CServiceBroker::GetPVRManager().GUIActions()->ClearEPG();
   CServiceBroker::GetPVRManager().GUIActions()->StartChannelScan();
   return ACK;
 }
