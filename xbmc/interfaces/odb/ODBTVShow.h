@@ -148,6 +148,8 @@ struct ODBView_TVShow
   std::shared_ptr<CODBRating> defaultRating;
   PRAGMA_DB (column("MAX(" + CODBFile::m_dateAdded.m_ulong_date + ")"))
   unsigned long dateAddedULong;
+  PRAGMA_DB (column("COUNT(" + CODBEpisode::m_idEpisode + ")"))
+  int episodesTotal;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
@@ -183,6 +185,8 @@ struct ODBView_Season
   unsigned long dateAddedULong;
   PRAGMA_DB (column("SUM(" + CODBFile::m_playCount + ") AS playCount"))
   int playCount;
+  PRAGMA_DB (column("COUNT(" + CODBEpisode::m_idEpisode + ")"))
+  int episodesTotal;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \
@@ -213,6 +217,10 @@ struct ODBView_Episode
   std::shared_ptr<CODBEpisode> episode;
   PRAGMA_DB (column(fileView::m_dateAdded.m_ulong_date + "as dateadded"))
   unsigned long dateAddedULong;
+  // Dummy column that we need for the GetDetails-Template methods
+  // only used for tvshow and season
+  PRAGMA_DB (column(CODBEpisode::m_idEpisode))
+  int episodesTotal;
 };
 
 PRAGMA_DB (view object(CODBTVShow) \

@@ -6193,6 +6193,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
   details->m_iUserRating = record.show->m_userrating;
   details->SetDuration(record.show->m_runtime);
   details->m_dateAdded.SetFromULongLong(record.dateAddedULong);
+  details->m_iEpisode = record.episodesTotal;
 
   if (record.defaultRating)
   {
@@ -6282,6 +6283,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getSeason(record.season->m_idSeason, getDetails, record.season->m_updatedAt);
   if (det)
   {
+    det->m_iEpisode = record.episodesTotal;
     GetTranslation(MediaTypeSeason, det.get(), getDetails, record.season->m_updatedAt);
     return *det;
   }
@@ -6317,6 +6319,7 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
   details->m_firstAired.GetAsULongLong();
   details->m_iUserRating = record.season->m_userrating;
   details->m_strMPAARating = tvshow.m_strMPAARating;
+  details->m_iEpisode = record.episodesTotal;
 
   // season premiered date based on first episode airdate associated to the season
   // tvshow premiered date is used as a fallback
@@ -6332,10 +6335,6 @@ CVideoInfoTag CVideoDatabase::GetDetailsForSeason(const T record, const CVideoIn
     details->m_genre = tvshow.m_genre;
     details->m_genreIds = tvshow.m_genreIds;
     details->m_studio = tvshow.m_studio;
-
-    ODBView_Season_Episode_Count objEpisodeCount;
-    if (m_cdb.getDB()->query_one<ODBView_Season_Episode_Count>(odb::query<ODBView_Season_Episode_Count>::CODBSeason::idSeason == record.season->m_idSeason, objEpisodeCount))
-      details->m_iEpisode = objEpisodeCount.episodesTotal;
 
     if (getDetails & VideoDbDetailsCast)
       GetCast(record.show->m_actors, details);
