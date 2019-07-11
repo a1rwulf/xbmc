@@ -52,6 +52,7 @@ namespace PVR
     std::string GetDirectoryPath(void) override { return ""; }
     bool GetDirectory(const std::string &strDirectory, CFileItemList &items) override;
     void FormatAndSort(CFileItemList &items) override;
+    CFileItemPtr GetCurrentListItem(int offset = 0) override;
 
     void ClearData() override;
 
@@ -79,6 +80,7 @@ namespace PVR
     std::unique_ptr<CFileItemList> m_newTimeline;
 
     bool m_bChannelSelectionRestored;
+    std::atomic_bool m_bFirstOpen;
   };
 
   class CGUIWindowPVRTVGuide : public CGUIWindowPVRGuideBase
@@ -101,7 +103,7 @@ namespace PVR
 
     void Process() override;
 
-    void DoRefresh();
+    void DoRefresh(bool bWait);
     void Stop();
 
   private:

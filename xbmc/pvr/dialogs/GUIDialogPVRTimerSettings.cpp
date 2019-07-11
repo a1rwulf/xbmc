@@ -771,16 +771,17 @@ void CGUIDialogPVRTimerSettings::InitializeChannelsList()
 {
   m_channelEntries.clear();
 
-  CFileItemList channelsList;
-  CServiceBroker::GetPVRManager().ChannelGroups()->GetGroupAll(m_bIsRadio)->GetMembers(channelsList);
-
-  for (int i = 0; i < channelsList.Size(); ++i)
+  const std::shared_ptr<CPVRChannelGroup> allGroup = CServiceBroker::GetPVRManager().ChannelGroups()->GetGroupAll(m_bIsRadio);
+  const std::vector<PVRChannelGroupMember> groupMembers = allGroup->GetMembers(CPVRChannelGroup::Include::ONLY_VISIBLE);
+  int i = 0;
+  for (const auto& groupMember : groupMembers)
   {
-    const CPVRChannelPtr channel(channelsList[i]->GetPVRChannelInfoTag());
+    const std::shared_ptr<CPVRChannel> channel = groupMember.channel;
     std::string channelDescription(
       StringUtils::Format("%s %s", channel->ChannelNumber().FormattedChannelNumber().c_str(), channel->ChannelName().c_str()));
     m_channelEntries.insert(
       std::make_pair(i, ChannelDescriptor(channel->UniqueID(), channel->ClientID(), channelDescription)));
+    i++;
   }
 
   // Add special "any channel" entry (used for epg-based timer rules).
@@ -1125,7 +1126,7 @@ bool CGUIDialogPVRTimerSettings::TypeReadOnlyCondition(const std::string &condit
   }
 
   /* Always enable enable/disable, if supported by the timer type. */
-  if (pThis->m_timerType->SupportsEnableDisable())
+  if (pThis->m_timerType->SupportsEnableDisable() && !pThis->m_timerInfoTag->IsBroken())
   {
     if (cond == SETTING_TMR_ACTIVE)
       return true;

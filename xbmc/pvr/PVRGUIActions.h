@@ -203,6 +203,13 @@ namespace PVR
     bool EditRecording(const CFileItemPtr &item) const;
 
     /*!
+     * @brief Check if any recording settings can be edited.
+     * @param item containing the recording to edit.
+     * @return true on success, false otherwise.
+     */
+    bool CanEditRecording(const CFileItem& item) const;
+
+    /*!
      * @brief Rename a recording, showing a text input dialog.
      * @param item containing a recording to rename.
      * @return true, if the recording was renamed successfully, false otherwise.
@@ -394,6 +401,11 @@ namespace PVR
      * @param item The item that stopped to play.
      */
     void OnPlaybackStopped(const CFileItemPtr &item);
+
+    /*!
+     * @brief Remove all EPG entries
+     */
+    void ClearEPG();
 
   private:
     CPVRGUIActions(const CPVRGUIActions&) = delete;

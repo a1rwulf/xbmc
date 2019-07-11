@@ -15,10 +15,13 @@
 #include "guilib/GUIMessage.h"
 #include "input/Key.h"
 #include "messaging/ApplicationMessenger.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 
 #include "pvr/PVRGUIActions.h"
 #include "pvr/PVRManager.h"
 #include "pvr/channels/PVRChannelGroup.h"
+#include "pvr/channels/PVRChannelGroupsContainer.h"
 #include "pvr/epg/EpgContainer.h"
 
 using namespace PVR;
@@ -111,7 +114,10 @@ bool CGUIDialogPVRChannelsOSD::OnAction(const CAction &action)
       SaveControlStates();
 
       // switch to next or previous group
-      const CPVRChannelGroupPtr nextGroup = action.GetID() == ACTION_NEXT_CHANNELGROUP ? m_group->GetNextGroup() : m_group->GetPreviousGroup();
+      const CPVRChannelGroups* groups = CServiceBroker::GetPVRManager().ChannelGroups()->Get(m_group->IsRadio());
+      const std::shared_ptr<CPVRChannelGroup> nextGroup = action.GetID() == ACTION_NEXT_CHANNELGROUP
+                                                        ? groups->GetNextGroup(*m_group)
+                                                        : groups->GetPreviousGroup(*m_group);
       CServiceBroker::GetPVRManager().SetPlayingGroup(nextGroup);
       m_group = nextGroup;
       Init();
@@ -160,7 +166,12 @@ void CGUIDialogPVRChannelsOSD::Update()
     const CPVRChannelGroupPtr group = pvrMgr.GetPlayingGroup(channel->IsRadio());
     if (group)
     {
-      group->GetMembers(*m_vecItems);
+      const std::vector<PVRChannelGroupMember> groupMembers = group->GetMembers(CPVRChannelGroup::Include::ONLY_VISIBLE);
+      for (const auto& groupMember : groupMembers)
+      {
+        m_vecItems->Add(std::make_shared<CFileItem>(groupMember.channel));
+      }
+
       m_viewControl.SetItems(*m_vecItems);
 
       if (!m_group)
@@ -214,7 +225,9 @@ void CGUIDialogPVRChannelsOSD::GotoChannel(int item)
 
   // Preserve the item before closing self, because this will clear m_vecItems
   const CFileItemPtr itemptr = m_vecItems->Get(item);
-  Close();
+  if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_PVRMENU_CLOSECHANNELOSDONSWITCH))
+    Close();
+
   CServiceBroker::GetPVRManager().GUIActions()->SwitchToChannel(itemptr, true /* bCheckResume */);
 }
 

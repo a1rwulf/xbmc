@@ -19,6 +19,7 @@
 #include "utils/StringUtils.h"
 
 #include "pvr/PVRManager.h"
+#include "pvr/channels/PVRChannelGroupsContainer.h"
 
 using namespace PVR;
 
@@ -43,6 +44,7 @@ void CPVRGUITimesInfo::Reset()
   m_iTimeshiftProgressDuration = 0;
 
   m_playingEpgTag.reset();
+  m_playingChannel.reset();
 }
 
 void CPVRGUITimesInfo::UpdatePlayingTag()
@@ -52,12 +54,14 @@ void CPVRGUITimesInfo::UpdatePlayingTag()
 
   if (currentChannel || currentTag)
   {
-    if (!currentTag)
+    if (currentChannel && !currentTag)
       currentTag = currentChannel->GetEPGNow();
+
+    const std::shared_ptr<CPVRChannelGroupsContainer> groups = CServiceBroker::GetPVRManager().ChannelGroups();
 
     CSingleLock lock(m_critSection);
 
-    const CPVRChannelPtr playingChannel = m_playingEpgTag ? m_playingEpgTag->Channel() : nullptr;
+    const std::shared_ptr<CPVRChannel> playingChannel = m_playingEpgTag ? groups->GetChannelForEpgTag(m_playingEpgTag) : nullptr;
     if (!m_playingEpgTag || !m_playingEpgTag->IsActive() ||
         !playingChannel || !currentChannel || *playingChannel != *currentChannel)
     {
@@ -104,8 +108,17 @@ void CPVRGUITimesInfo::UpdateTimeshiftData()
   int64_t iPlayTime, iMinTime, iMaxTime;
   CServiceBroker::GetDataCacheCore().GetPlayTimes(iStartTime, iPlayTime, iMinTime, iMaxTime);
   bool bPlaying = CServiceBroker::GetDataCacheCore().GetSpeed() == 1.0;
+  const CPVRChannelPtr playingChannel = CServiceBroker::GetPVRManager().GetPlayingChannel();
 
   CSingleLock lock(m_critSection);
+
+  if (playingChannel != m_playingChannel)
+  {
+    // playing channel changed. we need to reset offset and playtime.
+    m_iTimeshiftOffset = 0;
+    m_iTimeshiftPlayTime = 0;
+    m_playingChannel = playingChannel;
+  }
 
   if (!iStartTime)
   {

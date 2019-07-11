@@ -22,6 +22,8 @@
 class CFileItem;
 typedef std::shared_ptr<CFileItem> CFileItemPtr;
 
+class CFileItemList;
+
 namespace PVR
 {
 #define PVR_GROUP_TYPE_DEFAULT      0
@@ -57,21 +59,23 @@ namespace PVR
     friend class CPVRDatabase;
 
   public:
-    CPVRChannelGroup(void);
+    static const int INVALID_GROUP_ID = -1;
 
     /*!
      * @brief Create a new channel group instance.
      * @param bRadio True if this group holds radio channels.
-     * @param iGroupId The database ID of this group.
+     * @param iGroupId The database ID of this group or INVALID_GROUP_ID if the group was not yet stored in the database.
      * @param strGroupName The name of this group.
+     * @param allChannelsGroup The channel group containing all TV or radio channels.
      */
-    CPVRChannelGroup(bool bRadio, unsigned int iGroupId, const std::string &strGroupName);
+    CPVRChannelGroup(bool bRadio, int iGroupId, const std::string& strGroupName, const std::shared_ptr<CPVRChannelGroup>& allChannelsGroup);
 
     /*!
      * @brief Create a new channel group instance from a channel group provided by an add-on.
      * @param group The channel group provided by the add-on.
+     * @param allChannelsGroup The channel group containing all TV or radio channels.
      */
-    explicit CPVRChannelGroup(const PVR_CHANNEL_GROUP &group);
+    CPVRChannelGroup(const PVR_CHANNEL_GROUP& group, const std::shared_ptr<CPVRChannelGroup>& allChannelsGroup);
 
     /*!
      * @brief Copy constructor
@@ -91,9 +95,10 @@ namespace PVR
 
     /*!
      * @brief Load the channels from the database.
+     * @param channelsToRemove Returns the channels to be removed from all groups, if any
      * @return True when loaded successfully, false otherwise.
      */
-    virtual bool Load(void);
+    virtual bool Load(std::vector<std::shared_ptr<CPVRChannel>>& channelsToRemove);
 
     /*!
      * @return The amount of group members
@@ -102,8 +107,9 @@ namespace PVR
 
     /*!
      * @brief Refresh the channel list from the clients.
+     * @param channelsToRemove Returns the channels to be removed from all groups, if any
      */
-    virtual bool Update(void);
+    virtual bool Update(std::vector<std::shared_ptr<CPVRChannel>>& channelsToRemove);
 
     /*!
      * @brief Get the path of this group.
@@ -308,12 +314,6 @@ namespace PVR
      */
     CPVRChannelPtr GetByChannelID(int iChannelID) const;
 
-    /*!
-     * Get the current members of this group
-     * @return The group members
-     */
-    PVR_CHANNEL_GROUP_SORTED_MEMBERS GetMembers(void) const;
-
     enum class Include
     {
       ALL,
@@ -322,28 +322,17 @@ namespace PVR
     };
 
     /*!
-     * @brief Get a filtered list of channels in this group.
-     * @param results The file list to store the results in.
-     * @param eFilter A filter to apply to the list.
-     * @return The amount of channels that were added to the list.
+     * @brief Get the current members of this group
+     * @param eFilter A filter to apply.
+     * @return The group members
      */
-    int GetMembers(CFileItemList &results, Include eFilter = Include::ONLY_VISIBLE) const;
+    std::vector<PVRChannelGroupMember> GetMembers(Include eFilter = Include::ALL) const;
 
     /*!
      * @brief Get the list of channel numbers in a group.
      * @param channelNumbers The list to store the numbers in.
      */
     void GetChannelNumbers(std::vector<std::string>& channelNumbers) const;
-
-    /*!
-     * @return The next channel group.
-     */
-    CPVRChannelGroupPtr GetNextGroup(void) const;
-
-    /*!
-     * @return The previous channel group.
-     */
-    CPVRChannelGroupPtr GetPreviousGroup(void) const;
 
     /*!
      * @brief The amount of hidden channels in this container.
@@ -380,12 +369,11 @@ namespace PVR
     virtual bool CreateChannelEpgs(bool bForce = false);
 
     /*!
-     * @brief Get all EPG tables.
-     * @param results The fileitem list to store the results in.
+     * @brief Get all EPG tags for all channels in this group.
      * @param bIncludeChannelsWithoutEPG, for channels without EPG data, put an empty EPG tag associated with the channel into results
-     * @return The amount of entries that were added.
+     * @return The tags.
      */
-    int GetEPGAll(CFileItemList &results, bool bIncludeChannelsWithoutEPG = false) const;
+    std::vector<std::shared_ptr<CPVREpgInfoTag>> GetEPGAll(bool bIncludeChannelsWithoutEPG = false) const;
 
     /*!
      * @brief Get the start time of the first entry.
@@ -438,6 +426,8 @@ namespace PVR
     bool IsMissingChannelsFromClient(int iClientId) const;
 
   protected:
+    CPVRChannelGroup();
+
     /*!
      * @brief Init class
      */
@@ -457,9 +447,10 @@ namespace PVR
      * Only the new channels will be present in the passed list after this call.
      *
      * @param channels The channels to use to update this list.
+     * @param channelsToRemove Returns the channels to be removed from all groups, if any
      * @return True if everything went well, false otherwise.
      */
-    virtual bool UpdateGroupEntries(const CPVRChannelGroup &channels);
+    virtual bool UpdateGroupEntries(const CPVRChannelGroup& channels, std::vector<std::shared_ptr<CPVRChannel>>& channelsToRemove);
 
     /*!
      * @brief Add new channels to this group; updtae data.
@@ -504,7 +495,7 @@ namespace PVR
 
     bool             m_bRadio = false;                      /*!< true if this container holds radio channels, false if it holds TV channels */
     int              m_iGroupType = PVR_GROUP_TYPE_DEFAULT;                  /*!< The type of this group */
-    int              m_iGroupId = -1;                    /*!< The ID of this group in the database */
+    int              m_iGroupId = INVALID_GROUP_ID; /*!< The ID of this group in the database */
     std::string      m_strGroupName;                /*!< The name of this group */
     bool             m_bLoaded = false;                     /*!< True if this container is loaded, false otherwise */
     bool             m_bChanged = false;                    /*!< true if anything changed in this group that hasn't been persisted, false otherwise */
@@ -522,5 +513,7 @@ namespace PVR
 
   private:
     CDateTime GetEPGDate(EpgDateType epgDateType) const;
+
+    std::shared_ptr<CPVRChannelGroup> m_allChannelsGroup;
   };
 }

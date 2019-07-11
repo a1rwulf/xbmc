@@ -179,9 +179,11 @@ bool CGUIWindowPVRBase::OnAction(const CAction &action)
     case ACTION_NEXT_CHANNELGROUP:
     {
       // switch to next or previous group
-      if (const CPVRChannelGroupPtr channelGroup = GetChannelGroup())
+      const std::shared_ptr<CPVRChannelGroup> channelGroup = GetChannelGroup();
+      if (channelGroup)
       {
-        SetChannelGroup(action.GetID() == ACTION_NEXT_CHANNELGROUP ? channelGroup->GetNextGroup() : channelGroup->GetPreviousGroup());
+        const CPVRChannelGroups* groups = CServiceBroker::GetPVRManager().ChannelGroups()->Get(channelGroup->IsRadio());
+        SetChannelGroup(action.GetID() == ACTION_NEXT_CHANNELGROUP ? groups->GetNextGroup(*channelGroup) : groups->GetPreviousGroup(*channelGroup));
       }
       return true;
     }
@@ -435,6 +437,14 @@ void CGUIWindowPVRBase::SetChannelGroup(CPVRChannelGroupPtr &&group, bool bUpdat
 
 bool CGUIWindowPVRBase::Update(const std::string &strDirectory, bool updateFilterPath /*= true*/)
 {
+  if (m_bUpdating)
+  {
+    // no concurrent updates
+    return false;
+  }
+
+  CUpdateGuard guard(m_bUpdating);
+
   if (!GetChannelGroup())
   {
     // no updates before fully initialized
