@@ -40,6 +40,7 @@
 CVideoDatabaseCache::CVideoDatabaseCache()
 {
   m_language = "resource.language.en_gb";
+  m_tryReload = true;
 }
 
 CVideoDatabaseCache::~CVideoDatabaseCache()
@@ -388,29 +389,18 @@ std::string CVideoDatabaseCache::getTranslation(std::string key, uint64_t update
     }
     return it->second.m_text;
   }
-  // We cache all available translations when we load a language
-  // The below code makes loading covers incredibly slow if not all translations
-  // are in place, because then we start to lookup every item in the database again.
-  // This is not what we want, I keep the code just for reference if we need to revise my
-  // decision again.
-  // else
-  // {
-  //   std::shared_ptr<odb::transaction> odb_transaction (CCommonDatabase::GetInstance().getTransaction());
-  //   typedef odb::query<CODBTranslation> query;
-  //   std::string language = m_language.substr(18);
-  //   CODBTranslation translation;
-  //   if (CCommonDatabase::GetInstance().getDB()->query_one<CODBTranslation>(query::key == key && query::language == language, translation))
-  //   {
-  //     CVideoDatabaseTranslationItem item;
-  //     item.m_updatedAt = updatedAt;
-  //     item.m_language = language;
-  //     item.m_text = translation.m_text;
-      
-  //     m_TranslationCacheMap.insert(std::make_pair(translation.m_key, item));
-      
-  //     return item.m_text;
-  //   }
-  // }
+  else
+  {
+    if (m_tryReload)
+    {
+      // Reload only once until the flag is reset, otherwise we will
+      // pretty sure end up reloading all the time which is a pain, performancewise
+      // This flag gets reset in our GetXXXXNav(...) methods, which
+      // form the public interface of the videodb
+      loadTranslations();
+      m_tryReload = false;
+    }
+  }
 
   return "";
 }
