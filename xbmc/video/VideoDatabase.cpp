@@ -8589,6 +8589,7 @@ bool CVideoDatabase::GetGenresNav(const std::string& strBaseDir, CFileItemList& 
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, std::pair<std::string,int> > mapItems;
@@ -8741,6 +8742,7 @@ bool CVideoDatabase::GetCountriesNav(const std::string& strBaseDir, CFileItemLis
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, std::pair<std::string,int> > mapItems;
@@ -8823,6 +8825,7 @@ bool CVideoDatabase::GetStudiosNav(const std::string& strBaseDir, CFileItemList&
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, std::pair<std::string,int> > mapItems;
@@ -9164,6 +9167,7 @@ bool CVideoDatabase::GetTagsNav(const std::string& strBaseDir, CFileItemList& it
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, std::pair<std::string,int> > mapItems;
@@ -9269,6 +9273,7 @@ bool CVideoDatabase::GetFileStreamLanguageNav(const std::string& strBaseDir, CFi
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     
     std::map<unsigned long, std::pair<std::string,std::string> > mapItems;
@@ -9365,6 +9370,7 @@ bool CVideoDatabase::GetFileStreamLanguageNav(const std::string& strBaseDir, CFi
 
 bool CVideoDatabase::GetSetsNav(const std::string& strBaseDir, CFileItemList& items, int idContent /* = -1 */, const Filter &filter /* = Filter() */, bool ignoreSingleMovieSets /* = false */)
 {
+  gVideoDatabaseCache.EnableReload();
   if (idContent != VIDEODB_CONTENT_MOVIES)
     return false;
 
@@ -9445,6 +9451,7 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     if (NULL == m_pDB.get()) return false;
     if (NULL == m_pDS.get()) return false;
 
@@ -9571,6 +9578,7 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
 
 bool CVideoDatabase::GetWritersNav(const std::string& strBaseDir, CFileItemList& items, int idContent /* = -1 */, const Filter &filter /* = Filter() */, bool countOnly /* = false */)
 {
+  gVideoDatabaseCache.EnableReload();
   //TODO: Check if this is working with odb was it was
   return GetPeopleNav(strBaseDir, items, "writer", idContent, filter, countOnly);
 }
@@ -9579,6 +9587,7 @@ bool CVideoDatabase::GetDirectorsNav(const std::string& strBaseDir, CFileItemLis
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
     std::map<int, std::string> mapItems;
 
@@ -9714,6 +9723,7 @@ bool CVideoDatabase::GetActorsNav(const std::string& strBaseDir, CFileItemList& 
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, CActor > mapItems;
@@ -9889,6 +9899,7 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
 
   try
   {
+    gVideoDatabaseCache.EnableReload();
     //! @todo This routine (and probably others at this same level) use playcount as a reference to filter on at a later
     //!       point.  This means that we *MUST* filter these levels as you'll get double ups.  Ideally we'd allow playcount
     //!       to filter through as we normally do for tvshows to save this happening.
@@ -10126,6 +10137,7 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
 {
   try
   {
+    gVideoDatabaseCache.EnableReload();
     std::shared_ptr<odb::transaction> odb_transaction (m_cdb.getTransaction());
 
     std::map<int, std::pair<std::string,int> > mapItems;
@@ -10242,6 +10254,7 @@ bool CVideoDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& i
 
 bool CVideoDatabase::GetSeasonsNav(const std::string& strBaseDir, CFileItemList& items, int idActor, int idDirector, int idGenre, int idYear, int idShow, bool getLinkedMovies /* = true */)
 {
+  gVideoDatabaseCache.EnableReload();
   // parse the base path to get additional filters
   CVideoDbUrl videoUrl;
   if (!videoUrl.FromString(strBaseDir))
@@ -10518,6 +10531,7 @@ bool CVideoDatabase::GetMoviesNav(const std::string& strBaseDir, CFileItemList& 
                                   int idStudio /* = -1 */, int idCountry /* = -1 */, int idSet /* = -1 */, int idTag /* = -1 */,
                                   const SortDescription &sortDescription /* = SortDescription() */, int getDetails /* = VideoDbDetailsNone */)
 {
+  gVideoDatabaseCache.EnableReload();
   CVideoDbUrl videoUrl;
   if (!videoUrl.FromString(strBaseDir))
     return false;
@@ -10868,6 +10882,7 @@ bool CVideoDatabase::GetTvShowsByWhere(const std::string& strBaseDir, const Filt
 
 bool CVideoDatabase::GetEpisodesNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idYear, int idActor, int idDirector, int idShow, int idSeason, const SortDescription &sortDescription /* = SortDescription() */, int getDetails /* = VideoDbDetailsNone */)
 {
+  gVideoDatabaseCache.EnableReload();
   CVideoDbUrl videoUrl;
   if (!videoUrl.FromString(strBaseDir))
     return false;
@@ -11037,6 +11052,7 @@ bool CVideoDatabase::GetEpisodesByWhere(const std::string& strBaseDir, const Fil
 
 bool CVideoDatabase::GetMusicVideosNav(const std::string& strBaseDir, CFileItemList& items, int idGenre, int idYear, int idArtist, int idDirector, int idStudio, int idAlbum, int idTag /* = -1 */, const SortDescription &sortDescription /* = SortDescription() */, int getDetails /* = VideoDbDetailsNone */)
 {
+  gVideoDatabaseCache.EnableReload();
   CVideoDbUrl videoUrl;
   if (!videoUrl.FromString(strBaseDir))
     return false;

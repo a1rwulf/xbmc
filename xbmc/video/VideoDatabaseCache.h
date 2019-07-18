@@ -97,6 +97,10 @@ public:
   std::shared_ptr<CVideoInfoTag> getEpisode(long id, uint64_t updatedAt);
   
   std::string getTranslation(std::string key, uint64_t updatedAt);
+
+  void EnableReload() { m_tryReload = true; }
+  bool GetReload() const { return m_tryReload; }
+
 private:
   void setCurrentLanguage();
   
@@ -132,4 +136,5 @@ private:
   
   std::string m_language;
   CCriticalSection m_mutex;
+  bool m_tryReload;
 };
