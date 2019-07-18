@@ -109,14 +109,4 @@ struct ODBView_Season_Play_Count
   int playCount;
 };
 
-PRAGMA_DB (view object(CODBSeason) \
-           object(CODBEpisode inner: CODBSeason::m_episodes) \
-           query(distinct))
-struct ODBView_Season_Episode_Count
-{
-  PRAGMA_DB (column("COUNT(DISTINCT " + CODBEpisode::m_idEpisode + ")"))
-  int episodesTotal;
-};
-
-
 #endif /* ODBSEASON_H */
