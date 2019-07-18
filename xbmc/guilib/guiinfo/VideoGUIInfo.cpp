@@ -122,8 +122,16 @@ bool CVideoGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         return true;
       case VIDEOPLAYER_GENRE:
       case LISTITEM_GENRE:
-        value = StringUtils::Join(tag->m_genre, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator);
+      {
+        std::vector<std::string> tmpgenres;
+        if (tag->m_genre.size() > 4)
+          std::copy(tag->m_genre.begin(), tag->m_genre.begin() + 4, std::back_inserter(tmpgenres));
+        else
+          std::copy(tag->m_genre.begin(), tag->m_genre.end(), std::back_inserter(tmpgenres));
+
+        value = StringUtils::Join(tmpgenres, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator);
         return true;
+      }
       case VIDEOPLAYER_DIRECTOR:
       case LISTITEM_DIRECTOR:
         value = StringUtils::Join(tag->m_director, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator);
