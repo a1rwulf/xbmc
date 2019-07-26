@@ -6169,7 +6169,10 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
   std::shared_ptr<CVideoInfoTag> det = gVideoDatabaseCache.getTVShow(record.show->m_idTVShow, getDetails, record.show->m_updatedAt);
   if (det)
   {
+    if (std::is_same<T, ODBView_TVShow>::value)
+      det->m_iEpisode = record.episodesTotal;
     GetTranslation(MediaTypeTvShow, det.get(), getDetails, record.show->m_updatedAt);
+
     return *det;
   }
 
@@ -6193,7 +6196,8 @@ CVideoInfoTag CVideoDatabase::GetDetailsForTvShow(T record, int getDetails /* = 
   details->m_iUserRating = record.show->m_userrating;
   details->SetDuration(record.show->m_runtime);
   details->m_dateAdded.SetFromULongLong(record.dateAddedULong);
-  details->m_iEpisode = record.episodesTotal;
+  if (std::is_same<T, ODBView_TVShow>::value)
+    details->m_iEpisode = record.episodesTotal;
 
   if (record.defaultRating)
   {
