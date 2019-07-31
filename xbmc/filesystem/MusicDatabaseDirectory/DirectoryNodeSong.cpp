@@ -27,8 +27,11 @@ bool CDirectoryNodeSong::GetContent(CFileItemList& items) const
   CQueryParams params;
   CollectQueryParams(params);
 
-  std::string strBaseDir=BuildPath();
-  bool bSuccess=musicdatabase.GetSongsNav(strBaseDir, items, params.GetGenreId(), params.GetArtistId(), params.GetAlbumId(), params.GetPlaylistId());
+  std::string strBaseDir = BuildPath();
+
+  bool bSuccess = CServiceBroker::GetMetadataManager().GetSongs(
+      strBaseDir, items, params.GetGenreId(), params.GetArtistId(), params.GetAlbumId(),
+      params.GetPlaylistId());
 
   musicdatabase.Close();
 
