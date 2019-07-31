@@ -284,7 +284,8 @@ void CURL::Parse(const std::string& strURL1)
    || IsProtocol("musicdb")
    || IsProtocol("videodb")
    || IsProtocol("sources")
-   || IsProtocol("pvr"))
+   || IsProtocol("pvr")
+   || IsProtocol("oam"))
   {
     if (m_strHostName != "" && m_strFileName != "")
     {

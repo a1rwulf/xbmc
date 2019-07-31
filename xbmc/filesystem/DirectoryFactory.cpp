@@ -121,6 +121,7 @@ IDirectory* CDirectoryFactory::Create(const CURL& url)
   if (url.IsProtocol("playlistmusic")) return new CPlaylistDirectory();
   if (url.IsProtocol("playlistvideo")) return new CPlaylistDirectory();
   if (url.IsProtocol("musicdb")) return new CMusicDatabaseDirectory();
+  if (url.IsProtocol("oam")) return new CMusicDatabaseDirectory();
   if (url.IsProtocol("musicsearch")) return new CMusicSearchDirectory();
   if (url.IsProtocol("videodb")) return new CVideoDatabaseDirectory();
   if (url.IsProtocol("library")) return new CLibraryDirectory();
