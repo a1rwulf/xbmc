@@ -24,7 +24,7 @@ CMusicDbUrl::~CMusicDbUrl() = default;
 bool CMusicDbUrl::parse()
 {
   // the URL must start with musicdb://
-  if (!m_url.IsProtocol("musicdb") || m_url.GetFileName().empty())
+  if (m_url.GetFileName().empty())
     return false;
 
   std::string path = m_url.Get();
