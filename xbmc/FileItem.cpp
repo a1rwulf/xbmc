@@ -3694,3 +3694,13 @@ bool CFileItem::GetCurrentResumeTimeAndPartNumber(int64_t& startOffset, int& par
   }
   return false;
 }
+
+void CFileItem::SetProvider(std::string provider)
+{
+  m_provider = provider;
+}
+
+std::string CFileItem::GetProvider() const
+{
+  return m_provider;
+}
