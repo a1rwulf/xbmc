@@ -10,9 +10,9 @@
 
 #include "GameClientSubsystem.h"
 #include "addons/binary-addons/AddonDll.h"
-#include "addons/kodi-addon-dev-kit/include/kodi/kodi_game_types.h"
 #include "games/addons/streams/GameClientStreamHwFramebuffer.h"
 #include "games/GameTypes.h"
+#include "addons/kodi-addon-dev-kit/include/kodi/addon-instance/Game.h"
 #include "threads/CriticalSection.h"
 
 #include <atomic>
