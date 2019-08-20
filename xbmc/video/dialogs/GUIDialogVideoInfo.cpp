@@ -45,8 +45,8 @@
 #include "music/MusicDatabase.h"
 #include "video/VideoThumbLoader.h"
 #include "filesystem/Directory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory/QueryParams.h"
+#include "filesystem/MediaDirectory.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "utils/FileUtils.h"
 #include "utils/Variant.h"
 #include "messaging/helpers/DialogOKHelper.h"
@@ -54,7 +54,7 @@
 #include <iterator>
 #include <string>
 
-using namespace XFILE::VIDEODATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 using namespace XFILE;
 using namespace KODI::MESSAGING;
 
@@ -1288,14 +1288,14 @@ bool CGUIDialogVideoInfo::CanDeleteVideoItem(const CFileItemPtr &item)
     return false;
 
   CQueryParams params;
-  CVideoDatabaseDirectory::GetQueryParams(item->GetPath(), params);
+  CMediaDirectory::GetQueryParams(item->GetPath(), params);
 
   return params.GetMovieId()   != -1 ||
          params.GetEpisodeId() != -1 ||
          params.GetMVideoId()  != -1 ||
          params.GetSetId()     != -1 ||
          (params.GetTvShowId() != -1 && params.GetSeason() <= -1 &&
-          !CVideoDatabaseDirectory::IsAllItem(item->GetPath()));
+          !CMediaDirectory::IsAllItem(item->GetPath()));
 }
 
 bool CGUIDialogVideoInfo::DeleteVideoItemFromDatabase(const CFileItemPtr &item, bool unavailable /* = false */)

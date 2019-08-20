@@ -13,29 +13,29 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-Node Top100Children[] = {
-                          { NODE_TYPE_SONG_TOP100,  "songs",   10504 },
-                          { NODE_TYPE_ALBUM_TOP100, "albums",  10505 },
+XFILE::MEDIADIRECTORY::Node Top100Children[] = {
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_SONG_TOP100,  "songs",   10504 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_ALBUM_TOP100, "albums",  10505 },
                         };
 
-CDirectoryNodeTop100::CDirectoryNodeTop100(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_TOP100, strName, pParent, strOrigin)
+CDirectoryNodeTop100::CDirectoryNodeTop100(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_TOP100, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeTop100::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeTop100::GetChildType() const
 {
-  for (const Node& node : Top100Children)
+  for (const XFILE::MEDIADIRECTORY::Node& node : Top100Children)
     if (GetName() == node.id)
       return node.node;
 
-  return NODE_TYPE_NONE;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_NONE;
 }
 
 std::string CDirectoryNodeTop100::GetLocalizedName() const
 {
-  for (const Node& node : Top100Children)
+  for (const XFILE::MEDIADIRECTORY::Node& node : Top100Children)
     if (GetName() == node.id)
       return g_localizeStrings.Get(node.label);
   return "";
@@ -43,7 +43,7 @@ std::string CDirectoryNodeTop100::GetLocalizedName() const
 
 bool CDirectoryNodeTop100::GetContent(CFileItemList& items) const
 {
-  for (const Node& node : Top100Children)
+  for (const XFILE::MEDIADIRECTORY::Node& node : Top100Children)
   {
     CFileItemPtr pItem(new CFileItem(g_localizeStrings.Get(node.label)));
     std::string strDir = StringUtils::Format("%s/", node.id.c_str());

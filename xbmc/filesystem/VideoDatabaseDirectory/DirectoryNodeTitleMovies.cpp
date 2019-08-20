@@ -7,13 +7,13 @@
  */
 
 #include "DirectoryNodeTitleMovies.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "video/VideoDatabase.h"
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-CDirectoryNodeTitleMovies::CDirectoryNodeTitleMovies(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_TITLE_MOVIES, strName, pParent, strOrigin)
+CDirectoryNodeTitleMovies::CDirectoryNodeTitleMovies(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_TITLE_MOVIES, strName, pParent, strOrigin)
 {
 
 }
@@ -24,7 +24,7 @@ bool CDirectoryNodeTitleMovies::GetContent(CFileItemList& items) const
   if (!videodatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=videodatabase.GetMoviesNav(BuildPath(), items, params.GetGenreId(), params.GetYear(), params.GetActorId(), params.GetDirectorId(), params.GetStudioId(), params.GetCountryId(), params.GetSetId(), params.GetTagId());

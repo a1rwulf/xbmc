@@ -7,13 +7,13 @@
  */
 
 #include "DirectoryNodeYearSong.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeYearSong::CDirectoryNodeYearSong(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_YEAR_SONG, strName, pParent, strOrigin)
+CDirectoryNodeYearSong::CDirectoryNodeYearSong(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR_SONG, strName, pParent, strOrigin)
 {
 
 }
@@ -24,7 +24,7 @@ bool CDirectoryNodeYearSong::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   std::string strBaseDir=BuildPath();

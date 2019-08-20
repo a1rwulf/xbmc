@@ -7,13 +7,13 @@
  */
 
 #include "DirectoryNodeAlbumCompilationsSongs.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeAlbumCompilationsSongs::CDirectoryNodeAlbumCompilationsSongs(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_ALBUM_COMPILATIONS_SONGS, strName, pParent, strOrigin)
+CDirectoryNodeAlbumCompilationsSongs::CDirectoryNodeAlbumCompilationsSongs(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_ALBUM_COMPILATIONS_SONGS, strName, pParent, strOrigin)
 {
 
 }
@@ -25,7 +25,7 @@ bool CDirectoryNodeAlbumCompilationsSongs::GetContent(CFileItemList& items) cons
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=musicdatabase.GetCompilationSongs(BuildPath(), items);

@@ -12,7 +12,7 @@
 
 namespace XFILE
 {
-  namespace VIDEODATABASEDIRECTORY
+  namespace MEDIADIRECTORY
   {
     class CDirectoryNodeOverview : public CDirectoryNode
     {
@@ -25,5 +25,3 @@ namespace XFILE
     };
   }
 }
-
-

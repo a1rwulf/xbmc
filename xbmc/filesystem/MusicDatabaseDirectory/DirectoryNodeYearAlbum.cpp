@@ -7,24 +7,24 @@
  */
 
 #include "DirectoryNodeYearAlbum.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeYearAlbum::CDirectoryNodeYearAlbum(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_YEAR_ALBUM, strName, pParent, strOrigin)
+CDirectoryNodeYearAlbum::CDirectoryNodeYearAlbum(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR_ALBUM, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeYearAlbum::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeYearAlbum::GetChildType() const
 {
   if (GetName()=="-1")
-    return NODE_TYPE_YEAR_SONG;
+    return XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR_SONG;
 
-  return NODE_TYPE_SONG;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_SONG;
 }
 
 std::string CDirectoryNodeYearAlbum::GetLocalizedName() const
@@ -43,7 +43,7 @@ bool CDirectoryNodeYearAlbum::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=musicdatabase.GetAlbumsByYear(BuildPath(), items, params.GetYear());

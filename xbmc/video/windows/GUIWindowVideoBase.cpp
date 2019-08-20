@@ -24,7 +24,7 @@
 #include "cores/playercorefactory/PlayerCoreFactory.h"
 #include "GUIPassword.h"
 #include "filesystem/StackDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "PartyModeManager.h"
 #include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
@@ -57,7 +57,7 @@
 
 using namespace XFILE;
 using namespace PLAYLIST;
-using namespace VIDEODATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace VIDEO;
 using namespace ADDON;
 using namespace PVR;
@@ -1383,9 +1383,9 @@ void CGUIWindowVideoBase::GetGroupedItems(CFileItemList &items)
   if (!StringUtils::EqualsNoCase(group, "none"))
   {
     CQueryParams params;
-    CVideoDatabaseDirectory dir;
+    CMediaDirectory dir;
     dir.GetQueryParams(items.GetPath(), params);
-    VIDEODATABASEDIRECTORY::NODE_TYPE nodeType = CVideoDatabaseDirectory::GetDirectoryChildType(m_strFilterPath);
+    MEDIADIRECTORY::NODE_TYPE nodeType = CMediaDirectory::GetDirectoryChildType(m_strFilterPath);
     const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
     if (items.GetContent() == "movies" && params.GetSetId() <= 0 &&
         nodeType == NODE_TYPE_TITLE_MOVIES &&

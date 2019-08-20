@@ -14,8 +14,7 @@
 #include "utils/URIUtils.h"
 #include "GUIPassword.h"
 #include "music/dialogs/GUIDialogInfoProviderSettings.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "PartyModeManager.h"
 #include "playlists/PlayList.h"
 #include "playlists/PlayListFactory.h"
@@ -49,7 +48,7 @@
 
 using namespace XFILE;
 using namespace PLAYLIST;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace KODI::MESSAGING;
 
 #define CONTROL_BTNVIEWASICONS     2
@@ -197,7 +196,7 @@ bool CGUIWindowMusicNav::OnAction(const CAction& action)
   if (action.GetID() == ACTION_SCAN_ITEM)
   {
     int item = m_viewControl.GetSelectedItem();
-    CMusicDatabaseDirectory dir;
+    CMediaDirectory dir;
     if (item > -1 && m_vecItems->Get(item)->m_bIsFolder
                   && (m_vecItems->Get(item)->IsAlbum()||
                       dir.IsArtistDir(m_vecItems->Get(item)->GetPath())))
@@ -418,33 +417,33 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
   // update our content in the info manager
   if (StringUtils::StartsWithNoCase(strDirectory, "videodb://") || items.IsVideoDb())
   {
-    CVideoDatabaseDirectory dir;
-    VIDEODATABASEDIRECTORY::NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
-    if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS ||
-        node == VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS)
+    CMediaDirectory dir;
+    MEDIADIRECTORY::NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
+    if (node == MEDIADIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS ||
+        node == MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS)
       items.SetContent("musicvideos");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_GENRE)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_GENRE)
       items.SetContent("genres");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_COUNTRY)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_COUNTRY)
       items.SetContent("countries");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_ACTOR)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_ACTOR)
       items.SetContent("artists");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_DIRECTOR)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_DIRECTOR)
       items.SetContent("directors");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_STUDIO)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_STUDIO)
       items.SetContent("studios");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_YEAR)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_YEAR)
       items.SetContent("years");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM)
       items.SetContent("albums");
-    else if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_TAGS)
+    else if (node == MEDIADIRECTORY::NODE_TYPE_TAGS)
       items.SetContent("tags");
     else
       items.SetContent("");
   }
   else if (StringUtils::StartsWithNoCase(strDirectory, "musicdb://") || items.IsMusicDb())
   {
-    CMusicDatabaseDirectory dir;
+    CMediaDirectory dir;
     NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
     if (node == NODE_TYPE_ALBUM ||
         node == NODE_TYPE_ALBUM_RECENTLY_ADDED ||
@@ -533,7 +532,7 @@ void CGUIWindowMusicNav::UpdateButtons()
   // everything else is from a musicdb:// path
   else
   {
-    CMusicDatabaseDirectory dir;
+    CMediaDirectory dir;
     dir.GetLabel(m_vecItems->GetPath(), strLabel);
   }
 
@@ -617,7 +616,7 @@ void CGUIWindowMusicNav::GetContextButtons(int itemNumber, CContextButtons &butt
     {
       CGUIWindowMusicBase::GetContextButtons(itemNumber, buttons);
 
-      CMusicDatabaseDirectory dir;
+      CMediaDirectory dir;
 
       if (!item->IsParentFolder() && !dir.IsAllItem(item->GetPath()))
       {

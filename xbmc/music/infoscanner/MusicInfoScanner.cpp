@@ -23,8 +23,8 @@
 #include "FileItem.h"
 #include "filesystem/Directory.h"
 #include "filesystem/File.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/MusicDatabaseDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 #include "filesystem/SmartPlaylistDirectory.h"
 #include "GUIInfoManager.h"
 #include "guilib/GUIComponent.h"
@@ -55,7 +55,7 @@
 
 using namespace MUSIC_INFO;
 using namespace XFILE;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace MUSIC_GRABBER;
 using namespace ADDON;
 using KODI::UTILITY::CDigest;
@@ -347,7 +347,7 @@ void CMusicInfoScanner::FetchAlbumInfo(const std::string& strDirectory,
       }
       else
       {
-        CMusicDatabaseDirectory dir;
+        CMediaDirectory dir;
         NODE_TYPE childtype = dir.GetDirectoryChildType(strDirectory);
         if (childtype == NODE_TYPE_ALBUM)
           dir.GetDirectory(pathToUrl, items);
@@ -363,7 +363,7 @@ void CMusicInfoScanner::FetchAlbumInfo(const std::string& strDirectory,
   m_musicDatabase->Open();
   for (int i=0;i<items.Size();++i)
   {
-    if (CMusicDatabaseDirectory::IsAllItem(items[i]->GetPath()) || items[i]->IsParentFolder())
+    if (CMediaDirectory::IsAllItem(items[i]->GetPath()) || items[i]->IsParentFolder())
       continue;
 
     m_pathsToScan.insert(items[i]->GetPath());
@@ -411,7 +411,7 @@ void CMusicInfoScanner::FetchArtistInfo(const std::string& strDirectory,
       }
       else
       {
-        CMusicDatabaseDirectory dir;
+        CMediaDirectory dir;
         NODE_TYPE childtype = dir.GetDirectoryChildType(strDirectory);
         if (childtype == NODE_TYPE_ARTIST)
           dir.GetDirectory(pathToUrl, items);
@@ -427,7 +427,7 @@ void CMusicInfoScanner::FetchArtistInfo(const std::string& strDirectory,
   m_musicDatabase->Open();
   for (int i=0;i<items.Size();++i)
   {
-    if (CMusicDatabaseDirectory::IsAllItem(items[i]->GetPath()) || items[i]->IsParentFolder())
+    if (CMediaDirectory::IsAllItem(items[i]->GetPath()) || items[i]->IsParentFolder())
       continue;
 
     m_pathsToScan.insert(items[i]->GetPath());

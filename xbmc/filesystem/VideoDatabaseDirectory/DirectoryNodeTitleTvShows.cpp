@@ -7,20 +7,20 @@
  */
 
 #include "DirectoryNodeTitleTvShows.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "video/VideoDatabase.h"
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-CDirectoryNodeTitleTvShows::CDirectoryNodeTitleTvShows(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_TITLE_TVSHOWS, strName, pParent, strOrigin)
+CDirectoryNodeTitleTvShows::CDirectoryNodeTitleTvShows(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_TITLE_TVSHOWS, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeTitleTvShows::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeTitleTvShows::GetChildType() const
 {
-  return NODE_TYPE_SEASONS;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_SEASONS;
 }
 
 std::string CDirectoryNodeTitleTvShows::GetLocalizedName() const
@@ -37,7 +37,7 @@ bool CDirectoryNodeTitleTvShows::GetContent(CFileItemList& items) const
   if (!videodatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=videodatabase.GetTvShowsNav(BuildPath(), items, params.GetGenreId(), params.GetYear(), params.GetActorId(), params.GetDirectorId(), params.GetStudioId(), params.GetTagId());

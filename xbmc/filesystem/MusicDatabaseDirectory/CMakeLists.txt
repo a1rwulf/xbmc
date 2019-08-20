@@ -8,21 +8,15 @@ set(SOURCES DirectoryNodeAlbumCompilations.cpp
             DirectoryNodeAlbumTop100.cpp
             DirectoryNodeAlbumTop100Song.cpp
             DirectoryNodeArtist.cpp
-            DirectoryNode.cpp
-            DirectoryNodeGrouped.cpp
-            DirectoryNodeOverview.cpp
-            DirectoryNodeRoot.cpp
             DirectoryNodeSingles.cpp
             DirectoryNodeSong.cpp
             DirectoryNodeSongTop100.cpp
             DirectoryNodeTop100.cpp
             DirectoryNodeYearAlbum.cpp
             DirectoryNodeYearSong.cpp
-            DirectoryNodePlaylist.cpp
-            QueryParams.cpp)
+            DirectoryNodePlaylist.cpp)
 
-set(HEADERS DirectoryNode.h
-            DirectoryNodeAlbum.h
+set(HEADERS DirectoryNodeAlbum.h
             DirectoryNodeAlbumCompilations.h
             DirectoryNodeAlbumCompilationsSongs.h
             DirectoryNodeAlbumRecentlyAdded.h
@@ -32,16 +26,12 @@ set(HEADERS DirectoryNode.h
             DirectoryNodeAlbumTop100.h
             DirectoryNodeAlbumTop100Song.h
             DirectoryNodeArtist.h
-            DirectoryNodeGrouped.h
-            DirectoryNodeOverview.h
-            DirectoryNodeRoot.h
             DirectoryNodeSingles.h
             DirectoryNodeSong.h
             DirectoryNodeSongTop100.h
             DirectoryNodeTop100.h
             DirectoryNodeYearAlbum.h
             DirectoryNodeYearSong.h
-            DirectoryNodePlaylist.h
-            QueryParams.h)
+            DirectoryNodePlaylist.h)
 
 core_add_library(musicdatabasedirectory)

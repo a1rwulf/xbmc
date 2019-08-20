@@ -8,7 +8,7 @@
 
 #include "DirectoryNodeArtist.h"
 #include "ServiceBroker.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDatabase.h"
 #include "settings/Settings.h"
@@ -16,15 +16,15 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeArtist::CDirectoryNodeArtist(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_ARTIST, strName, pParent, strOrigin)
+CDirectoryNodeArtist::CDirectoryNodeArtist(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_ARTIST, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeArtist::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeArtist::GetChildType() const
 {
-  return NODE_TYPE_ALBUM;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_ALBUM;
 }
 
 std::string CDirectoryNodeArtist::GetLocalizedName() const
@@ -43,7 +43,7 @@ bool CDirectoryNodeArtist::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess = musicdatabase.GetArtistsNav(BuildPath(), items, !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_MUSICLIBRARY_SHOWCOMPILATIONARTISTS), params.GetGenreId());

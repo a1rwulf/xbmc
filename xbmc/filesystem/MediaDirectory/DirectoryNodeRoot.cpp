@@ -8,7 +8,7 @@
 
 #include "DirectoryNodeRoot.h"
 
-using namespace XFILE::MUSICDATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 
 CDirectoryNodeRoot::CDirectoryNodeRoot(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
   : CDirectoryNode(NODE_TYPE_ROOT, strName, pParent, strOrigin)

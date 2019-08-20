@@ -13,11 +13,11 @@
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 #include "video/VideoDatabase.h"
-#include "filesystem/VideoDatabaseDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 #include "guilib/LocalizeStrings.h"
 #include "video/VideoDbUrl.h"
 
-using namespace XFILE::VIDEODATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 
 bool CVideoFileItemListModifier::CanModify(const CFileItemList &items) const
 {

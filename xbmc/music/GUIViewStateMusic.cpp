@@ -22,11 +22,10 @@
 #include "view/ViewStateSettings.h"
 
 #include "filesystem/Directory.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 
 using namespace XFILE;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 
 int CGUIViewStateWindowMusic::GetPlaylist() const
 {
@@ -79,7 +78,7 @@ void CGUIViewStateMusicSearch::SaveViewState()
 
 CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& items) : CGUIViewStateWindowMusic(items)
 {
-  CMusicDatabaseDirectory dir;
+  CMediaDirectory dir;
   NODE_TYPE NodeType=dir.GetDirectoryChildType(items.GetPath());
 
   const std::shared_ptr<CSettings> settings = CServiceBroker::GetSettingsComponent()->GetSettings();
@@ -314,7 +313,7 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
 
 void CGUIViewStateMusicDatabase::SaveViewState()
 {
-  CMusicDatabaseDirectory dir;
+  CMediaDirectory dir;
   NODE_TYPE NodeType=dir.GetDirectoryChildType(m_items.GetPath());
 
   switch (NodeType)
@@ -482,8 +481,8 @@ CGUIViewStateWindowMusicNav::CGUIViewStateWindowMusicNav(const CFileItemList& it
   {
     if (items.IsVideoDb() && items.Size() > (settings->GetBool(CSettings::SETTING_FILELISTS_SHOWPARENTDIRITEMS)?1:0))
     {
-      XFILE::VIDEODATABASEDIRECTORY::CQueryParams params;
-      XFILE::CVideoDatabaseDirectory::GetQueryParams(items[settings->GetBool(CSettings::SETTING_FILELISTS_SHOWPARENTDIRITEMS) ? 1 : 0]->GetPath(), params);
+      XFILE::MEDIADIRECTORY::CQueryParams params;
+      XFILE::CMediaDirectory::GetQueryParams(items[settings->GetBool(CSettings::SETTING_FILELISTS_SHOWPARENTDIRITEMS) ? 1 : 0]->GetPath(), params);
       if (params.GetMVideoId() != -1)
       {
         AddSortMethod(SortByLabel, sortAttribute, 551, LABEL_MASKS("%T", "%Y"));  // Filename, Duration | Foldername, empty

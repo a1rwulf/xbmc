@@ -15,36 +15,36 @@
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-Node MovieChildren[] = {
-                        { NODE_TYPE_GENRE,        "genres",     135 },
-                        { NODE_TYPE_TITLE_MOVIES, "titles",     10024 },
-                        { NODE_TYPE_YEAR,         "years",      652 },
-                        { NODE_TYPE_ACTOR,        "actors",     344 },
-                        { NODE_TYPE_DIRECTOR,     "directors",  20348 },
-                        { NODE_TYPE_STUDIO,       "studios",    20388 },
-                        { NODE_TYPE_SETS,         "sets",       20434 },
-                        { NODE_TYPE_COUNTRY,      "countries",  20451 },
-                        { NODE_TYPE_TAGS,         "tags",       20459 }
+XFILE::MEDIADIRECTORY::Node MovieChildren[] = {
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_GENRE,        "genres",     135 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_TITLE_MOVIES, "titles",     10024 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR,         "years",      652 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_ACTOR,        "actors",     344 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_DIRECTOR,     "directors",  20348 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_STUDIO,       "studios",    20388 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_SETS,         "sets",       20434 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_COUNTRY,      "countries",  20451 },
+                        { XFILE::MEDIADIRECTORY::NODE_TYPE_TAGS,         "tags",       20459 }
                        };
 
-CDirectoryNodeMoviesOverview::CDirectoryNodeMoviesOverview(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_MOVIES_OVERVIEW, strName, pParent, strOrigin)
+CDirectoryNodeMoviesOverview::CDirectoryNodeMoviesOverview(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_MOVIES_OVERVIEW, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeMoviesOverview::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeMoviesOverview::GetChildType() const
 {
-  for (const Node& node : MovieChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : MovieChildren)
     if (GetName() == node.id)
       return node.node;
 
-  return NODE_TYPE_NONE;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_NONE;
 }
 
 std::string CDirectoryNodeMoviesOverview::GetLocalizedName() const
 {
-  for (const Node& node : MovieChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : MovieChildren)
     if (GetName() == node.id)
       return g_localizeStrings.Get(node.label);
   return "";
@@ -56,7 +56,7 @@ bool CDirectoryNodeMoviesOverview::GetContent(CFileItemList& items) const
   if (!videoUrl.FromString(BuildPath()))
     return false;
 
-  for (unsigned int i = 0; i < sizeof(MovieChildren) / sizeof(Node); ++i)
+  for (unsigned int i = 0; i < sizeof(MovieChildren) / sizeof(XFILE::MEDIADIRECTORY::Node); ++i)
   {
     if (i == 6)
     {

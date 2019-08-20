@@ -10,8 +10,8 @@
 #include "ServiceBroker.h"
 #include "MusicDatabase.h"
 #include "music/tags/MusicInfoTagLoaderFactory.h"
-#include "filesystem/MusicDatabaseDirectory/DirectoryNode.h"
-#include "filesystem/MusicDatabaseDirectory/QueryParams.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "utils/URIUtils.h"
 #include "music/tags/MusicInfoTag.h"
 #include "filesystem/File.h"
@@ -204,8 +204,8 @@ bool CMusicInfoLoader::LoadItemLookup(CFileItem* pItem)
       }
       else if (pItem->IsMusicDb())
       { // a music db item that doesn't have tag loaded - grab details from the database
-        XFILE::MUSICDATABASEDIRECTORY::CQueryParams param;
-        XFILE::MUSICDATABASEDIRECTORY::CDirectoryNode::GetDatabaseInfo(pItem->GetPath(),param);
+        XFILE::MEDIADIRECTORY::CQueryParams param;
+        XFILE::MEDIADIRECTORY::CDirectoryNode::GetDatabaseInfo(pItem->GetPath(),param);
         CSong song;
         if (m_musicDatabase.GetSong(param.GetSongId(), song))
         {

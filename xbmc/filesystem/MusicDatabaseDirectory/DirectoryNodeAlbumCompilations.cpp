@@ -7,24 +7,24 @@
  */
 
 #include "DirectoryNodeAlbumCompilations.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeAlbumCompilations::CDirectoryNodeAlbumCompilations(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_ALBUM_COMPILATIONS, strName, pParent, strOrigin)
+CDirectoryNodeAlbumCompilations::CDirectoryNodeAlbumCompilations(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_ALBUM_COMPILATIONS, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeAlbumCompilations::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeAlbumCompilations::GetChildType() const
 {
   if (GetName()=="-1")
-    return NODE_TYPE_ALBUM_COMPILATIONS_SONGS;
+    return XFILE::MEDIADIRECTORY::NODE_TYPE_ALBUM_COMPILATIONS_SONGS;
 
-  return NODE_TYPE_SONG;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_SONG;
 }
 
 std::string CDirectoryNodeAlbumCompilations::GetLocalizedName() const
@@ -43,7 +43,7 @@ bool CDirectoryNodeAlbumCompilations::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=musicdatabase.GetCompilationAlbums(BuildPath(), items);

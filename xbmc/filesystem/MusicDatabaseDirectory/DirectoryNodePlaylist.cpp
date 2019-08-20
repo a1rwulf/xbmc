@@ -7,7 +7,7 @@
  */
 
 #include "DirectoryNodePlaylist.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "guilib/LocalizeStrings.h"
 #include "media/MetadataManager.h"
 #include "music/MusicDatabase.h"
@@ -15,15 +15,15 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodePlaylist::CDirectoryNodePlaylist(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-    : CDirectoryNode(NODE_TYPE_PLAYLIST, strName, pParent, strOrigin)
+CDirectoryNodePlaylist::CDirectoryNodePlaylist(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+    : XFILE::MEDIADIRECTORY::CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_PLAYLIST, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodePlaylist::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodePlaylist::GetChildType() const
 {
-  return NODE_TYPE_SONG;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_SONG;
 }
 
 bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
@@ -32,7 +32,7 @@ bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   std::string strBaseDir=BuildPath();

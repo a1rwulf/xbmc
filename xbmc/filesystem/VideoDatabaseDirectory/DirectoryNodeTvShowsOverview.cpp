@@ -14,36 +14,36 @@
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-Node TvShowChildren[] = {
-                          { NODE_TYPE_GENRE,         "genres",   135 },
-                          { NODE_TYPE_TITLE_TVSHOWS, "titles",   10024 },
-                          { NODE_TYPE_YEAR,          "years",    652 },
-                          { NODE_TYPE_ACTOR,         "actors",   344 },
-                          { NODE_TYPE_STUDIO,        "studios",  20388 },
-                          { NODE_TYPE_TAGS,          "tags",     20459 }
+XFILE::MEDIADIRECTORY::Node TvShowChildren[] = {
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_GENRE,         "genres",   135 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_TITLE_TVSHOWS, "titles",   10024 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR,          "years",    652 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_ACTOR,         "actors",   344 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_STUDIO,        "studios",  20388 },
+                          { XFILE::MEDIADIRECTORY::NODE_TYPE_TAGS,          "tags",     20459 }
                         };
 
-CDirectoryNodeTvShowsOverview::CDirectoryNodeTvShowsOverview(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_TVSHOWS_OVERVIEW, strName, pParent, strOrigin)
+CDirectoryNodeTvShowsOverview::CDirectoryNodeTvShowsOverview(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeTvShowsOverview::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeTvShowsOverview::GetChildType() const
 {
   if (GetName()=="0")
-    return NODE_TYPE_EPISODES;
+    return XFILE::MEDIADIRECTORY::NODE_TYPE_EPISODES;
 
-  for (const Node& node : TvShowChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : TvShowChildren)
     if (GetName() == node.id)
       return node.node;
 
-  return NODE_TYPE_NONE;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_NONE;
 }
 
 std::string CDirectoryNodeTvShowsOverview::GetLocalizedName() const
 {
-  for (const Node& node : TvShowChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : TvShowChildren)
     if (GetName() == node.id)
       return g_localizeStrings.Get(node.label);
   return "";
@@ -55,7 +55,7 @@ bool CDirectoryNodeTvShowsOverview::GetContent(CFileItemList& items) const
   if (!videoUrl.FromString(BuildPath()))
     return false;
 
-  for (const Node& node : TvShowChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : TvShowChildren)
   {
     CFileItemPtr pItem(new CFileItem(g_localizeStrings.Get(node.label)));
 

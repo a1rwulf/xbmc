@@ -12,7 +12,7 @@
 #include "Util.h"
 #include "GUIPassword.h"
 #include "filesystem/MultiPathDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "filesystem/VideoDatabaseFile.h"
 #include "view/GUIViewState.h"
 #include "PartyModeManager.h"
@@ -47,7 +47,7 @@
 #include <utility>
 
 using namespace XFILE;
-using namespace VIDEODATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace KODI::MESSAGING;
 
 #define CONTROL_BTNVIEWASICONS     2
@@ -245,7 +245,7 @@ SelectFirstUnwatchedItem CGUIWindowVideoNav::GetSettingSelectFirstUnwatchedItem(
 {
   if (m_vecItems->IsVideoDb())
   {
-    NODE_TYPE nodeType = CVideoDatabaseDirectory::GetDirectoryChildType(m_vecItems->GetPath());
+    NODE_TYPE nodeType = CMediaDirectory::GetDirectoryChildType(m_vecItems->GetPath());
 
     if (nodeType == NODE_TYPE_SEASONS || nodeType == NODE_TYPE_EPISODES)
     {
@@ -293,7 +293,7 @@ int CGUIWindowVideoNav::GetFirstUnwatchedItemIndex(bool includeAllSeasons, bool 
     }
   }
 
-  NODE_TYPE nodeType = CVideoDatabaseDirectory::GetDirectoryChildType(m_vecItems->GetPath());
+  NODE_TYPE nodeType = CMediaDirectory::GetDirectoryChildType(m_vecItems->GetPath());
   if (nodeType == NODE_TYPE::NODE_TYPE_EPISODES)
   {
     iIndex = 0;
@@ -366,10 +366,10 @@ bool CGUIWindowVideoNav::GetDirectory(const std::string &strDirectory, CFileItem
   {
     if (items.IsVideoDb())
     {
-      XFILE::CVideoDatabaseDirectory dir;
+      XFILE::CMediaDirectory dir;
       CQueryParams params;
       dir.GetQueryParams(items.GetPath(),params);
-      VIDEODATABASEDIRECTORY::NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
+      MEDIADIRECTORY::NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
 
       int iFlatten = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(CSettings::SETTING_VIDEOLIBRARY_FLATTENTVSHOWS);
       int itemsSize = items.GetObjectCount();
@@ -411,7 +411,7 @@ bool CGUIWindowVideoNav::GetDirectory(const std::string &strDirectory, CFileItem
         }
       }
 
-      if (node == VIDEODATABASEDIRECTORY::NODE_TYPE_EPISODES ||
+      if (node == MEDIADIRECTORY::NODE_TYPE_EPISODES ||
           node == NODE_TYPE_SEASONS                          ||
           node == NODE_TYPE_RECENTLY_ADDED_EPISODES)
       {
@@ -688,7 +688,7 @@ void CGUIWindowVideoNav::UpdateButtons()
   // everything else is from a videodb:// path
   else if (m_vecItems->IsVideoDb())
   {
-    CVideoDatabaseDirectory dir;
+    CMediaDirectory dir;
     dir.GetLabel(m_vecItems->GetPath(), strLabel);
   }
   else
@@ -839,7 +839,7 @@ void CGUIWindowVideoNav::OnDeleteItem(CFileItemPtr pItem)
       for (int i=0;i<items.Size();++i)
         OnDeleteItem(items[i]);
 
-      CVideoDatabaseDirectory dir;
+      CMediaDirectory dir;
       CQueryParams params;
       dir.GetQueryParams(pItem->GetPath(),params);
       m_database.DeleteSet(params.GetSetId());
@@ -854,7 +854,7 @@ void CGUIWindowVideoNav::OnDeleteItem(CFileItemPtr pItem)
     pDialog->Open();
     if (pDialog->IsConfirmed())
     {
-      CVideoDatabaseDirectory dir;
+      CMediaDirectory dir;
       CQueryParams params;
       dir.GetQueryParams(pItem->GetPath(), params);
       m_database.DeleteTag(params.GetTagId(), (VIDEODB_CONTENT_TYPE)params.GetContentType());
@@ -888,7 +888,7 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
 
   CGUIWindowVideoBase::GetContextButtons(itemNumber, buttons);
 
-  CVideoDatabaseDirectory dir;
+  CMediaDirectory dir;
   NODE_TYPE node = dir.GetDirectoryChildType(m_vecItems->GetPath());
 
   const std::shared_ptr<CProfileManager> profileManager = CServiceBroker::GetSettingsComponent()->GetProfileManager();
@@ -1264,7 +1264,7 @@ std::string CGUIWindowVideoNav::GetStartFolder(const std::string &dir)
 bool CGUIWindowVideoNav::ApplyWatchedFilter(CFileItemList &items)
 {
   bool listchanged = false;
-  CVideoDatabaseDirectory dir;
+  CMediaDirectory dir;
   NODE_TYPE node = dir.GetDirectoryChildType(items.GetPath());
 
   // now filter watched items as necessary

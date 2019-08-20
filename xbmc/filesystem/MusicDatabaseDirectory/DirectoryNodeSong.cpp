@@ -7,7 +7,7 @@
  */
 
 #include "DirectoryNodeSong.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "ServiceBroker.h"
 #include "media/MetadataManager.h"
 #include "music/MusicDatabase.h"
@@ -15,9 +15,9 @@
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
 CDirectoryNodeSong::CDirectoryNodeSong(const std::string& strName,
-                                       CDirectoryNode* pParent,
+                                       XFILE::MEDIADIRECTORY::CDirectoryNode* pParent,
                                        const std::string& strOrigin)
-    : CDirectoryNode(NODE_TYPE_SONG, strName, pParent, strOrigin)
+    : XFILE::MEDIADIRECTORY::CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_SONG, strName, pParent, strOrigin)
 {
 }
 
@@ -27,7 +27,7 @@ bool CDirectoryNodeSong::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   std::string strBaseDir = BuildPath();

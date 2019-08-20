@@ -7,7 +7,7 @@
  */
 
 #include "DirectoryNodeSeasons.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "video/VideoDatabase.h"
 #include "FileItem.h"
 #include "guilib/LocalizeStrings.h"
@@ -15,15 +15,15 @@
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-CDirectoryNodeSeasons::CDirectoryNodeSeasons(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
-  : CDirectoryNode(NODE_TYPE_SEASONS, strName, pParent, strOrigin)
+CDirectoryNodeSeasons::CDirectoryNodeSeasons(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_SEASONS, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeSeasons::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeSeasons::GetChildType() const
 {
-  return NODE_TYPE_EPISODES;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_EPISODES;
 }
 
 std::string CDirectoryNodeSeasons::GetLocalizedName() const
@@ -53,7 +53,7 @@ bool CDirectoryNodeSeasons::GetContent(CFileItemList& items) const
   if (!videodatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   bool bSuccess=videodatabase.GetSeasonsNav(BuildPath(), items, params.GetActorId(), params.GetDirectorId(), params.GetGenreId(), params.GetYear(), params.GetTvShowId());

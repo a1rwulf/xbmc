@@ -22,8 +22,7 @@
 #include "FileItem.h"
 #include "filesystem/File.h"
 #include "filesystem/StackDirectory.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "video/VideoInfoTag.h"
 #include "music/MusicDatabase.h"
 #include "music/tags/MusicInfoTag.h"
@@ -457,9 +456,9 @@ BuildObject(CFileItem&                    item,
 
         /* this might be overkill, but hey */
         if (item.IsMusicDb()) {
-            MUSICDATABASEDIRECTORY::NODE_TYPE node = CMusicDatabaseDirectory::GetDirectoryType(item.GetPath());
+            MEDIADIRECTORY::NODE_TYPE node = CMediaDirectory::GetDirectoryType(item.GetPath());
             switch(node) {
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_ARTIST: {
+                case MEDIADIRECTORY::NODE_TYPE_ARTIST: {
                       container->m_ObjectClass.type += ".person.musicArtist";
                       CMusicInfoTag *tag = item.GetMusicInfoTag();
                       if (tag) {
@@ -474,10 +473,10 @@ BuildObject(CFileItem&                    item,
 #endif
                   }
                   break;
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_ALBUM:
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_ALBUM_COMPILATIONS:
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_ALBUM_RECENTLY_ADDED:
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_YEAR_ALBUM: {
+                case MEDIADIRECTORY::NODE_TYPE_ALBUM:
+                case MEDIADIRECTORY::NODE_TYPE_ALBUM_COMPILATIONS:
+                case MEDIADIRECTORY::NODE_TYPE_ALBUM_RECENTLY_ADDED:
+                case MEDIADIRECTORY::NODE_TYPE_YEAR_ALBUM: {
                       container->m_ObjectClass.type += ".album.musicAlbum";
                       // for Sonos to be happy
                       CMusicInfoTag *tag = item.GetMusicInfoTag();
@@ -494,26 +493,26 @@ BuildObject(CFileItem&                    item,
 #endif
                   }
                   break;
-                case MUSICDATABASEDIRECTORY::NODE_TYPE_GENRE:
+                case MEDIADIRECTORY::NODE_TYPE_GENRE:
                   container->m_ObjectClass.type += ".genre.musicGenre";
                   break;
                 default:
                   break;
             }
         } else if (item.IsVideoDb()) {
-            VIDEODATABASEDIRECTORY::NODE_TYPE node = CVideoDatabaseDirectory::GetDirectoryType(item.GetPath());
+            MEDIADIRECTORY::NODE_TYPE node = CMediaDirectory::GetDirectoryType(item.GetPath());
             CVideoInfoTag &tag = *item.GetVideoInfoTag();
             switch(node) {
-                case VIDEODATABASEDIRECTORY::NODE_TYPE_GENRE:
+                case MEDIADIRECTORY::NODE_TYPE_GENRE:
                   container->m_ObjectClass.type += ".genre.movieGenre";
                   break;
-                case VIDEODATABASEDIRECTORY::NODE_TYPE_ACTOR:
+                case MEDIADIRECTORY::NODE_TYPE_ACTOR:
                   container->m_ObjectClass.type += ".person.videoArtist";
                   container->m_Creator = StringUtils::Join(tag.m_artist, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator).c_str();
                   container->m_Title   = tag.m_strTitle.c_str();
                   break;
-                case VIDEODATABASEDIRECTORY::NODE_TYPE_SEASONS:
-                case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
+                case MEDIADIRECTORY::NODE_TYPE_SEASONS:
+                case MEDIADIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
                   container->m_ObjectClass.type += ".album.videoAlbum";
                   container->m_Recorded.series_title = tag.m_strShowTitle.c_str();
                   container->m_Recorded.episode_number = tag.m_iEpisode;

@@ -12,7 +12,7 @@
 
 namespace XFILE
 {
-  namespace VIDEODATABASEDIRECTORY
+  namespace MEDIADIRECTORY
   {
     class CDirectoryNodeGrouped : public CDirectoryNode
     {
@@ -24,10 +24,8 @@ namespace XFILE
       std::string GetLocalizedName() const override;
 
     private:
-      std::string GetContentType() const;
+    std::string GetContentType() const;
       std::string GetContentType(const CQueryParams &params) const;
     };
   }
 }
-
-
