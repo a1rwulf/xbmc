@@ -559,7 +559,9 @@
       "displayartist": { "type" : "string" },
       "votes": { "type": "integer" },
       "userrating": { "type": "integer" },
-      "sortartist": { "type" : "string" }
+      "sortartist": { "type": "string" },
+      "playlistid": { "type": "string"},
+      "provider": { "type": "string"}
     }
   },
   "Audio.Details.Artist": {
@@ -1474,7 +1476,7 @@
                 "locked", "channelnumber", "starttime", "endtime", "specialsortseason",
                 "specialsortepisode", "compilation", "releasetype", "albumreleasetype",
                 "contributors", "displaycomposer", "displayconductor", "displayorchestra", "displaylyricist",
-                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid"]
+                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid", "playlistid", "provider"]
     }
   },
   "List.Item.All": {

@@ -68,14 +68,18 @@ bool CApiMetadataProvider::GetPlaylists(const std::string& strBaseDir,
           !pl.uuidPlaylist.empty() ? pl.uuidPlaylist : std::to_string(pl.idPlaylist));
       itemUrl.FromString(path);
 
-      CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), pl));
-      pItem->m_dwSize = doc["data"]["items"].GetArray().Size();
+      CFileItemPtr item(new CFileItem(itemUrl.ToString(), pl));
+      item->m_dwSize = doc["data"]["items"].GetArray().Size();
       std::string iconPath = playlist["thumbnail"].IsString() ? playlist["thumbnail"].GetString()
                                                               : "DefaultMusicPlaylists.png";
-      pItem->SetIconImage(iconPath);
-      pItem->SetProvider(playlist["provider"].GetString());
 
-      items.Add(pItem);
+      item->SetArt("thumb", iconPath);
+      item->SetIconImage(iconPath);
+
+      item->SetProvider(playlist["provider"].GetString());
+      item->SetProperty("provider", playlist["provider"].GetString());
+
+      items.Add(item);
       total++;
     }
 
@@ -159,8 +163,17 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
       // item->m_lEndOffset = r.song->m_endOffset;
       std::string iconPath =
           track["thumbnail"].IsString() ? track["thumbnail"].GetString() : "DefaultAlbumCover.png";
+
+      item->SetArt("thumb", iconPath);
       item->SetIconImage(iconPath);
       item->SetProvider(track["provider"].GetString());
+      item->SetProperty("provider", track["provider"].GetString());
+
+      // If we get the songs from a playlist, save the playlistid in
+      // the fileitem as property.
+      // This way we can supply the playlist that's being played in Player.GetItem
+      if (StringUtils::StartsWith(url.GetFileName(), "playlist"))
+        item->SetProperty("playlistid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
 
       items.Add(item);
       total++;
