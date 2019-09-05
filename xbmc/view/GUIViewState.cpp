@@ -71,7 +71,7 @@ CGUIViewState* CGUIViewState::GetViewState(int windowId, const CFileItemList& it
   if (items.HasSortDetails())
     return new CGUIViewStateFromItems(items);
 
-  if (url.IsProtocol("musicdb"))
+  if (url.IsProtocol("musicdb") || url.IsProtocol("oam"))
     return new CGUIViewStateMusicDatabase(items);
 
   if (url.IsProtocol("musicsearch"))
