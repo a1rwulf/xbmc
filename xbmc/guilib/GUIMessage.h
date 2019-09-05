@@ -159,6 +159,16 @@
  */
 #define GUI_MSG_SUBTITLE_DOWNLOADED  52
 
+/*!
+ \brief Called when a loading data of a container is finished
+ */
+#define GUI_MSG_LOADING_COMPLETE  53
+
+/*!
+ \brief Called for controls when a window gets deinit
+ */
+#define GUI_MSG_CTRL_DEINIT 54
+
 
 #define GUI_MSG_USER         1000
 

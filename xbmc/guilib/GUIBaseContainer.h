@@ -207,6 +207,8 @@ protected:
 
   unsigned int m_lastRenderTime;
 
+  bool m_dataLoadFinished;
+
 private:
   bool OnContextMenu();
 

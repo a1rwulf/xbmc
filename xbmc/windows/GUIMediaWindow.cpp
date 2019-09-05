@@ -276,6 +276,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
       // Call ClearFileItems() after our window has finished doing any WindowClose
       // animations
       ClearFileItems();
+      m_viewControl.DeInit();
       return true;
     }
     break;
@@ -1747,7 +1748,7 @@ void CGUIMediaWindow::OnRenameItem(int iItem)
 void CGUIMediaWindow::OnInitWindow()
 {
   // initial fetch is done unthreaded to ensure the items are setup prior to skin animations kicking off
-  m_backgroundLoad = false;
+  m_backgroundLoad = true;
 
   // the start directory may change during Refresh
   bool updateStartDirectory = URIUtils::PathEquals(m_vecItems->GetPath(), m_startDirectory, true);
@@ -2320,6 +2321,13 @@ bool CGUIMediaWindow::GetDirectoryItems(CURL &url, CFileItemList &items, bool us
 
     m_updateJobActive = false;
     m_rootDir.ReleaseDirImpl();
+
+    if (!url.GetProtocol().empty())
+    {
+      CGUIMessage loadmsg(GUI_MSG_LOADING_COMPLETE, GetID(), m_viewControl.GetCurrentControl(), 0, 0);
+      CServiceBroker::GetGUI()->GetWindowManager().SendMessage(loadmsg, GetID());
+    }
+
     return ret;
   }
   else

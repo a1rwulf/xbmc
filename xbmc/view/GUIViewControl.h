@@ -46,6 +46,7 @@ public:
   int GetCurrentControl() const;
 
   void Clear();
+  void DeInit();
 
 protected:
   int GetSelectedItem(const CGUIControl *control) const;

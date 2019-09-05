@@ -298,6 +298,15 @@ void CGUIViewControl::Clear()
   CServiceBroker::GetGUI()->GetWindowManager().SendMessage(msg, m_parentWindow);
 }
 
+void CGUIViewControl::DeInit()
+{
+  if (m_currentView < 0 || m_currentView >= (int)m_visibleViews.size())
+    return; // no valid current view!
+
+  CGUIMessage msg(GUI_MSG_CTRL_DEINIT, m_parentWindow, m_visibleViews[m_currentView]->GetID(), 0);
+  CServiceBroker::GetGUI()->GetWindowManager().SendMessage(msg, m_parentWindow);
+}
+
 int CGUIViewControl::GetView(VIEW_TYPE type, int id) const
 {
   for (int i = 0; i < (int)m_visibleViews.size(); i++)

@@ -53,6 +53,7 @@ CGUIBaseContainer::CGUIBaseContainer(int parentID, int controlID, float posX, fl
   m_autoScrollDelayTime = 0;
   m_autoScrollIsReversed = false;
   m_lastRenderTime = 0;
+  m_dataLoadFinished = false;
 }
 
 CGUIBaseContainer::CGUIBaseContainer(const CGUIBaseContainer &) = default;
@@ -475,6 +476,15 @@ bool CGUIBaseContainer::OnMessage(CGUIMessage& message)
         count--;
       }
       return true;
+    }
+    else if (message.GetMessage() == GUI_MSG_LOADING_COMPLETE)
+    {
+      m_dataLoadFinished = true;
+      return true;
+    }
+    else if (message.GetMessage() == GUI_MSG_CTRL_DEINIT)
+    {
+      m_dataLoadFinished = false;
     }
   }
   return CGUIControl::OnMessage(message);
@@ -1256,6 +1266,8 @@ bool CGUIBaseContainer::GetCondition(int condition, int data) const
     return ((m_scrollTimer.IsRunning() && m_scrollTimer.GetElapsedMilliseconds() > std::max(m_scroller.GetDuration(), SCROLLING_THRESHOLD)) || m_pageChangeTimer.IsRunning());
   case CONTAINER_ISUPDATING:
     return (m_listProvider) ? m_listProvider->IsUpdating() : false;
+  case CONTAINER_HAS_FINISHED_LOADING:
+    return m_dataLoadFinished;
   default:
     return false;
   }

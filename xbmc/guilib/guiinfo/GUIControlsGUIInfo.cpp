@@ -547,6 +547,7 @@ bool CGUIControlsGUIInfo::GetBool(bool& value, const CGUIListItem *gitem, int co
     case CONTAINER_SUBITEM:
     case CONTAINER_ISUPDATING:
     case CONTAINER_HAS_PARENT_ITEM:
+    case CONTAINER_HAS_FINISHED_LOADING:
     {
       if (info.GetData1())
       {

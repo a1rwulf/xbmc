@@ -3389,7 +3389,8 @@ const infomap container_bools[] ={{ "onnext",           CONTAINER_MOVE_NEXT },
                                   { "canfilter",        CONTAINER_CAN_FILTER },
                                   { "canfilteradvanced",CONTAINER_CAN_FILTERADVANCED },
                                   { "filtered",         CONTAINER_FILTERED },
-                                  { "isupdating",       CONTAINER_ISUPDATING }};
+                                  { "isupdating",       CONTAINER_ISUPDATING },
+                                  { "hasfinishedloading", CONTAINER_HAS_FINISHED_LOADING }};
 
 /// \page modules__infolabels_boolean_conditions
 ///   \table_row3{   <b>`Container(id).Row`</b>,
