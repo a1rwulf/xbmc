@@ -17,7 +17,7 @@ namespace XFILE
     class CDirectoryNodeAlbumCompilationsSongs : public CDirectoryNode
     {
     public:
-      CDirectoryNodeAlbumCompilationsSongs(const std::string& strName, CDirectoryNode* pParent);
+      CDirectoryNodeAlbumCompilationsSongs(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin);
     protected:
       bool GetContent(CFileItemList& items) const override;
     };

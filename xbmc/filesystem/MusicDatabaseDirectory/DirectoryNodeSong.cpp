@@ -8,14 +8,17 @@
 
 #include "DirectoryNodeSong.h"
 #include "QueryParams.h"
+#include "ServiceBroker.h"
+#include "media/MetadataManager.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeSong::CDirectoryNodeSong(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_SONG, strName, pParent)
+CDirectoryNodeSong::CDirectoryNodeSong(const std::string& strName,
+                                       CDirectoryNode* pParent,
+                                       const std::string& strOrigin)
+    : CDirectoryNode(NODE_TYPE_SONG, strName, pParent, strOrigin)
 {
-
 }
 
 bool CDirectoryNodeSong::GetContent(CFileItemList& items) const

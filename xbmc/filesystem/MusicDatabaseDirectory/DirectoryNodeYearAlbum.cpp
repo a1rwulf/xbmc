@@ -13,8 +13,8 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeYearAlbum::CDirectoryNodeYearAlbum(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_YEAR_ALBUM, strName, pParent)
+CDirectoryNodeYearAlbum::CDirectoryNodeYearAlbum(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(NODE_TYPE_YEAR_ALBUM, strName, pParent, strOrigin)
 {
 
 }
