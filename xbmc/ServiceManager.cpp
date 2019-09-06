@@ -25,6 +25,7 @@
 #include "input/InputManager.h"
 #include "interfaces/generic/ScriptInvocationManager.h"
 #include "interfaces/python/XBPython.h"
+#include "media/MetadataManager.h"
 #include "pvr/PVRManager.h"
 #include "network/Network.h"
 #include "utils/FileExtensionProvider.h"
@@ -157,6 +158,8 @@ bool CServiceManager::InitStageTwo(const CAppParamParser &params, const std::str
   m_powerManager->SetDefaults();
 
   m_weatherManager.reset(new CWeatherManager());
+
+  m_metadataManager.reset(new METADATA::CMetadataManager());
 
   init_level = 2;
   return true;
@@ -330,6 +333,11 @@ CFileExtensionProvider& CServiceManager::GetFileExtensionProvider()
 CPowerManager &CServiceManager::GetPowerManager()
 {
   return *m_powerManager;
+}
+
+METADATA::CMetadataManager& CServiceManager::GetMetadataManager()
+{
+  return *m_metadataManager;
 }
 
 // deleters for unique_ptr

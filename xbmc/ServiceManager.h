@@ -70,6 +70,11 @@ class CDatabaseManager;
 class CProfileManager;
 class CEventLog;
 
+namespace METADATA
+{
+  class CMetadataManager;
+}
+
 class CServiceManager
 {
 public:
@@ -121,6 +126,8 @@ public:
 
   CDatabaseManager &GetDatabaseManager();
 
+  METADATA::CMetadataManager& GetMetadataManager();
+
 protected:
   struct delete_dataCacheCore
   {
@@ -163,4 +170,5 @@ protected:
   std::unique_ptr<CWeatherManager> m_weatherManager;
   std::unique_ptr<CPlayerCoreFactory> m_playerCoreFactory;
   std::unique_ptr<CDatabaseManager> m_databaseManager;
+  std::unique_ptr<METADATA::CMetadataManager> m_metadataManager;
 };

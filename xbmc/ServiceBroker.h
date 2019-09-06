@@ -34,6 +34,11 @@ namespace PLAYLIST
   class CPlayListPlayer;
 }
 
+namespace METADATA
+{
+  class CMetadataManager;
+}
+
 class CContextMenuManager;
 class XBPython;
 class CDataCacheCore;
@@ -105,6 +110,7 @@ public:
   static CPlayerCoreFactory &GetPlayerCoreFactory();
   static CDatabaseManager &GetDatabaseManager();
   static CEventLog &GetEventLog();
+  static METADATA::CMetadataManager &GetMetadataManager();
 
   static CGUIComponent* GetGUI();
   static void RegisterGUI(CGUIComponent *gui);
