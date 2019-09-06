@@ -9,7 +9,9 @@
 #include "DirectoryNodePlaylist.h"
 #include "QueryParams.h"
 #include "guilib/LocalizeStrings.h"
+#include "media/MetadataManager.h"
 #include "music/MusicDatabase.h"
+#include "ServiceBroker.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
@@ -34,7 +36,8 @@ bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
   CollectQueryParams(params);
 
   std::string strBaseDir=BuildPath();
-  bool bSuccess=musicdatabase.GetPlaylistsNav(strBaseDir, items);
+  const CDatabase::Filter filter;
+  bool bSuccess = CServiceBroker::GetMetadataManager().GetPlaylists(strBaseDir, items, filter, SortDescription(), false);
   musicdatabase.Close();
 
   return bSuccess;
