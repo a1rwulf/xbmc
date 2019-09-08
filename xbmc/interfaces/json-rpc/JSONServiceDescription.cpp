@@ -627,15 +627,12 @@ bool JSONSchemaTypeDefinition::Parse(const CVariant &value, bool isParameter /* 
   return true;
 }
 
-JSONRPC_STATUS JSONSchemaTypeDefinition::Check(const CVariant &value, CVariant &outputValue, CVariant &errorData)
+JSONRPC_STATUS JSONSchemaTypeDefinition::Check(const CVariant &value, CVariant &outputValue, CVariant &errorData) const
 {
   if (!name.empty())
     errorData["name"] = name;
   SchemaValueTypeToJson(type, errorData["type"]);
   std::string errorMessage;
-
-  if (referencedType != NULL && !referencedTypeSet)
-    Set(referencedType);
 
   // Let's check the type of the provided parameter
   if (!IsType(value, type))
@@ -1133,9 +1130,31 @@ void JSONSchemaTypeDefinition::Print(bool isParameter, bool isGlobal, bool print
   }
 }
 
-void JSONSchemaTypeDefinition::Set(const JSONSchemaTypeDefinitionPtr typeDefinition)
+void JSONSchemaTypeDefinition::ResolveReference()
 {
-  if (typeDefinition.get() == NULL)
+  // Check and set the reference type before recursing
+  // to guard against cycles
+  if (referencedTypeSet)
+    return;
+
+  referencedTypeSet = true;
+
+  // Take care of all nested types
+  for (auto it : extends)
+    it->ResolveReference();
+  for (auto it : unionTypes)
+    it->ResolveReference();
+  for (auto it : items)
+    it->ResolveReference();
+  for (auto it : additionalItems)
+    it->ResolveReference();
+  for (auto it : properties)
+    it.second->ResolveReference();
+
+  if (additionalProperties)
+    additionalProperties->ResolveReference();
+
+  if (referencedType == nullptr)
     return;
 
   std::string origName = name;
@@ -1145,7 +1164,7 @@ void JSONSchemaTypeDefinition::Set(const JSONSchemaTypeDefinitionPtr typeDefinit
   JSONSchemaTypeDefinitionPtr referencedTypeDef = referencedType;
 
   // set all the values from the given type definition
-  *this = *typeDefinition;
+  *this = *referencedType;
 
   // restore the original values
   if (!origName.empty())
@@ -1163,6 +1182,8 @@ void JSONSchemaTypeDefinition::Set(const JSONSchemaTypeDefinitionPtr typeDefinit
   if (referencedTypeDef.get() != NULL)
     referencedType = referencedTypeDef;
 
+  // This will have been overwritten by the copy of the reference
+  // type so we need to set it again
   referencedTypeSet = true;
 }
 
@@ -1380,6 +1401,12 @@ JSONRPC_STATUS JsonRpcMethod::checkParameter(const CVariant &requestParameters, 
   }
 
   return OK;
+}
+
+void CJSONServiceDescription::ResolveReferences()
+{
+  for (auto it : m_types)
+    it.second->ResolveReference();
 }
 
 void CJSONServiceDescription::Cleanup()
