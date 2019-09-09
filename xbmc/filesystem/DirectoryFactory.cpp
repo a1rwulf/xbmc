@@ -14,9 +14,8 @@
 #include "StackDirectory.h"
 #include "FileDirectoryFactory.h"
 #include "PlaylistDirectory.h"
-#include "MusicDatabaseDirectory.h"
+#include "MediaDirectory.h"
 #include "MusicSearchDirectory.h"
-#include "VideoDatabaseDirectory.h"
 #include "FavouritesDirectory.h"
 #include "LibraryDirectory.h"
 #include "EventsDirectory.h"
@@ -120,9 +119,10 @@ IDirectory* CDirectoryFactory::Create(const CURL& url)
   if (url.IsProtocol("stack")) return new CStackDirectory();
   if (url.IsProtocol("playlistmusic")) return new CPlaylistDirectory();
   if (url.IsProtocol("playlistvideo")) return new CPlaylistDirectory();
-  if (url.IsProtocol("musicdb")) return new CMusicDatabaseDirectory();
+  if (url.IsProtocol("musicdb")) return new CMediaDirectory();
+  if (url.IsProtocol("oam")) return new CMediaDirectory();
   if (url.IsProtocol("musicsearch")) return new CMusicSearchDirectory();
-  if (url.IsProtocol("videodb")) return new CVideoDatabaseDirectory();
+  if (url.IsProtocol("videodb")) return new CMediaDirectory();
   if (url.IsProtocol("library")) return new CLibraryDirectory();
   if (url.IsProtocol("favourites")) return new CFavouritesDirectory();
 #if defined(TARGET_ANDROID)

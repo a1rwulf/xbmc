@@ -11,15 +11,15 @@
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-CDirectoryNodeInProgressTvShows::CDirectoryNodeInProgressTvShows(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_INPROGRESS_TVSHOWS, strName, pParent)
+CDirectoryNodeInProgressTvShows::CDirectoryNodeInProgressTvShows(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeInProgressTvShows::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeInProgressTvShows::GetChildType() const
 {
-  return NODE_TYPE_SEASONS;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_SEASONS;
 }
 
 std::string CDirectoryNodeInProgressTvShows::GetLocalizedName() const

@@ -9,7 +9,7 @@
 #include "GUIViewStateVideo.h"
 #include "PlayListPlayer.h"
 #include "ServiceBroker.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "filesystem/Directory.h"
 #include "VideoDatabase.h"
 #include "settings/MediaSettings.h"
@@ -23,7 +23,7 @@
 #include "utils/SortUtils.h"
 
 using namespace XFILE;
-using namespace VIDEODATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 
 std::string CGUIViewStateWindowVideo::GetLockType()
 {
@@ -70,9 +70,9 @@ CGUIViewStateWindowVideoNav::CGUIViewStateWindowVideoNav(const CFileItemList& it
   }
   else if (items.IsVideoDb())
   {
-    NODE_TYPE NodeType=CVideoDatabaseDirectory::GetDirectoryChildType(items.GetPath());
+    NODE_TYPE NodeType = CMediaDirectory::GetDirectoryChildType(items.GetPath());
     CQueryParams params;
-    CVideoDatabaseDirectory::GetQueryParams(items.GetPath(),params);
+    CMediaDirectory::GetQueryParams(items.GetPath(),params);
 
     switch (NodeType)
     {
@@ -325,9 +325,9 @@ void CGUIViewStateWindowVideoNav::SaveViewState()
 {
   if (m_items.IsVideoDb())
   {
-    NODE_TYPE NodeType = CVideoDatabaseDirectory::GetDirectoryChildType(m_items.GetPath());
+    NODE_TYPE NodeType = CMediaDirectory::GetDirectoryChildType(m_items.GetPath());
     CQueryParams params;
-    CVideoDatabaseDirectory::GetQueryParams(m_items.GetPath(),params);
+    CMediaDirectory::GetQueryParams(m_items.GetPath(),params);
     switch (NodeType)
     {
     case NODE_TYPE_ACTOR:
@@ -390,7 +390,7 @@ VECSOURCES& CGUIViewStateWindowVideoNav::GetSources()
 bool CGUIViewStateWindowVideoNav::AutoPlayNextItem()
 {
   CQueryParams params;
-  CVideoDatabaseDirectory::GetQueryParams(m_items.GetPath(),params);
+  CMediaDirectory::GetQueryParams(m_items.GetPath(),params);
   if (params.GetContentType() == VIDEODB_CONTENT_MUSICVIDEOS || params.GetContentType() == 6) // recently added musicvideos
     return CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_MUSICPLAYER_AUTOPLAYNEXTITEM);
 

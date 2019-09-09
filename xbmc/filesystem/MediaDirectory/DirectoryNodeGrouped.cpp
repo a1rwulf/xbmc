@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016-2018 Team Kodi
+ *  Copyright (C) 2005-2018 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,13 +8,13 @@
 
 #include "DirectoryNodeGrouped.h"
 #include "QueryParams.h"
+#include "music/MusicDatabase.h"
 #include "video/VideoDatabase.h"
-#include "video/VideoDbUrl.h"
 
-using namespace XFILE::VIDEODATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 
-CDirectoryNodeGrouped::CDirectoryNodeGrouped(NODE_TYPE type, const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(type, strName, pParent)
+CDirectoryNodeGrouped::CDirectoryNodeGrouped(NODE_TYPE type, const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(type, strName, pParent, strOrigin)
 { }
 
 NODE_TYPE CDirectoryNodeGrouped::GetChildType() const
@@ -32,20 +32,34 @@ NODE_TYPE CDirectoryNodeGrouped::GetChildType() const
       return NODE_TYPE_TITLE_MUSICVIDEOS;
   }
 
-  return NODE_TYPE_TITLE_TVSHOWS;
+  if (params.GetContentType() == VIDEODB_CONTENT_TVSHOWS)
+    return NODE_TYPE_TITLE_TVSHOWS;
+
+  if (GetType() == NODE_TYPE_YEAR)
+    return NODE_TYPE_YEAR_ALBUM;
+
+  return NODE_TYPE_ARTIST;
 }
 
 std::string CDirectoryNodeGrouped::GetLocalizedName() const
 {
-  CVideoDatabase db;
+  CMusicDatabase db;
   if (db.Open())
     return db.GetItemById(GetContentType(), GetID());
-
   return "";
 }
 
 bool CDirectoryNodeGrouped::GetContent(CFileItemList& items) const
 {
+  //! @todo a1rwulf - At some point we should work with one common interface to get this data
+  // and also use the registered providers in metadata manager
+  bool musicRet = false, videoRet = false;
+  CMusicDatabase musicdatabase;
+  if (!musicdatabase.Open())
+    return false;
+
+  musicRet = musicdatabase.GetItems(BuildPath(), GetContentType(), items);
+
   CVideoDatabase videodatabase;
   if (!videodatabase.Open())
     return false;
@@ -62,14 +76,15 @@ bool CDirectoryNodeGrouped::GetContent(CFileItemList& items) const
   if (!videoUrl.FromString(BuildPath()))
     return false;
 
-  return videodatabase.GetItems(videoUrl.ToString(), (VIDEODB_CONTENT_TYPE)params.GetContentType(), itemType, items);
+  videoRet = videodatabase.GetItems(videoUrl.ToString(), (VIDEODB_CONTENT_TYPE)params.GetContentType(), itemType, items);
+
+  return musicRet && videoRet;
 }
 
 std::string CDirectoryNodeGrouped::GetContentType() const
 {
   CQueryParams params;
   CollectQueryParams(params);
-
   return GetContentType(params);
 }
 
@@ -79,14 +94,18 @@ std::string CDirectoryNodeGrouped::GetContentType(const CQueryParams &params) co
   {
     case NODE_TYPE_GENRE:
       return "genres";
+    case NODE_TYPE_SOURCE:
+      return "sources";
+    case NODE_TYPE_ROLE:
+      return "roles";
+    case NODE_TYPE_YEAR:
+      return "years";
     case NODE_TYPE_COUNTRY:
       return "countries";
     case NODE_TYPE_SETS:
       return "sets";
     case NODE_TYPE_TAGS:
       return "tags";
-    case NODE_TYPE_YEAR:
-      return "years";
     case NODE_TYPE_ACTOR:
       if ((VIDEODB_CONTENT_TYPE)params.GetContentType() == VIDEODB_CONTENT_MUSICVIDEOS)
         return "artists";

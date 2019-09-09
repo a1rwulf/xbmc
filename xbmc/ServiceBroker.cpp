@@ -205,6 +205,11 @@ CEventLog& CServiceBroker::GetEventLog()
   return m_pSettingsComponent->GetProfileManager()->GetEventLog();
 }
 
+METADATA::CMetadataManager& CServiceBroker::GetMetadataManager()
+{
+  return g_application.m_ServiceManager->GetMetadataManager();
+}
+
 CGUIComponent* CServiceBroker::m_pGUI = nullptr;
 
 CGUIComponent* CServiceBroker::GetGUI()

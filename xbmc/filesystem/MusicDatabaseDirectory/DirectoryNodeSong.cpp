@@ -7,15 +7,18 @@
  */
 
 #include "DirectoryNodeSong.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
+#include "ServiceBroker.h"
+#include "media/MetadataManager.h"
 #include "music/MusicDatabase.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeSong::CDirectoryNodeSong(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_SONG, strName, pParent)
+CDirectoryNodeSong::CDirectoryNodeSong(const std::string& strName,
+                                       XFILE::MEDIADIRECTORY::CDirectoryNode* pParent,
+                                       const std::string& strOrigin)
+    : XFILE::MEDIADIRECTORY::CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_SONG, strName, pParent, strOrigin)
 {
-
 }
 
 bool CDirectoryNodeSong::GetContent(CFileItemList& items) const
@@ -24,11 +27,14 @@ bool CDirectoryNodeSong::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
-  std::string strBaseDir=BuildPath();
-  bool bSuccess=musicdatabase.GetSongsNav(strBaseDir, items, params.GetGenreId(), params.GetArtistId(), params.GetAlbumId(), params.GetPlaylistId());
+  std::string strBaseDir = BuildPath();
+
+  bool bSuccess = CServiceBroker::GetMetadataManager().GetSongs(
+      strBaseDir, items, params.GetGenreId(), params.GetArtistId(), params.GetAlbumId(),
+      params.GetPlaylistId());
 
   musicdatabase.Close();
 

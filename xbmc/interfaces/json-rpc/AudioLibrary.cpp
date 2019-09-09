@@ -15,6 +15,7 @@
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
+#include "media/MetadataManager.h"
 #include "music/tags/MusicInfoTag.h"
 #include "music/Artist.h"
 #include "music/Album.h"
@@ -897,6 +898,7 @@ bool CAudioLibrary::FillFileItemList(const CVariant &parameterObject, CFileItemL
   int albumID = (int)parameterObject["albumid"].asInteger(-1);
   int genreID = (int)parameterObject["genreid"].asInteger(-1);
   int playlistID = (int)parameterObject["playlistid"].asInteger(-1);
+  std::string playlistUUID = parameterObject["playlistuuid"].asString();
 
   bool success = false;
   CFileItemPtr fileItem(new CFileItem());
@@ -908,6 +910,13 @@ bool CAudioLibrary::FillFileItemList(const CVariant &parameterObject, CFileItemL
 
   if (artistID != -1 || albumID != -1 || genreID != -1 || playlistID != -1)
     success |= musicdatabase.GetSongsNav("musicdb://songs/", list, genreID, artistID, albumID, playlistID);
+
+  if (!playlistUUID.empty())
+  {
+    const CDatabase::Filter filter;
+    std::string vfspath = StringUtils::Format("oam://playlists/{}/", playlistUUID);
+    success |= CServiceBroker::GetMetadataManager().GetSongs(vfspath, list, genreID, artistID, albumID, playlistID);
+  }
 
   int songID = (int)parameterObject["songid"].asInteger(-1);
   if (songID != -1)

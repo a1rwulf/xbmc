@@ -33,6 +33,7 @@ public:
   void Reset()
   {
     idPlaylist = -1;
+    uuidPlaylist.clear();
     strPlaylist.clear();
     strThumb.clear();
     m_updatedAt.Reset();
@@ -40,6 +41,7 @@ public:
   }
 
   long idPlaylist = -1;
+  std::string uuidPlaylist;
   std::string strPlaylist;
   std::string strThumb;
   CDateTime m_updatedAt;

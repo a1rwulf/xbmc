@@ -7,13 +7,13 @@
  */
 
 #include "DirectoryNodeEpisodes.h"
-#include "QueryParams.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "video/VideoDatabase.h"
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-CDirectoryNodeEpisodes::CDirectoryNodeEpisodes(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_EPISODES, strName, pParent)
+CDirectoryNodeEpisodes::CDirectoryNodeEpisodes(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_EPISODES, strName, pParent, strOrigin)
 {
 
 }
@@ -24,7 +24,7 @@ bool CDirectoryNodeEpisodes::GetContent(CFileItemList& items) const
   if (!videodatabase.Open())
     return false;
 
-  CQueryParams params;
+  XFILE::MEDIADIRECTORY::CQueryParams params;
   CollectQueryParams(params);
 
   int season = (int)params.GetSeason();
@@ -38,7 +38,7 @@ bool CDirectoryNodeEpisodes::GetContent(CFileItemList& items) const
   return bSuccess;
 }
 
-NODE_TYPE CDirectoryNodeEpisodes::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeEpisodes::GetChildType() const
 {
-  return NODE_TYPE_EPISODES;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_EPISODES;
 }

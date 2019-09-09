@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016-2018 Team Kodi
+ *  Copyright (C) 2005-2018 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,27 +9,50 @@
 #pragma once
 
 #include "utils/UrlOptions.h"
-#include <string>
 
 class CFileItemList;
 
 namespace XFILE
 {
-  namespace VIDEODATABASEDIRECTORY
+  namespace MEDIADIRECTORY
   {
     class CQueryParams;
 
     typedef enum _NODE_TYPE
     {
+      // common stuff
       NODE_TYPE_NONE=0,
-      NODE_TYPE_MOVIES_OVERVIEW,
-      NODE_TYPE_TVSHOWS_OVERVIEW,
-      NODE_TYPE_GENRE,
-      NODE_TYPE_ACTOR,
       NODE_TYPE_ROOT,
       NODE_TYPE_OVERVIEW,
-      NODE_TYPE_TITLE_MOVIES,
+      NODE_TYPE_TOP100,
+      NODE_TYPE_ROLE,
+      NODE_TYPE_SOURCE,
+      NODE_TYPE_GENRE,
+      NODE_TYPE_MUSICGENRE, // not sure if needed
+      NODE_TYPE_VIDEOGENRE, // not sure if needed
+      // music stuff
+      NODE_TYPE_ARTIST,
+      NODE_TYPE_ALBUM,
+      NODE_TYPE_ALBUM_RECENTLY_ADDED,
+      NODE_TYPE_ALBUM_RECENTLY_ADDED_SONGS,
+      NODE_TYPE_ALBUM_RECENTLY_PLAYED,
+      NODE_TYPE_ALBUM_RECENTLY_PLAYED_SONGS,
+      NODE_TYPE_ALBUM_TOP100,
+      NODE_TYPE_ALBUM_TOP100_SONGS,
+      NODE_TYPE_ALBUM_COMPILATIONS,
+      NODE_TYPE_ALBUM_COMPILATIONS_SONGS,
+      NODE_TYPE_SONG,
+      NODE_TYPE_SONG_TOP100,
       NODE_TYPE_YEAR,
+      NODE_TYPE_YEAR_ALBUM,
+      NODE_TYPE_YEAR_SONG,
+      NODE_TYPE_SINGLES,
+      NODE_TYPE_PLAYLIST,
+      // video stuff
+      NODE_TYPE_MOVIES_OVERVIEW,
+      NODE_TYPE_TVSHOWS_OVERVIEW,
+      NODE_TYPE_ACTOR,
+      NODE_TYPE_TITLE_MOVIES,
       NODE_TYPE_DIRECTOR,
       NODE_TYPE_TITLE_TVSHOWS,
       NODE_TYPE_SEASONS,
@@ -67,13 +90,13 @@ namespace XFILE
       virtual std::string GetLocalizedName() const;
 
       CDirectoryNode* GetParent() const;
+      virtual bool CanCache() const;
 
       std::string BuildPath() const;
 
-      virtual bool CanCache() const;
     protected:
-      CDirectoryNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent);
-      static CDirectoryNode* CreateNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent);
+      CDirectoryNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin);
+      static CDirectoryNode* CreateNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin);
 
       void AddOptions(const std::string &options);
       void CollectQueryParams(CQueryParams& params) const;
@@ -84,15 +107,12 @@ namespace XFILE
 
       virtual bool GetContent(CFileItemList& items) const;
 
-
     private:
       NODE_TYPE m_Type;
       std::string m_strName;
       CDirectoryNode* m_pParent;
       CUrlOptions m_options;
+      std::string m_origin;
     };
   }
 }
-
-
-

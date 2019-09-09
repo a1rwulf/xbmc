@@ -17,9 +17,9 @@
 #include "music/MusicThumbLoader.h"
 #include "interfaces/AnnouncementManager.h"
 #include "filesystem/Directory.h"
-#include "filesystem/MusicDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "filesystem/SpecialProtocol.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "guilib/GUIComponent.h"
 #include "guilib/WindowIDs.h"
 #include "guilib/LocalizeStrings.h"
@@ -299,8 +299,8 @@ CUPnPServer::Build(CFileItemPtr                  item,
                 item->SetLabelPreformatted(true);
             } else {
                 if (!item->HasMusicInfoTag()) {
-                    MUSICDATABASEDIRECTORY::CQueryParams params;
-                    MUSICDATABASEDIRECTORY::CDirectoryNode::GetDatabaseInfo((const char*)path, params);
+                    MEDIADIRECTORY::CQueryParams params;
+                    MEDIADIRECTORY::CDirectoryNode::GetDatabaseInfo((const char*)path, params);
 
                     CMusicDatabase db;
                     if (!db.Open() ) return NULL;
@@ -326,7 +326,7 @@ CUPnPServer::Build(CFileItemPtr                  item,
                 if (item->GetLabel().empty()) {
                     /* if no label try to grab it from node type */
                     std::string label;
-                    if (CMusicDatabaseDirectory::GetLabel((const char*)path, label)) {
+                    if (CMediaDirectory::GetLabel((const char*)path, label)) {
                         item->SetLabel(label);
                         item->SetLabelPreformatted(true);
                     }
@@ -338,8 +338,8 @@ CUPnPServer::Build(CFileItemPtr                  item,
                 item->SetLabelPreformatted(true);
             } else {
                 if (!item->HasVideoInfoTag()) {
-                    VIDEODATABASEDIRECTORY::CQueryParams params;
-                    VIDEODATABASEDIRECTORY::CDirectoryNode::GetDatabaseInfo((const char*)path, params);
+                    MEDIADIRECTORY::CQueryParams params;
+                    MEDIADIRECTORY::CDirectoryNode::GetDatabaseInfo((const char*)path, params);
 
                     CVideoDatabase db;
                     if (!db.Open() ) return NULL;
@@ -370,7 +370,7 @@ CUPnPServer::Build(CFileItemPtr                  item,
                 // try to grab it from the folder
                 if (item->GetLabel().empty()) {
                     std::string label;
-                    if (CVideoDatabaseDirectory::GetLabel((const char*)path, label)) {
+                    if (CMediaDirectory::GetLabel((const char*)path, label)) {
                         item->SetLabel(label);
                         item->SetLabelPreformatted(true);
                     }
@@ -1030,8 +1030,8 @@ CUPnPServer::OnUpdateObject(PLT_ActionReference&             action,
         NPT_CHECK_LABEL(!db.Open(), error);
 
         // must first determine type of file from object id
-        VIDEODATABASEDIRECTORY::CQueryParams params;
-        VIDEODATABASEDIRECTORY::CDirectoryNode::GetDatabaseInfo(path.c_str(), params);
+        MEDIADIRECTORY::CQueryParams params;
+        MEDIADIRECTORY::CDirectoryNode::GetDatabaseInfo(path.c_str(), params);
 
         int id = -1;
         VIDEODB_CONTENT_TYPE content_type;

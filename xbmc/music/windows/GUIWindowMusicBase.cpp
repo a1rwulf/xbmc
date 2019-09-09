@@ -26,7 +26,7 @@
 #include "PartyModeManager.h"
 #include "GUIInfoManager.h"
 #include "filesystem/Directory.h"
-#include "filesystem/MusicDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "addons/GUIDialogAddonInfo.h"
 #include "dialogs/GUIDialogSmartPlaylistEditor.h"
 #include "view/GUIViewState.h"
@@ -63,7 +63,7 @@
 #endif
 
 using namespace XFILE;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace PLAYLIST;
 using namespace MUSIC_GRABBER;
 using namespace MUSIC_INFO;
@@ -414,7 +414,7 @@ void CGUIWindowMusicBase::AddItemToPlayList(const CFileItemPtr &pItem, CFileItem
 
   if (pItem->IsMusicDb() && pItem->m_bIsFolder && !pItem->IsParentFolder())
   { // we have a music database folder, just grab the "all" item underneath it
-    CMusicDatabaseDirectory dir;
+    CMediaDirectory dir;
     if (!dir.ContainsSongs(pItem->GetPath()))
     { // grab the ALL item in this category
       // Genres will still require 2 lookups, and queuing the entire Genre folder

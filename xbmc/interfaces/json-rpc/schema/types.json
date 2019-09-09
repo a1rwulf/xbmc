@@ -160,7 +160,8 @@
       { "type": "object", "properties": { "albumid": { "$ref": "Library.Id", "required": true } }, "additionalProperties": false },
       { "type": "object", "properties": { "songid": { "$ref": "Library.Id", "required": true } }, "additionalProperties": false },
       { "type": "object", "properties": { "genreid": { "$ref": "Library.Id", "required": true, "description": "Identification of a genre from the AudioLibrary" } }, "additionalProperties": false },
-      { "type": "object", "properties": { "playlistid": { "$ref": "Library.Id", "required": true, "description": "Identification of a playlist from the AudioLibrary" } }, "additionalProperties": false }
+      { "type": "object", "properties": { "playlistid": { "$ref": "Library.Id", "required": true, "description": "Identification of a playlist from the AudioLibrary" } }, "additionalProperties": false },
+      { "type": "object", "properties": { "playlistuuid": { "type": "string", "required": true, "description": "Identification of a playlist by UUID" } }, "additionalProperties": false }
     ]
   },
   "Player.Id": {
@@ -558,7 +559,9 @@
       "displayartist": { "type" : "string" },
       "votes": { "type": "integer" },
       "userrating": { "type": "integer" },
-      "sortartist": { "type" : "string" }
+      "sortartist": { "type": "string" },
+      "playlistid": { "type": "string"},
+      "provider": { "type": "string"}
     }
   },
   "Audio.Details.Artist": {
@@ -1473,7 +1476,7 @@
                 "locked", "channelnumber", "starttime", "endtime", "specialsortseason",
                 "specialsortepisode", "compilation", "releasetype", "albumreleasetype",
                 "contributors", "displaycomposer", "displayconductor", "displayorchestra", "displaylyricist",
-                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid"]
+                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid", "playlistid", "provider"]
     }
   },
   "List.Item.All": {

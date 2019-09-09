@@ -8,8 +8,8 @@
 
 #include "MusicInfoTagLoaderDatabase.h"
 #include "music/MusicDatabase.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/MusicDatabaseDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 #include "MusicInfoTag.h"
 
 using namespace MUSIC_INFO;
@@ -23,8 +23,8 @@ bool CMusicInfoTagLoaderDatabase::Load(const std::string& strFileName, CMusicInf
   tag.SetLoaded(false);
   CMusicDatabase database;
   database.Open();
-  XFILE::MUSICDATABASEDIRECTORY::CQueryParams param;
-  XFILE::MUSICDATABASEDIRECTORY::CDirectoryNode::GetDatabaseInfo(strFileName,param);
+  XFILE::MEDIADIRECTORY::CQueryParams param;
+  XFILE::MEDIADIRECTORY::CDirectoryNode::GetDatabaseInfo(strFileName,param);
 
   CSong song;
   if (database.GetSong(param.GetSongId(),song))

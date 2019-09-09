@@ -7,7 +7,7 @@
  */
 
 #include "VideoDbUrl.h"
-#include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "playlists/SmartPlayList.h"
 #include "utils/StringUtils.h"
 #include "utils/Variant.h"
@@ -22,37 +22,36 @@ CVideoDbUrl::~CVideoDbUrl() = default;
 
 bool CVideoDbUrl::parse()
 {
-  // the URL must start with videodb://
-  if (!m_url.IsProtocol("videodb") || m_url.GetFileName().empty())
+  if (m_url.GetFileName().empty())
     return false;
 
   std::string path = m_url.Get();
-  VIDEODATABASEDIRECTORY::NODE_TYPE dirType = CVideoDatabaseDirectory::GetDirectoryType(path);
-  VIDEODATABASEDIRECTORY::NODE_TYPE childType = CVideoDatabaseDirectory::GetDirectoryChildType(path);
+  MEDIADIRECTORY::NODE_TYPE dirType = CMediaDirectory::GetDirectoryType(path);
+  MEDIADIRECTORY::NODE_TYPE childType = CMediaDirectory::GetDirectoryChildType(path);
 
   switch (dirType)
   {
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MOVIES_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_MOVIES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_MOVIES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_SETS:
+    case MEDIADIRECTORY::NODE_TYPE_MOVIES_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_MOVIES:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_MOVIES:
+    case MEDIADIRECTORY::NODE_TYPE_SETS:
       m_type = "movies";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_SEASONS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_EPISODES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_EPISODES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
+    case MEDIADIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
+    case MEDIADIRECTORY::NODE_TYPE_SEASONS:
+    case MEDIADIRECTORY::NODE_TYPE_EPISODES:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_EPISODES:
+    case MEDIADIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
       m_type = "tvshows";
       break;
 
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MUSICVIDEOS_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM:
+    case MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS:
+    case MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM:
       m_type = "musicvideos";
 
     default:
@@ -61,77 +60,77 @@ bool CVideoDbUrl::parse()
 
   switch (childType)
   {
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MOVIES_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_MOVIES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_MOVIES:
+    case MEDIADIRECTORY::NODE_TYPE_MOVIES_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_MOVIES:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_MOVIES:
       m_type = "movies";
       m_itemType = "movies";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
+    case MEDIADIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
+    case MEDIADIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
       m_type = "tvshows";
       m_itemType = "tvshows";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_SEASONS:
+    case MEDIADIRECTORY::NODE_TYPE_SEASONS:
       m_type = "tvshows";
       m_itemType = "seasons";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_EPISODES:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_EPISODES:
+    case MEDIADIRECTORY::NODE_TYPE_EPISODES:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_EPISODES:
       m_type = "tvshows";
       m_itemType = "episodes";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MUSICVIDEOS_OVERVIEW:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS:
+    case MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS:
+    case MEDIADIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS:
       m_type = "musicvideos";
       m_itemType = "musicvideos";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_GENRE:
+    case MEDIADIRECTORY::NODE_TYPE_GENRE:
       m_itemType = "genres";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_ACTOR:
+    case MEDIADIRECTORY::NODE_TYPE_ACTOR:
       m_itemType = "actors";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_YEAR:
+    case MEDIADIRECTORY::NODE_TYPE_YEAR:
       m_itemType = "years";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_DIRECTOR:
+    case MEDIADIRECTORY::NODE_TYPE_DIRECTOR:
       m_itemType = "directors";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_STUDIO:
+    case MEDIADIRECTORY::NODE_TYPE_STUDIO:
       m_itemType = "studios";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_COUNTRY:
+    case MEDIADIRECTORY::NODE_TYPE_COUNTRY:
       m_itemType = "countries";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_SETS:
+    case MEDIADIRECTORY::NODE_TYPE_SETS:
       m_itemType = "sets";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM:
+    case MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM:
       m_type = "musicvideos";
       m_itemType = "albums";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_TAGS:
+    case MEDIADIRECTORY::NODE_TYPE_TAGS:
       m_itemType = "tags";
       break;
 
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_ROOT:
-    case VIDEODATABASEDIRECTORY::NODE_TYPE_OVERVIEW:
+    case MEDIADIRECTORY::NODE_TYPE_ROOT:
+    case MEDIADIRECTORY::NODE_TYPE_OVERVIEW:
     default:
       return false;
   }
@@ -140,8 +139,8 @@ bool CVideoDbUrl::parse()
     return false;
 
   // parse query params
-  VIDEODATABASEDIRECTORY::CQueryParams queryParams;
-  if (!CVideoDatabaseDirectory::GetQueryParams(path, queryParams))
+  MEDIADIRECTORY::CQueryParams queryParams;
+  if (!CMediaDirectory::GetQueryParams(path, queryParams))
     return false;
 
   // retrieve and parse all options

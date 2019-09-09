@@ -1,0 +1,1 @@
+xbmc/media/providers     media/providers

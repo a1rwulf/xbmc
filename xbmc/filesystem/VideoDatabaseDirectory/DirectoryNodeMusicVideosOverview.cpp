@@ -14,35 +14,35 @@
 
 using namespace XFILE::VIDEODATABASEDIRECTORY;
 
-Node MusicVideoChildren[] = {
-                              { NODE_TYPE_GENRE,             "genres",    135 },
-                              { NODE_TYPE_TITLE_MUSICVIDEOS, "titles",    10024 },
-                              { NODE_TYPE_YEAR,              "years",     652 },
-                              { NODE_TYPE_ACTOR,             "artists",   133 },
-                              { NODE_TYPE_MUSICVIDEOS_ALBUM, "albums",    132 },
-                              { NODE_TYPE_DIRECTOR,          "directors", 20348 },
-                              { NODE_TYPE_STUDIO,            "studios",   20388 },
-                              { NODE_TYPE_TAGS,              "tags",      20459 }
+XFILE::MEDIADIRECTORY::Node MusicVideoChildren[] = {
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_GENRE,             "genres",    135 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_TITLE_MUSICVIDEOS, "titles",    10024 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_YEAR,              "years",     652 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_ACTOR,             "artists",   133 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_ALBUM, "albums",    132 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_DIRECTOR,          "directors", 20348 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_STUDIO,            "studios",   20388 },
+                              { XFILE::MEDIADIRECTORY::NODE_TYPE_TAGS,              "tags",      20459 }
                             };
 
-CDirectoryNodeMusicVideosOverview::CDirectoryNodeMusicVideosOverview(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_MUSICVIDEOS_OVERVIEW, strName, pParent)
+CDirectoryNodeMusicVideosOverview::CDirectoryNodeMusicVideosOverview(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin)
+  : CDirectoryNode(XFILE::MEDIADIRECTORY::NODE_TYPE_MUSICVIDEOS_OVERVIEW, strName, pParent, strOrigin)
 {
 
 }
 
-NODE_TYPE CDirectoryNodeMusicVideosOverview::GetChildType() const
+XFILE::MEDIADIRECTORY::NODE_TYPE CDirectoryNodeMusicVideosOverview::GetChildType() const
 {
-  for (const Node& node : MusicVideoChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : MusicVideoChildren)
     if (GetName() == node.id)
       return node.node;
 
-  return NODE_TYPE_NONE;
+  return XFILE::MEDIADIRECTORY::NODE_TYPE_NONE;
 }
 
 std::string CDirectoryNodeMusicVideosOverview::GetLocalizedName() const
 {
-  for (const Node& node : MusicVideoChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : MusicVideoChildren)
     if (GetName() == node.id)
       return g_localizeStrings.Get(node.label);
   return "";
@@ -54,7 +54,7 @@ bool CDirectoryNodeMusicVideosOverview::GetContent(CFileItemList& items) const
   if (!videoUrl.FromString(BuildPath()))
     return false;
 
-  for (const Node& node : MusicVideoChildren)
+  for (const XFILE::MEDIADIRECTORY::Node& node : MusicVideoChildren)
   {
     CFileItemPtr pItem(new CFileItem(g_localizeStrings.Get(node.label)));
 

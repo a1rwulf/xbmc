@@ -1,3 +1,4 @@
 xbmc/filesystem                         filesystem
 xbmc/filesystem/VideoDatabaseDirectory  filesystem/videodatabase
 xbmc/filesystem/MusicDatabaseDirectory  filesystem/musicdatabase
+xbmc/filesystem/MediaDirectory          filesystem/media

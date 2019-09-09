@@ -8,16 +8,16 @@
 
 #pragma once
 
-#include "DirectoryNode.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 
 namespace XFILE
 {
   namespace MUSICDATABASEDIRECTORY
   {
-    class CDirectoryNodeAlbumRecentlyAddedSong : public CDirectoryNode
+    class CDirectoryNodeAlbumRecentlyAddedSong : public XFILE::MEDIADIRECTORY::CDirectoryNode
     {
     public:
-      CDirectoryNodeAlbumRecentlyAddedSong(const std::string& strName, CDirectoryNode* pParent);
+      CDirectoryNodeAlbumRecentlyAddedSong(const std::string& strName, XFILE::MEDIADIRECTORY::CDirectoryNode* pParent, const std::string& strOrigin);
     protected:
       bool GetContent(CFileItemList& items) const override;
     };

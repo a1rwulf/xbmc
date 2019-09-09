@@ -14,7 +14,7 @@
 #include "FileItem.h"
 #include "filesystem/Directory.h"
 #include "filesystem/File.h"
-#include "filesystem/MusicDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
@@ -44,7 +44,7 @@
 
 using namespace XFILE;
 using namespace MUSIC_INFO;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace KODI::MESSAGING;
 using KODI::MESSAGING::HELPERS::DialogResponse;
 

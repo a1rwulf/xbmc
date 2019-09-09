@@ -12,12 +12,12 @@
 
 namespace XFILE
 {
-  namespace VIDEODATABASEDIRECTORY
+  namespace MEDIADIRECTORY
   {
     class CDirectoryNodeOverview : public CDirectoryNode
     {
     public:
-      CDirectoryNodeOverview(const std::string& strName, CDirectoryNode* pParent);
+      CDirectoryNodeOverview(const std::string& strName, CDirectoryNode* pParent, const std::string& strOrigin);
     protected:
       NODE_TYPE GetChildType() const override;
       bool GetContent(CFileItemList& items) const override;
@@ -25,5 +25,3 @@ namespace XFILE
     };
   }
 }
-
-

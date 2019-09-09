@@ -27,9 +27,9 @@ set(SOURCES AddonsDirectory.cpp
             ISO9660Directory.cpp
             ISOFile.cpp
             LibraryDirectory.cpp
+            MediaDirectory.cpp
             MultiPathDirectory.cpp
             MultiPathFile.cpp
-            MusicDatabaseDirectory.cpp
             MusicDatabaseFile.cpp
             MusicFileDirectory.cpp
             MusicSearchDirectory.cpp
@@ -54,7 +54,6 @@ set(SOURCES AddonsDirectory.cpp
             udf25.cpp
             UDFDirectory.cpp
             UDFFile.cpp
-            VideoDatabaseDirectory.cpp
             VideoDatabaseFile.cpp
             VirtualDirectory.cpp
             XbtDirectory.cpp
@@ -96,9 +95,9 @@ set(HEADERS AddonsDirectory.h
             ISOFile.h
             iso9660.h
             LibraryDirectory.h
+            MediaDirectory.h
             MultiPathDirectory.h
             MultiPathFile.h
-            MusicDatabaseDirectory.h
             MusicDatabaseFile.h
             MusicFileDirectory.h
             MusicSearchDirectory.h
@@ -123,7 +122,6 @@ set(HEADERS AddonsDirectory.h
             udf25.h
             UDFDirectory.h
             UDFFile.h
-            VideoDatabaseDirectory.h
             VirtualDirectory.h
             XbtDirectory.h
             XbtFile.h

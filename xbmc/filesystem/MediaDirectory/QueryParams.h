@@ -12,12 +12,18 @@
 
 namespace XFILE
 {
-  namespace VIDEODATABASEDIRECTORY
+  namespace MEDIADIRECTORY
   {
     class CQueryParams
     {
     public:
       CQueryParams();
+      long GetArtistId() { return m_idArtist; }
+      long GetAlbumId() { return m_idAlbum; }
+      long GetGenreId() { return m_idGenre; }
+      long GetSongId() { return m_idSong; }
+      long GetYear() { return m_year; }
+      long GetPlaylistId() { return m_idPlaylist; }
       long GetContentType() const { return m_idContent; }
       long GetMovieId() const { return m_idMovie; }
       long GetYear() const { return m_idYear; }
@@ -39,9 +45,14 @@ namespace XFILE
 
       friend class CDirectoryNode;
     private:
+      long m_idArtist;
+      long m_idAlbum;
+      long m_idGenre;
+      long m_idSong;
+      long m_year;
+      long m_idPlaylist;
       long m_idContent;
       long m_idMovie;
-      long m_idGenre;
       long m_idCountry;
       long m_idYear;
       long m_idActor;
@@ -51,7 +62,6 @@ namespace XFILE
       long m_idEpisode;
       long m_idStudio;
       long m_idMVideo;
-      long m_idAlbum;
       long m_idSet;
       long m_idTag;
     };

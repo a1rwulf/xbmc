@@ -22,9 +22,8 @@
 #include "filesystem/StackDirectory.h"
 #include "filesystem/CurlFile.h"
 #include "filesystem/MultiPathDirectory.h"
-#include "filesystem/MusicDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory.h"
-#include "filesystem/VideoDatabaseDirectory/QueryParams.h"
+#include "filesystem/MediaDirectory.h"
+#include "filesystem/MediaDirectory/QueryParams.h"
 #include "games/addons/GameClient.h"
 #include "games/GameUtils.h"
 #include "games/tags/GameInfoTag.h"
@@ -2999,10 +2998,8 @@ std::string CFileItemList::GetDiscFileCache(int windowID) const
 bool CFileItemList::AlwaysCache() const
 {
   // some database folders are always cached
-  if (IsMusicDb())
-    return CMusicDatabaseDirectory::CanCache(GetPath());
-  if (IsVideoDb())
-    return CVideoDatabaseDirectory::CanCache(GetPath());
+  if (IsMusicDb() || IsVideoDb())
+    return CMediaDirectory::CanCache(GetPath());
   if (IsEPG())
     return true; // always cache
   return false;
@@ -3646,8 +3643,8 @@ int CFileItem::GetVideoContentType() const
   if (HasVideoInfoTag() && GetVideoInfoTag()->m_type == MediaTypeMusicVideo)
     return VIDEODB_CONTENT_MUSICVIDEOS;
 
-  CVideoDatabaseDirectory dir;
-  VIDEODATABASEDIRECTORY::CQueryParams params;
+  CMediaDirectory dir;
+  MEDIADIRECTORY::CQueryParams params;
   dir.GetQueryParams(m_strPath, params);
   if (params.GetSetId() != -1 && params.GetMovieId() == -1) // movie set
     return VIDEODB_CONTENT_MOVIE_SETS;
@@ -3693,4 +3690,14 @@ bool CFileItem::GetCurrentResumeTimeAndPartNumber(int64_t& startOffset, int& par
     return true;
   }
   return false;
+}
+
+void CFileItem::SetProvider(std::string provider)
+{
+  m_provider = provider;
+}
+
+std::string CFileItem::GetProvider() const
+{
+  return m_provider;
 }

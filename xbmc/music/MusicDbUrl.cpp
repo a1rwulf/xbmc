@@ -7,13 +7,13 @@
  */
 
 #include "MusicDbUrl.h"
-#include "filesystem/MusicDatabaseDirectory.h"
+#include "filesystem/MediaDirectory.h"
 #include "playlists/SmartPlayList.h"
 #include "utils/StringUtils.h"
 #include "utils/Variant.h"
 
 using namespace XFILE;
-using namespace XFILE::MUSICDATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 
 CMusicDbUrl::CMusicDbUrl()
   : CDbUrl()
@@ -24,12 +24,12 @@ CMusicDbUrl::~CMusicDbUrl() = default;
 bool CMusicDbUrl::parse()
 {
   // the URL must start with musicdb://
-  if (!m_url.IsProtocol("musicdb") || m_url.GetFileName().empty())
+  if (m_url.GetFileName().empty())
     return false;
 
   std::string path = m_url.Get();
-  NODE_TYPE dirType = CMusicDatabaseDirectory::GetDirectoryType(path);
-  NODE_TYPE childType = CMusicDatabaseDirectory::GetDirectoryChildType(path);
+  NODE_TYPE dirType = CMediaDirectory::GetDirectoryType(path);
+  NODE_TYPE childType = CMediaDirectory::GetDirectoryChildType(path);
 
   switch (dirType)
   {

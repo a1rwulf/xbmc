@@ -545,6 +545,9 @@ public:
   void LoadEmbeddedCue();
   bool HasCueDocument() const;
   bool LoadTracksFromCueDocument(CFileItemList& scannedItems);
+
+  void SetProvider(std::string provider);
+  std::string GetProvider() const;
 private:
   /*! \brief initialize all members of this class (not CGUIListItem members) to default values.
    Called from constructors, and from Reset()
@@ -583,6 +586,7 @@ private:
   std::shared_ptr<const ADDON::IAddon> m_addonInfo;
   KODI::GAME::CGameInfoTag* m_gameInfoTag;
   EventPtr m_eventLogEntry;
+  std::string m_provider = "omniyon";
 
   CCueDocumentPtr m_cueDocument;
 };

@@ -8,7 +8,7 @@
 
 #include "MusicFileItemListModifier.h"
 #include "ServiceBroker.h"
-#include "filesystem/MusicDatabaseDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 #include "FileItem.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDbUrl.h"
@@ -16,7 +16,7 @@
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 
-using namespace XFILE::MUSICDATABASEDIRECTORY;
+using namespace XFILE::MEDIADIRECTORY;
 
 bool CMusicFileItemListModifier::CanModify(const CFileItemList &items) const
 {

@@ -24,7 +24,7 @@
 #include "filesystem/Directory.h"
 #include "filesystem/DirectoryCache.h"
 #include "filesystem/File.h"
-#include "filesystem/MusicDatabaseDirectory/DirectoryNode.h"
+#include "filesystem/MediaDirectory/DirectoryNode.h"
 #include "guilib/GUIComponent.h"
 #include "guilib/guiinfo/GUIInfoLabels.h"
 #include "GUIInfoManager.h"
@@ -71,7 +71,7 @@
 #include "MusicPlaylist.h"
 
 using namespace XFILE;
-using namespace MUSICDATABASEDIRECTORY;
+using namespace MEDIADIRECTORY;
 using namespace KODI::MESSAGING;
 using namespace MUSIC_INFO;
 

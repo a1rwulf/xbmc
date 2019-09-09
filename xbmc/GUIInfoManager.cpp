@@ -5618,6 +5618,12 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     @return The parental rating of the list item (PVR).
 ///     <p>
 ///   }
+///   \table_row3{   <b>`ListItem.Provider`</b>,
+///                  \anchor ListItem_Provider
+///                  _string_,
+///     @return The provider of an item (video/music streaming service or localdb).
+///     <p>
+///   }
 /// \table_end
 ///
 /// -----------------------------------------------------------------------------
@@ -5803,7 +5809,8 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "expirationtime",   LISTITEM_EXPIRATION_TIME },
                                   { "art",              LISTITEM_ART },
                                   { "property",         LISTITEM_PROPERTY },
-                                  { "parentalrating",   LISTITEM_PARENTAL_RATING }
+                                  { "parentalrating",   LISTITEM_PARENTAL_RATING },
+                                  { "provider",         LISTITEM_PROVIDER }
 };
 
 /// \page modules__infolabels_boolean_conditions
@@ -9696,6 +9703,8 @@ std::string CGUIInfoManager::GetMultiInfoItemLabel(const CFileItem *item, int co
         return item->GetOverlayImage();
       case LISTITEM_THUMB:
         return item->GetArt("thumb");
+      case LISTITEM_PROVIDER:
+        return item->GetProvider();
       case LISTITEM_FOLDERPATH:
         return CURL(item->GetPath()).GetWithoutUserDetails();
       case LISTITEM_FOLDERNAME:
