@@ -632,7 +632,7 @@ bool CGUIMediaWindow::OnMessage(CGUIMessage& message)
         if (!returning || !URIUtils::PathEquals(dir, m_startDirectory, true))
         { // we're not returning to the same path, so set our directory to the requested path
           m_vecItems->SetPath(dir);
-          resetHistory = true;
+          //resetHistory = true;
         }
         else if (m_vecItems->GetPath().empty() && URIUtils::PathEquals(dir, m_startDirectory, true))
           m_vecItems->SetPath(dir);
@@ -913,7 +913,7 @@ bool CGUIMediaWindow::Update(const std::string &strDirectory, bool updateFilterP
   // stores the selected item in history
   SaveSelectedItemInHistory();
 
-  const std::string previousPath = m_vecItems->GetPath();
+  const std::string previousPath = m_history.GetParentPath();
 
   // check if the path contains a filter and temporarily remove it
   // so that the retrieved list of items is unfiltered
