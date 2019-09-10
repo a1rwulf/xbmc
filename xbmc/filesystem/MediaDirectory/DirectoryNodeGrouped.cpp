@@ -53,32 +53,37 @@ bool CDirectoryNodeGrouped::GetContent(CFileItemList& items) const
 {
   //! @todo a1rwulf - At some point we should work with one common interface to get this data
   // and also use the registered providers in metadata manager
-  bool musicRet = false, videoRet = false;
-  CMusicDatabase musicdatabase;
-  if (!musicdatabase.Open())
-    return false;
 
-  musicRet = musicdatabase.GetItems(BuildPath(), GetContentType(), items);
+  if (GetMediaType() == "music")
+  {
+    CMusicDatabase musicdatabase;
+    if (!musicdatabase.Open())
+      return false;
 
-  CVideoDatabase videodatabase;
-  if (!videodatabase.Open())
-    return false;
+    return musicdatabase.GetItems(BuildPath(), GetContentType(), items);
+  }
+  else if (GetMediaType() == "video")
+  {
+    CVideoDatabase videodatabase;
+    if (!videodatabase.Open())
+      return false;
 
-  CQueryParams params;
-  CollectQueryParams(params);
+    CQueryParams params;
+    CollectQueryParams(params);
 
-  std::string itemType = GetContentType(params);
-  if (itemType.empty())
-    return false;
+    std::string itemType = GetContentType(params);
+    if (itemType.empty())
+      return false;
 
-  // make sure to translate all IDs in the path into URL parameters
-  CVideoDbUrl videoUrl;
-  if (!videoUrl.FromString(BuildPath()))
-    return false;
+    // make sure to translate all IDs in the path into URL parameters
+    CVideoDbUrl videoUrl;
+    if (!videoUrl.FromString(BuildPath()))
+      return false;
 
-  videoRet = videodatabase.GetItems(videoUrl.ToString(), (VIDEODB_CONTENT_TYPE)params.GetContentType(), itemType, items);
+    return videodatabase.GetItems(videoUrl.ToString(), (VIDEODB_CONTENT_TYPE)params.GetContentType(), itemType, items);
+  }
 
-  return musicRet && videoRet;
+  return false;
 }
 
 std::string CDirectoryNodeGrouped::GetContentType() const
@@ -138,4 +143,66 @@ std::string CDirectoryNodeGrouped::GetContentType(const CQueryParams &params) co
   }
 
   return "";
+}
+
+std::string CDirectoryNodeGrouped::GetMediaType() const
+{
+  CQueryParams params;
+  CollectQueryParams(params);
+  return GetMediaType(params);
+}
+
+std::string CDirectoryNodeGrouped::GetMediaType(const CQueryParams &params) const
+{
+  switch (GetType())
+  {
+    case NODE_TYPE_NONE:
+    case NODE_TYPE_ROOT:
+    case NODE_TYPE_OVERVIEW:
+    case NODE_TYPE_TOP100:
+    case NODE_TYPE_ROLE:
+    case NODE_TYPE_SOURCE:
+    case NODE_TYPE_GENRE:
+    case NODE_TYPE_MUSICGENRE:
+    case NODE_TYPE_VIDEOGENRE:
+    case NODE_TYPE_ARTIST:
+    case NODE_TYPE_ALBUM:
+    case NODE_TYPE_ALBUM_RECENTLY_ADDED:
+    case NODE_TYPE_ALBUM_RECENTLY_ADDED_SONGS:
+    case NODE_TYPE_ALBUM_RECENTLY_PLAYED:
+    case NODE_TYPE_ALBUM_RECENTLY_PLAYED_SONGS:
+    case NODE_TYPE_ALBUM_TOP100:
+    case NODE_TYPE_ALBUM_TOP100_SONGS:
+    case NODE_TYPE_ALBUM_COMPILATIONS:
+    case NODE_TYPE_ALBUM_COMPILATIONS_SONGS:
+    case NODE_TYPE_SONG:
+    case NODE_TYPE_SONG_TOP100:
+    case NODE_TYPE_YEAR:
+    case NODE_TYPE_YEAR_ALBUM:
+    case NODE_TYPE_YEAR_SONG:
+    case NODE_TYPE_SINGLES:
+    case NODE_TYPE_PLAYLIST:
+      return "music";
+    case NODE_TYPE_MOVIES_OVERVIEW:
+    case NODE_TYPE_TVSHOWS_OVERVIEW:
+    case NODE_TYPE_ACTOR:
+    case NODE_TYPE_TITLE_MOVIES:
+    case NODE_TYPE_DIRECTOR:
+    case NODE_TYPE_TITLE_TVSHOWS:
+    case NODE_TYPE_SEASONS:
+    case NODE_TYPE_EPISODES:
+    case NODE_TYPE_RECENTLY_ADDED_MOVIES:
+    case NODE_TYPE_RECENTLY_ADDED_EPISODES:
+    case NODE_TYPE_STUDIO:
+    case NODE_TYPE_MUSICVIDEOS_OVERVIEW:
+    case NODE_TYPE_RECENTLY_ADDED_MUSICVIDEOS:
+    case NODE_TYPE_TITLE_MUSICVIDEOS:
+    case NODE_TYPE_MUSICVIDEOS_ALBUM:
+    case NODE_TYPE_SETS:
+    case NODE_TYPE_COUNTRY:
+    case NODE_TYPE_TAGS:
+    case NODE_TYPE_INPROGRESS_TVSHOWS:
+    default:
+      return "video";
+  }
 }

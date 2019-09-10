@@ -24,8 +24,10 @@ namespace XFILE
       std::string GetLocalizedName() const override;
 
     private:
-    std::string GetContentType() const;
+      std::string GetContentType() const;
       std::string GetContentType(const CQueryParams &params) const;
+      std::string GetMediaType(const CQueryParams &params) const;
+      std::string GetMediaType() const;
     };
   }
 }
