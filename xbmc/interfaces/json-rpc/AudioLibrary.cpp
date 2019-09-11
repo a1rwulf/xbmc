@@ -929,6 +929,14 @@ bool CAudioLibrary::FillFileItemList(const CVariant &parameterObject, CFileItemL
     }
   }
 
+  std::string songUUID = parameterObject["songuuid"].asString();
+  if (!songUUID.empty())
+  {
+    const CDatabase::Filter filter;
+    std::string vfspath = StringUtils::Format("oam://songs/{}/", songUUID);
+    success |= CServiceBroker::GetMetadataManager().GetSongs(vfspath, list, genreID, artistID, albumID, playlistID);
+  }
+
   if (success)
   {
     // If we retrieved the list of songs by "artistid"
