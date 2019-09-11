@@ -123,36 +123,96 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
     if (response.empty())
       return false;
 
-    for (auto& track : doc["data"]["tracks"].GetArray())
+    // Playlist response
+    if (doc.HasMember("data") && doc["data"].HasMember("tracks"))
+    {
+      for (auto& track : doc["data"]["tracks"].GetArray())
+      {
+        CSong song;
+        song.strTitle = track["label"].GetString();
+        song.strFileName = track["filepath"].GetString();
+        song.iDuration = track["duration"].GetInt();
+        song.strAlbum = track["album"].GetString();
+        song.strArtistDesc = track["artist"].GetString();
+        if (track.HasMember("genre") && track["genre"].IsString())
+          song.genre.push_back(track["genre"].GetString());
+        if (track.HasMember("genre") && track["genre"].IsObject())
+          song.genre.push_back(track["genre"]["name"].GetString());
+
+        // Some providers send a year in songs
+        // Others have a releaseDate
+        if (track.HasMember("year") && track["year"].IsInt())
+          song.iYear = track["year"].GetInt();
+        else if (track.HasMember("releaseDate") && track["releaseDate"].IsString())
+        {
+          CDateTime releaseDate;
+          releaseDate.SetFromDateString(track["releaseDate"].GetString());
+          song.iYear = releaseDate.GetYear();
+        }
+
+        CMusicDbUrl itemUrl;
+        std::string path;
+        if (track["id"].IsString())
+          path = StringUtils::Format("oam://songs/{}/", track["id"].GetString());
+        else if (track["id"].IsInt())
+          path = StringUtils::Format("oam://songs/{}/", track["id"].GetInt());
+
+        itemUrl.FromString(path);
+
+        CFileItemPtr item(new CFileItem(song));
+        item->SetLabel(song.strTitle);
+        // item->m_lStartOffset = r.song->m_startOffset;
+        // item->SetProperty("item_start", r.song->m_startOffset);
+        // item->m_lEndOffset = r.song->m_endOffset;
+        std::string iconPath =
+            track["thumbnail"].IsString() ? track["thumbnail"].GetString() : "DefaultAlbumCover.png";
+
+        item->SetArt("thumb", iconPath);
+        item->SetIconImage(iconPath);
+        item->SetProvider(track["provider"].GetString());
+        item->SetProperty("provider", track["provider"].GetString());
+
+        // If we get the songs from a playlist, save the playlistid in
+        // the fileitem as property.
+        // This way we can supply the playlist that's being played in Player.GetItem
+        if (StringUtils::StartsWith(url.GetFileName(), "playlist"))
+          item->SetProperty("playlistid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
+
+        items.Add(item);
+        total++;
+      }
+    }
+    // Song response
+    else if (doc.IsObject())
     {
       CSong song;
-      song.strTitle = track["label"].GetString();
-      song.strFileName = track["filepath"].GetString();
-      song.iDuration = track["duration"].GetInt();
-      song.strAlbum = track["album"].GetString();
-      song.strArtistDesc = track["artist"].GetString();
-      if (track.HasMember("genre") && track["genre"].IsString())
-        song.genre.push_back(track["genre"].GetString());
-      if (track.HasMember("genre") && track["genre"].IsObject())
-        song.genre.push_back(track["genre"]["name"].GetString());
+      song.strTitle = doc["label"].GetString();
+      song.strFileName = doc["filepath"].GetString();
+      song.iDuration = doc["duration"].GetInt();
+      song.strAlbum = doc["album"].GetString();
+      song.strArtistDesc = doc["artist"].GetString();
+      if (doc.HasMember("genre") && doc["genre"].IsString())
+        song.genre.push_back(doc["genre"].GetString());
+      if (doc.HasMember("genre") && doc["genre"].IsObject())
+        song.genre.push_back(doc["genre"]["name"].GetString());
 
       // Some providers send a year in songs
       // Others have a releaseDate
-      if (track.HasMember("year") && track["year"].IsInt())
-        song.iYear = track["year"].GetInt();
-      else if (track.HasMember("releaseDate") && track["releaseDate"].IsString())
+      if (doc.HasMember("year") && doc["year"].IsInt())
+        song.iYear = doc["year"].GetInt();
+      else if (doc.HasMember("releaseDate") && doc["releaseDate"].IsString())
       {
         CDateTime releaseDate;
-        releaseDate.SetFromDateString(track["releaseDate"].GetString());
+        releaseDate.SetFromDateString(doc["releaseDate"].GetString());
         song.iYear = releaseDate.GetYear();
       }
 
       CMusicDbUrl itemUrl;
       std::string path;
-      if (track["id"].IsString())
-        path = StringUtils::Format("oam://songs/{}/", track["id"].GetString());
-      else if (track["id"].IsInt())
-        path = StringUtils::Format("oam://songs/{}/", track["id"].GetInt());
+      if (doc["id"].IsString())
+        path = StringUtils::Format("oam://songs/{}/", doc["id"].GetString());
+      else if (doc["id"].IsInt())
+        path = StringUtils::Format("oam://songs/{}/", doc["id"].GetInt());
 
       itemUrl.FromString(path);
 
@@ -162,12 +222,12 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
       // item->SetProperty("item_start", r.song->m_startOffset);
       // item->m_lEndOffset = r.song->m_endOffset;
       std::string iconPath =
-          track["thumbnail"].IsString() ? track["thumbnail"].GetString() : "DefaultAlbumCover.png";
+          doc["thumbnail"].IsString() ? doc["thumbnail"].GetString() : "DefaultAlbumCover.png";
 
       item->SetArt("thumb", iconPath);
       item->SetIconImage(iconPath);
-      item->SetProvider(track["provider"].GetString());
-      item->SetProperty("provider", track["provider"].GetString());
+      item->SetProvider(doc["provider"].GetString());
+      item->SetProperty("provider", doc["provider"].GetString());
 
       // If we get the songs from a playlist, save the playlistid in
       // the fileitem as property.
@@ -200,20 +260,37 @@ SupportedEntities CApiMetadataProvider::GetSupportedEntities()
 
 std::string CApiMetadataProvider::GetRequestUrl(const CURL& url) const
 {
-  if ((url.GetProtocol() == "oam" || url.GetProtocol() == "musicdb") &&
-      StringUtils::StartsWith(url.GetFileName(), "playlist"))
+  if (url.GetProtocol() == "oam" || url.GetProtocol() == "musicdb")
   {
-    if (!StringUtils::EndsWith(url.GetFileName(), "playlists/"))
+    if (StringUtils::StartsWith(url.GetFileName(), "playlist"))
     {
-      std::string uri = "/view/1/playlist?id=" + url.GetFileNameWithoutPath();
-      URIUtils::RemoveSlashAtEnd(uri);
-      return uri;
+      if (!StringUtils::EndsWith(url.GetFileName(), "playlists/"))
+      {
+        std::string uri = "/view/1/playlist?id=" + url.GetFileNameWithoutPath();
+        URIUtils::RemoveSlashAtEnd(uri);
+        return uri;
+      }
+      else
+      {
+        std::string uri = "/view/1/" + url.GetFileName();
+        URIUtils::RemoveSlashAtEnd(uri);
+        return uri;
+      }
     }
-    else
+    else if (StringUtils::StartsWith(url.GetFileName(), "song"))
     {
-      std::string uri = "/view/1/" + url.GetFileName();
-      URIUtils::RemoveSlashAtEnd(uri);
-      return uri;
+      if (!StringUtils::EndsWith(url.GetFileName(), "songs/"))
+      {
+        std::string uri = "/api/v2/music/track/" + url.GetFileNameWithoutPath();
+        URIUtils::RemoveSlashAtEnd(uri);
+        return uri;
+      }
+      else
+      {
+        std::string uri = "/api/v2/music/track";
+        URIUtils::RemoveSlashAtEnd(uri);
+        return uri;
+      }
     }
   }
 
