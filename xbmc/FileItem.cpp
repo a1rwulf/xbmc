@@ -489,6 +489,7 @@ CFileItem& CFileItem::operator=(const CFileItem& item)
   m_specialSort = item.m_specialSort;
   m_bIsAlbum = item.m_bIsAlbum;
   m_doContentLookup = item.m_doContentLookup;
+  m_provider = item.m_provider;
   return *this;
 }
 
