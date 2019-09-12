@@ -80,6 +80,7 @@ public:
   const ReplayGain& GetReplayGain() const;
   CAlbum::ReleaseType GetAlbumReleaseType() const;
   std::string GetPlaylist() const;
+  std::string GetUUID() const;
 
   void SetURL(const std::string& strURL);
   void SetTitle(const std::string& strTitle);
@@ -137,6 +138,7 @@ public:
   void SetType(const MediaType mediaType);
   void SetPlaylist(const std::string& strPlaylist);
   void SetPlaylistId(const int iPlaylistId);
+  void SetUUID(std::string strUUID);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -226,5 +228,6 @@ protected:
   EmbeddedArtInfo m_coverArt; ///< art information
 
   ReplayGain m_replayGain; ///< ReplayGain information
+  std::string m_strUUID;
 };
 }

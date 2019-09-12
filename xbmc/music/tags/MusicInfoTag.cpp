@@ -675,6 +675,7 @@ void CMusicInfoTag::SetSong(const CSong& song)
   SetCompilation(song.bCompilation);
   SetAlbumId(song.idAlbum);
   SetDatabaseId(song.idSong, MediaTypeSong);
+  SetUUID(song.uuidSong);
 
   if (song.replayGain.Get(ReplayGain::TRACK).Valid())
     m_replayGain.Set(ReplayGain::TRACK, song.replayGain.Get(ReplayGain::TRACK));
@@ -1058,4 +1059,14 @@ std::string CMusicInfoTag::Trim(const std::string &value) const
 std::string CMusicInfoTag::GetPlaylist() const
 {
   return m_strPlaylist;
+}
+
+std::string CMusicInfoTag::GetUUID() const
+{
+  return m_strUUID;
+}
+
+void CMusicInfoTag::SetUUID(std::string strUUID)
+{
+  m_strUUID = strUUID;
 }

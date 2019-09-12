@@ -153,9 +153,15 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
         CMusicDbUrl itemUrl;
         std::string path;
         if (track["id"].IsString())
+        {
           path = StringUtils::Format("oam://songs/{}/", track["id"].GetString());
+          song.uuidSong = track["id"].GetString();
+        }
         else if (track["id"].IsInt())
+        {
           path = StringUtils::Format("oam://songs/{}/", track["id"].GetInt());
+          song.uuidSong = std::to_string(track["id"].GetInt());
+        }
 
         itemUrl.FromString(path);
 
