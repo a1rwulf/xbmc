@@ -2509,6 +2509,7 @@ const infomap musicplayer[] =    {{ "title",            MUSICPLAYER_TITLE },
                                   { "channelgroup",     MUSICPLAYER_CHANNEL_GROUP },
                                   { "dbid",             MUSICPLAYER_DBID },
                                   { "property",         MUSICPLAYER_PROPERTY },
+                                  { "provider",         MUSICPLAYER_PROVIDER }
 };
 
 /// \page modules__infolabels_boolean_conditions
@@ -9704,8 +9705,6 @@ std::string CGUIInfoManager::GetMultiInfoItemLabel(const CFileItem *item, int co
         return item->GetOverlayImage();
       case LISTITEM_THUMB:
         return item->GetArt("thumb");
-      case LISTITEM_PROVIDER:
-        return item->GetProvider();
       case LISTITEM_FOLDERPATH:
         return CURL(item->GetPath()).GetWithoutUserDetails();
       case LISTITEM_FOLDERNAME:

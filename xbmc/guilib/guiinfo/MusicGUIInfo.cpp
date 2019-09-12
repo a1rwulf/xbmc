@@ -266,6 +266,12 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         }
         break;
       }
+      case MUSICPLAYER_PROVIDER:
+      case LISTITEM_PROVIDER:
+      {
+        value = item->GetProvider();
+        return true;
+      }
 
       /////////////////////////////////////////////////////////////////////////////////////////////
       // LISTITEM_*
