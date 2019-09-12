@@ -317,7 +317,10 @@
           "title": { "type": "string", "required": true },
           "album": { "type": "string" },
           "artist": { "type": "string" },
-          "track": { "type": "integer" }
+          "track": { "type": "integer" },
+          "provider": { "type": "string" },
+          "playlistid": { "type": "string" },
+          "songuuid": { "type": "string" }
         }
       },
       { "type": "object", "description": "A picture has a file path.",

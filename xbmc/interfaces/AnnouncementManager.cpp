@@ -220,6 +220,10 @@ void CAnnouncementManager::DoAnnounce(AnnouncementFlag flag, const char *sender,
         {
           item->GetMusicInfoTag()->SetSong(song);
           id = item->GetMusicInfoTag()->GetDatabaseId();
+          if (!item->GetProvider().empty())
+            object["item"]["provider"] = item->GetProvider();
+          if (!item->GetProperty("playlistid").asString().empty())
+            object["item"]["playlistid"] = item->GetProperty("playlistid").asString();
         }
 
         musicdatabase.Close();
@@ -242,6 +246,12 @@ void CAnnouncementManager::DoAnnounce(AnnouncementFlag flag, const char *sender,
         object["item"]["album"] = item->GetMusicInfoTag()->GetAlbum();
       if (!item->GetMusicInfoTag()->GetArtist().empty())
         object["item"]["artist"] = item->GetMusicInfoTag()->GetArtist();
+      if (!item->GetProvider().empty())
+        object["item"]["provider"] = item->GetProvider();
+      if (!item->GetProperty("playlistid").asString().empty())
+        object["item"]["playlistid"] = item->GetProperty("playlistid").asString();
+      if (!item->GetMusicInfoTag()->GetUUID().empty())
+        object["item"]["songuuid"] = item->GetMusicInfoTag()->GetUUID();
     }
   }
   else if (item->IsVideo())
