@@ -182,7 +182,7 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
         // the fileitem as property.
         // This way we can supply the playlist that's being played in Player.GetItem
         if (StringUtils::StartsWith(url.GetFileName(), "playlist"))
-          item->SetProperty("playlistid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
+          item->SetProperty("playlistuuid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
 
         items.Add(item);
         total++;
@@ -239,7 +239,7 @@ bool CApiMetadataProvider::GetSongs(const std::string& strBaseDir,
       // the fileitem as property.
       // This way we can supply the playlist that's being played in Player.GetItem
       if (StringUtils::StartsWith(url.GetFileName(), "playlist"))
-        item->SetProperty("playlistid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
+        item->SetProperty("playlistuuid", StringUtils::Split(url.GetFileNameWithoutPath(), "&")[0]);
 
       items.Add(item);
       total++;
