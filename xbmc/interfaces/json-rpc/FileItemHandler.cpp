@@ -149,6 +149,17 @@ bool CFileItemHandler::GetField(const std::string &field, const CVariant &info, 
       return true;
     }
 
+    if (field == "provider")
+    {
+      result[field] = item->GetProvider();
+    }
+
+    if (field == "songuuid" && item->HasMusicInfoTag())
+    {
+      if (!item->GetMusicInfoTag()->GetUUID().empty())
+        result[field] = item->GetMusicInfoTag()->GetUUID();
+    }
+
     if (item->HasVideoInfoTag() && item->GetVideoContentType() == VIDEODB_CONTENT_TVSHOWS)
     {
       if (item->GetVideoInfoTag()->m_iSeason < 0 && field == "season")

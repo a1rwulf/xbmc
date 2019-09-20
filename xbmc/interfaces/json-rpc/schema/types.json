@@ -1480,7 +1480,7 @@
                 "locked", "channelnumber", "starttime", "endtime", "specialsortseason",
                 "specialsortepisode", "compilation", "releasetype", "albumreleasetype",
                 "contributors", "displaycomposer", "displayconductor", "displayorchestra", "displaylyricist",
-                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid", "playlistuuid", "provider"]
+                "userrating", "votes", "sortartist", "musicbrainzreleasegroupid", "playlistuuid", "provider", "songuuid"]
     }
   },
   "List.Item.All": {
