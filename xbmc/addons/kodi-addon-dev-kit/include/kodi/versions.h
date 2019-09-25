@@ -128,6 +128,11 @@
                                                       "StreamCodec.h" \
                                                       "StreamCrypto.h"
 
+#define ADDON_INSTANCE_VERSION_METADATAPROVIDER            "1.0.0"
+#define ADDON_INSTANCE_VERSION_METADATAPROVIDER_MIN        "1.0.0"
+#define ADDON_INSTANCE_VERSION_METADATAPROVIDER_XML_ID     "kodi.binary.instance.metadataprovider"
+#define ADDON_INSTANCE_VERSION_METADATAPROVIDER_DEPENDS    "addon-instance/MetadataProvider.h"
+
 ///
 /// The currently available instance types for Kodi add-ons
 ///
@@ -159,6 +164,7 @@ typedef enum ADDON_TYPE
   ADDON_INSTANCE_VFS = 110,
   ADDON_INSTANCE_IMAGEDECODER = 111,
   ADDON_INSTANCE_VIDEOCODEC = 112,
+  ADDON_INSTANCE_METADATAPROVIDER = 113
 } ADDON_TYPE;
 
 #ifdef __cplusplus
@@ -251,6 +257,10 @@ inline const char* GetTypeVersion(int type)
     case ADDON_INSTANCE_VIDEOCODEC:
       return ADDON_INSTANCE_VERSION_VIDEOCODEC;
 #endif
+#if !defined(BUILD_KODI_ADDON) || defined(ADDON_INSTANCE_VERSION_METADATAPROVIDER_USED)
+    case ADDON_INSTANCE_METADATAPROVIDER:
+      return ADDON_INSTANCE_VERSION_METADATAPROVIDER;
+#endif
   }
   return "0.0.0";
 }
@@ -304,6 +314,8 @@ inline const char* GetTypeMinVersion(int type)
       return ADDON_INSTANCE_VERSION_VISUALIZATION_MIN;
     case ADDON_INSTANCE_VIDEOCODEC:
       return ADDON_INSTANCE_VERSION_VIDEOCODEC_MIN;
+    case ADDON_INSTANCE_METADATAPROVIDER:
+      return ADDON_INSTANCE_VERSION_METADATAPROVIDER_MIN;
   }
   return "0.0.0";
 }
@@ -354,6 +366,8 @@ inline const char* GetTypeName(int type)
       return "Visualization";
     case ADDON_INSTANCE_VIDEOCODEC:
       return "VideoCodec";
+    case ADDON_INSTANCE_METADATAPROVIDER:
+      return "MetadataProvider";
   }
   return "unknown";
 }
@@ -405,6 +419,8 @@ inline int GetTypeId(const char* name)
       return ADDON_INSTANCE_VISUALIZATION;
     else if (strcmp(name, "videocodec") == 0)
       return ADDON_INSTANCE_VIDEOCODEC;
+    else if (strcmp(name, "metadataprovider") == 0)
+      return ADDON_INSTANCE_METADATAPROVIDER;
   }
   return -1;
 }
