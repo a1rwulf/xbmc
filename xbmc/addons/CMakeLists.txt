@@ -21,6 +21,7 @@ set(SOURCES Addon.cpp
             ImageDecoder.cpp
             ImageResource.cpp
             LanguageResource.cpp
+            MetadataProvider.cpp
             PluginSource.cpp
             PVRClient.cpp
             PVRClientMenuHooks.cpp
@@ -61,6 +62,7 @@ set(HEADERS Addon.h
             ImageDecoder.h
             ImageResource.h
             LanguageResource.h
+            MetadataProvider.h
             PluginSource.h
             PVRClient.h
             PVRClientMenuHooks.h

@@ -2,6 +2,7 @@ set(HEADERS AudioDecoder.h
             AudioEncoder.h
             ImageDecoder.h
             Inputstream.h
+            MetadataProvider.h
             Peripheral.h
             PeripheralUtils.h
             Screensaver.h
