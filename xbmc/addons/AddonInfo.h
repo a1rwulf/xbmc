@@ -57,6 +57,7 @@ namespace ADDON
     ADDON_SCRIPT_MODULE,
     ADDON_GAME_CONTROLLER,
     ADDON_VIDEOCODEC,
+    ADDON_METADATAPROVIDER,
 
     /**
      * @brief virtual addon types

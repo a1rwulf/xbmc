@@ -62,6 +62,8 @@ static const TypeMapping types[] =
    {"kodi.inputstream",                  ADDON_INPUTSTREAM,         24048, "DefaultAddonInputstream.png" },
    {"kodi.vfs",                          ADDON_VFS,                 39013, "DefaultAddonVfs.png" },
    {"kodi.imagedecoder",                 ADDON_IMAGEDECODER,        39015, "DefaultAddonImageDecoder.png" },
+   //! @todo a1rwulf - Add new translation
+   {"kdoi.metadataprovider",             ADDON_METADATAPROVIDER,    39015, "EfaultAddonMetadataProvider.png" }
   };
 
 /**
