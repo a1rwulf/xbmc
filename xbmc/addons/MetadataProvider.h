@@ -20,12 +20,22 @@ public:
   explicit CMetadataProvider(BinaryAddonBasePtr addonBase);
   ~CMetadataProvider() override;
 
-  bool Start();
-  void Stop();
-  void Render();
+  bool GetPlaylists(const std::string& strBaseDir,
+                    CFileItemList& items,
+                    const CDatabase::Filter& filter,
+                    const SortDescription& sortDescription,
+                    bool countOnly);
+
+  bool GetSongs(const std::string& strBaseDir,
+                CFileItemList& items,
+                int idGenre,
+                int idArtist,
+                int idAlbum,
+                int idPlaylist,
+                const SortDescription &sortDescription = SortDescription());
 
 private:
-  AddonInstance_Metadataprovider m_struct;
+  AddonInstance_MetadataProvider m_struct;
 };
 
 } /* namespace ADDON */

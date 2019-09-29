@@ -15,7 +15,8 @@ namespace ADDON
 CMetadataProvider::CMetadataProvider(BinaryAddonBasePtr addonBase)
  : IAddonInstanceHandler(ADDON_INSTANCE_SCREENSAVER, addonBase)
 {
-  m_struct = {{0}};
+  //! @todo a1rwulf - check why this gives a compiler error (it works for screensaver/pvr)
+  //m_struct = {{0}};
 
   m_struct.toKodi.kodiInstance = this;
 
