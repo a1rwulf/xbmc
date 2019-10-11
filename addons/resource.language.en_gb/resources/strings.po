@@ -21590,14 +21590,16 @@ msgctxt "#39112"
 msgid "Downmix: Center Mix Level"
 msgstr ""
 
-#. Help text for 39112
+#. Help text for 39113
 #: xbmc/video/dialogs/GUIDialogAudioSettings.cpp
 msgctxt "#39113"
 msgid "Center Mix Level in dB relative to metadata or default (-3 dB)"
 msgstr ""
 
-
-
+#: /xbmc/addons/Addon.cpp
+msgctxt "#39114"
+msgid "Metadata Providers"
+msgstr ""
 
 
 ###############################
