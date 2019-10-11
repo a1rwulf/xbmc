@@ -8,13 +8,15 @@
 
 #pragma once
 
-#include "../AddonBase.h"
+
 
 #ifdef BUILD_KODI_ADDON
+#include "omniplayer/AddonBase.h"
 #include "../FileItem.h"
 #else
 #include "FileItem.h"
 #include "dbwrappers/Database.h"
+#include "../AddonBase.h"
 #endif
 
 namespace kodi

@@ -14,7 +14,12 @@
 #include <string>
 #include <vector>
 
+#ifdef BUILD_KODI_ADDON
+#include "MediaType.h"
+#else
 #include "media/MediaType.h"
+#endif
+
 
 class CVariant;
 

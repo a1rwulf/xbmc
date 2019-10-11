@@ -31,4 +31,24 @@ CMetadataProvider::~CMetadataProvider()
   DestroyInstance();
 }
 
+bool CMetadataProvider::GetPlaylists(const std::string& strBaseDir,
+                  CFileItemList& items,
+                  const CDatabase::Filter& filter,
+                  const SortDescription& sortDescription,
+                  bool countOnly)
+{
+  return m_struct.toAddon.GetPlaylists(&m_struct, strBaseDir, items, filter, sortDescription, countOnly);
+}
+
+bool CMetadataProvider::GetSongs(const std::string& strBaseDir,
+              CFileItemList& items,
+              int idGenre,
+              int idArtist,
+              int idAlbum,
+              int idPlaylist,
+              const SortDescription &sortDescription)
+{
+  return m_struct.toAddon.GetSongs(&m_struct, strBaseDir, items, idGenre, idArtist, idAlbum, idPlaylist, sortDescription);
+}
+
 } /* namespace ADDON */

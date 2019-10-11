@@ -8,7 +8,14 @@
 
 #pragma once
 
+
+#ifdef BUILD_KODI_ADDON
+#include "IArchivable.h"
+#else
 #include "utils/IArchivable.h"
+#endif
+
+
 #include "PlatformDefs.h"
 #include <string>
 

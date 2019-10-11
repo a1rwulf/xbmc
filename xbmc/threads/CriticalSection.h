@@ -8,7 +8,14 @@
 
 #pragma once
 
+#ifdef BUILD_KODI_ADDON
+#include "RecursiveMutex.h"
+#include "Lockables.h"
+#else
 #include "platform/RecursiveMutex.h"
 #include "threads/Lockables.h"
+#endif
+
+
 
 class CCriticalSection : public XbmcThreads::CountingLockable<XbmcThreads::CRecursiveMutex> {};

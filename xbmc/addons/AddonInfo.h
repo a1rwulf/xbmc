@@ -8,7 +8,11 @@
 
 #pragma once
 
+#ifdef BUILD_KODI_ADDON
+#include "AddonVersion.h"
+#else
 #include "addons/AddonVersion.h"
+#endif
 
 #include "XBDateTime.h"
 
