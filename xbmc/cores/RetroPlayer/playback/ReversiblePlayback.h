@@ -10,6 +10,7 @@
 
 #include "GameLoop.h"
 #include "IPlayback.h"
+#include "games/addons/streams/GameClientStreamHwFramebuffer.h"
 #include "threads/CriticalSection.h"
 #include "utils/Observer.h"
 
@@ -30,7 +31,8 @@ namespace RETRO
   class IMemoryStream;
 
   class CReversiblePlayback : public IPlayback,
-                              public IGameLoopCallback,
+                              public GAME::IGameLoopCallback,
+                              public GAME::IHwFramebufferCallback,
                               public Observer
   {
   public:
@@ -60,6 +62,9 @@ namespace RETRO
     // implementation of Observer
     void Notify(const Observable& obs, const ObservableMessage msg) override;
 
+    void HardwareContextReset();
+    void CreateHwContext();
+
   private:
     void AddFrame();
     void RewindFrames(uint64_t frames);
@@ -71,7 +76,7 @@ namespace RETRO
     GAME::CGameClient* const m_gameClient;
 
     // Gameplay functionality
-    CGameLoop m_gameLoop;
+    GAME::CGameLoop m_gameLoop;
     std::unique_ptr<IMemoryStream> m_memoryStream;
     CCriticalSection m_mutex;
 

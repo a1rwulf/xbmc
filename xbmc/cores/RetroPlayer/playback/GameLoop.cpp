@@ -14,6 +14,7 @@
 
 using namespace KODI;
 using namespace RETRO;
+using namespace GAME;
 
 #define DEFAULT_FPS  60  // In case fps is 0 (shouldn't happen)
 #define FOREVER_MS   (7 * 24 * 60 * 60 * 1000) // 1 week is large enough

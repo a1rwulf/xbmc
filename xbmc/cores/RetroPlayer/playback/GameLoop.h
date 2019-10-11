@@ -16,7 +16,7 @@
 
 namespace KODI
 {
-namespace RETRO
+namespace GAME
 {
   class IGameLoopCallback
   {

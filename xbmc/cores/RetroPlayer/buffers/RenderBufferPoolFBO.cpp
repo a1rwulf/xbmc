@@ -24,10 +24,12 @@
 #include "cores/RetroPlayer/rendering/RenderContext.h"
 #include "utils/log.h"
 #include "ServiceBroker.h"
-#include "windowing/gbm/WinSystemGbmGLESContext.h"
+#include "windowing/gbm/WinSystemGbmEGLContext.h"
 
 using namespace KODI;
 using namespace RETRO;
+using namespace WINDOWING;
+using namespace GBM;
 
 CRenderBufferPoolFBO::CRenderBufferPoolFBO(CRenderContext &context) :
   m_context(context)
