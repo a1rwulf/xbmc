@@ -543,7 +543,7 @@ void CGameClient::LogException(const char* strFunctionName) const
 
 void CGameClient::HardwareContextReset()
 {
-  try { LogError(m_struct.toAddon.HwContextReset(), "HwContextReset()"); }
+  try { LogError(m_struct.toAddon.HwContextReset(&m_struct), "HwContextReset()"); }
   catch (...) { LogException("HwContextReset()"); }
 }
 
