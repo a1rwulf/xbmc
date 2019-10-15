@@ -52,6 +52,7 @@
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
+#include "utils/Fanart.h"
 
 using namespace MUSIC_INFO;
 using namespace XFILE;
@@ -1366,7 +1367,7 @@ CMusicInfoScanner::UpdateDatabaseArtistInfo(CArtist& artist,
         CServiceBroker::GetEventLog().Add(EventPtr(new CMediaLibraryEvent(
           MediaTypeArtist, artist.strPath, 24146,
           StringUtils::Format(g_localizeStrings.Get(24147).c_str(), MediaTypeArtist, artist.strArtist.c_str()),
-          CScraperUrl::GetThumbURL(artist.thumbURL.GetFirstThumb()), CURL::GetRedacted(artist.strPath), EventLevel::Warning)));
+          CScraperUrl::GetThumbURL(artist.thumbURL->GetFirstThumb()), CURL::GetRedacted(artist.strPath), EventLevel::Warning)));
       }
     }
   }
@@ -2018,11 +2019,11 @@ bool CMusicInfoScanner::SetArtistArtwork(CArtist& artist, const std::vector<std:
     if (strArt.empty())
     {
       if (type == "thumb")
-        strArt = CScraperUrl::GetThumbURL(artist.thumbURL.GetFirstThumb());
+        strArt = CScraperUrl::GetThumbURL(artist.thumbURL->GetFirstThumb());
       else if (type == "fanart")
-        strArt = artist.fanart.GetImageURL();
+        strArt = artist.fanart->GetImageURL();
       else
-        strArt = CScraperUrl::GetThumbURL(artist.thumbURL.GetFirstThumb(type));
+        strArt = CScraperUrl::GetThumbURL(artist.thumbURL->GetFirstThumb(type));
     }
     // Add art to artist and library
     if (!strArt.empty())

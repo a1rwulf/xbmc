@@ -41,6 +41,7 @@
 #include "utils/ProgressJob.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
+#include "utils/Fanart.h"
 
 using namespace XFILE;
 using namespace MUSIC_INFO;
@@ -780,13 +781,13 @@ void CGUIDialogMusicInfo::OnGetArt()
   {
     // Scraped artist fanart URLs are held separately from other art types
     //! @todo Change once scraping all art types is unified
-    for (unsigned int i = 0; i < m_artist.fanart.GetNumFanarts(); i++)
+    for (unsigned int i = 0; i < m_artist.fanart->GetNumFanarts(); i++)
     {
       std::string strItemPath;
       strItemPath = StringUtils::Format("fanart://Remote%i", i);
       CFileItemPtr item(new CFileItem(strItemPath, false));
       // Preview "thumb" of fanart image for browsing
-      std::string thumb = m_artist.fanart.GetPreviewURL(i);
+      std::string thumb = m_artist.fanart->GetPreviewURL(i);
       std::string wrappedthumb = CTextureUtils::GetWrappedThumbURL(thumb);
       item->SetArt("thumb", wrappedthumb);
       item->SetIconImage("DefaultPicture.png");
@@ -801,7 +802,7 @@ void CGUIDialogMusicInfo::OnGetArt()
     // Type "thumb" returns URLs for all types of art including those without aspect.
     // Those URL without aspect are also returned for all other type values.
     if (m_bArtistInfo)
-      m_artist.thumbURL.GetThumbURLs(remotethumbs, type);
+      m_artist.thumbURL->GetThumbURLs(remotethumbs, type);
     else
       m_album.thumbURL.GetThumbURLs(remotethumbs, type);
 
@@ -932,8 +933,8 @@ void CGUIDialogMusicInfo::OnGetArt()
     else if (StringUtils::StartsWith(result, "fanart://Remote"))
     {
       int iFanart = atoi(result.substr(15).c_str());
-      m_artist.fanart.SetPrimaryFanart(iFanart);
-      newArt = m_artist.fanart.GetImageURL();
+      m_artist.fanart->SetPrimaryFanart(iFanart);
+      newArt = m_artist.fanart->GetImageURL();
     }
     else if (result == "thumb://Thumb")
       newArt = m_item->GetArt("thumb");

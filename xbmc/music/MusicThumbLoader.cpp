@@ -16,6 +16,7 @@
 #include "music/tags/MusicInfoTagLoaderFactory.h"
 #include "TextureDatabase.h"
 #include "video/VideoThumbLoader.h"
+#include "utils/StringUtils.h"
 
 using namespace MUSIC_INFO;
 

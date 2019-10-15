@@ -590,7 +590,7 @@ void CMusicInfoTag::SetArtist(const CArtist& artist)
   SetMusicBrainzAlbumArtistID({ artist.strMusicBrainzArtistID });
   SetGenre(artist.genre);
   SetMood(StringUtils::Join(artist.moods, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator));
-  SetDateAdded(artist.dateAdded);
+  SetDateAdded(*artist.dateAdded.get());
   SetDatabaseId(artist.idArtist, MediaTypeArtist);
 
   SetLoaded();

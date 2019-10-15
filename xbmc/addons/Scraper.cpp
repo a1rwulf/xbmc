@@ -791,11 +791,11 @@ void DetailsFromFileItem<CArtist>(const CFileItem &item, CArtist &artist)
   }
 
   int nThumbs = item.GetProperty("artist.thumbs").asInteger32();
-  ParseThumbs(artist.thumbURL, item, nThumbs, "artist.thumb");
+  ParseThumbs(*(artist.thumbURL.get()), item, nThumbs, "artist.thumb");
 
   int nFanart = item.GetProperty("artist.fanarts").asInteger32();
-  artist.fanart.m_xml = ParseFanart(item, nFanart, "artist.fanart");
-  artist.fanart.Unpack();
+  artist.fanart->m_xml = ParseFanart(item, nFanart, "artist.fanart");
+  artist.fanart->Unpack();
 }
 
 template<>

@@ -8,9 +8,13 @@
 
 #include "Artist.h"
 #include "utils/XMLUtils.h"
+#include "utils/ScraperUrl.h"
 #include "ServiceBroker.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/Fanart.h"
+#include "utils/StringUtils.h"
+#include "XBDateTime.h"
 
 #include <algorithm>
 
@@ -54,7 +58,7 @@ void CArtist::MergeScrapedArtist(const CArtist& source, bool override /* = true 
   strDisbanded = source.strDisbanded;
   yearsActive = source.yearsActive;
 
-  thumbURL = source.thumbURL; // Available remote thumbs
+  thumbURL.reset(source.thumbURL.get()); // Available remote thumbs
   fanart = source.fanart;  // Available remote fanart
   // Current artwork - thumb, fanart etc., to be stored in art table
   if (!source.art.empty())
@@ -90,14 +94,14 @@ bool CArtist::Load(const TiXmlElement *artist, bool append, bool prioritise)
   XMLUtils::GetString(artist,      "died", strDied);
   XMLUtils::GetString(artist, "disbanded", strDisbanded);
 
-  size_t iThumbCount = thumbURL.m_url.size();
-  std::string xmlAdd = thumbURL.m_xml;
+  size_t iThumbCount = thumbURL->m_url.size();
+  std::string xmlAdd = thumbURL->m_xml;
 
   // Available artist thumbs
   const TiXmlElement* thumb = artist->FirstChildElement("thumb");
   while (thumb)
   {
-    thumbURL.ParseElement(thumb);
+    thumbURL->ParseElement(thumb);
     if (prioritise)
     {
       std::string temp;
@@ -107,12 +111,12 @@ bool CArtist::Load(const TiXmlElement *artist, bool append, bool prioritise)
     thumb = thumb->NextSiblingElement("thumb");
   }
   // prefix thumbs from nfos
-  if (prioritise && iThumbCount && iThumbCount != thumbURL.m_url.size())
+  if (prioritise && iThumbCount && iThumbCount != thumbURL->m_url.size())
   {
-    rotate(thumbURL.m_url.begin(),
-           thumbURL.m_url.begin()+iThumbCount,
-           thumbURL.m_url.end());
-    thumbURL.m_xml = xmlAdd;
+    rotate(thumbURL->m_url.begin(),
+           thumbURL->m_url.begin()+iThumbCount,
+           thumbURL->m_url.end());
+    thumbURL->m_xml = xmlAdd;
   }
 
   // Discography
@@ -141,11 +145,11 @@ bool CArtist::Load(const TiXmlElement *artist, bool append, bool prioritise)
     {
       std::string temp;
       temp << *fanart2;
-      fanart.m_xml = temp+fanart.m_xml;
+      fanart->m_xml = temp+fanart->m_xml;
     }
     else
-      fanart.m_xml << *fanart2;
-    fanart.Unpack();
+      fanart->m_xml << *fanart2;
+    fanart->Unpack();
   }
 
  // Current artwork  - thumb, fanart etc. (the chosen art, not the lists of those available)
@@ -190,10 +194,10 @@ bool CArtist::Save(TiXmlNode *node, const std::string &tag, const std::string& s
   XMLUtils::SetString(artist,                      "died", strDied);
   XMLUtils::SetString(artist,                 "disbanded", strDisbanded);
   // Available thumbs
-  if (!thumbURL.m_xml.empty())
+  if (!thumbURL->m_xml.empty())
   {
     CXBMCTinyXML doc;
-    doc.Parse(thumbURL.m_xml);
+    doc.Parse(thumbURL->m_xml);
     const TiXmlNode* thumb = doc.FirstChild("thumb");
     while (thumb)
     {
@@ -203,10 +207,10 @@ bool CArtist::Save(TiXmlNode *node, const std::string &tag, const std::string& s
   }
   XMLUtils::SetString(artist,        "path", strPath);
   // Available fanart
-  if (fanart.m_xml.size())
+  if (fanart->m_xml.size())
   {
     CXBMCTinyXML doc;
-    doc.Parse(fanart.m_xml);
+    doc.Parse(fanart->m_xml);
     artist->InsertEndChild(*doc.RootElement());
   }
 
@@ -231,6 +235,40 @@ bool CArtist::Save(TiXmlNode *node, const std::string &tag, const std::string& s
 
 void CArtist::SetDateAdded(const std::string& strDateAdded)
 {
-  dateAdded.SetFromDBDateTime(strDateAdded);
+  dateAdded->SetFromDBDateTime(strDateAdded);
 }
 
+void CArtist::Reset()
+{
+  strArtist.clear();
+  strSortName.clear();
+  strType.clear();
+  strGender.clear();
+  strDisambiguation.clear();
+  genre.clear();
+  strBiography.clear();
+  styles.clear();
+  moods.clear();
+  instruments.clear();
+  strBorn.clear();
+  strFormed.clear();
+  strDied.clear();
+  strDisbanded.clear();
+  yearsActive.clear();
+  thumbURL->Clear();
+  art.clear();
+  discography.clear();
+  idArtist = -1;
+  strPath.clear();
+  dateAdded->Reset();
+  bScrapedMBID = false;
+  strLastScraped.clear();
+}
+
+bool CMusicRole::operator==(const CMusicRole& a) const
+{
+  if (StringUtils::EqualsNoCase(m_strRole, a.m_strRole))
+    return StringUtils::EqualsNoCase(m_strArtist, a.m_strArtist);
+  else
+    return false;
+}

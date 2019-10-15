@@ -48,6 +48,7 @@
 #include "threads/SystemClock.h"
 #include "URL.h"
 #include "Util.h"
+#include "utils/Fanart.h"
 #include "utils/FileUtils.h"
 #include "utils/LegacyPathTranslation.h"
 #include "utils/log.h"
@@ -1385,8 +1386,8 @@ bool CMusicDatabase::UpdateArtist(const CArtist& artist)
                  artist.strDied,
                  artist.strDisbanded,
                  StringUtils::Join(artist.yearsActive, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator).c_str(),
-                 artist.thumbURL.m_xml.c_str(),
-                 artist.fanart.m_xml.c_str());
+                 artist.thumbURL->m_xml.c_str(),
+                 artist.fanart->m_xml.c_str());
 
     DeleteArtistDiscography(objPerson->m_idPerson);
     for (const auto &disc : artist.discography)
@@ -2891,12 +2892,12 @@ CArtist CMusicDatabase::GetArtistFromODBObject(std::shared_ptr<CODBPerson> objAr
   
   if (needThumb)
   {
-    artist.fanart.m_xml = objDetails->m_fanart;
-    artist.fanart.Unpack();
+    artist.fanart->m_xml = objDetails->m_fanart;
+    artist.fanart->Unpack();
     
     if (objArtist->m_art.load())
     {
-      artist.thumbURL.ParseString(objArtist->m_art->m_url);
+      artist.thumbURL->ParseString(objArtist->m_art->m_url);
     }
   }
   

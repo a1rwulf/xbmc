@@ -12,15 +12,15 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "utils/StringUtils.h"
-#include "utils/Fanart.h"
-#include "utils/ScraperUrl.h"
-#include "XBDateTime.h"
+#include <memory>
 
 class TiXmlNode;
 class CAlbum;
+class CDateTime;
+class CFanart;
 class CMusicDatabase;
+class CScraperUrl;
+class TiXmlElement;
 
 class CArtist
 {
@@ -42,32 +42,7 @@ public:
 
   void MergeScrapedArtist(const CArtist& source, bool override = true);
 
-  void Reset()
-  {
-    strArtist.clear();
-    strSortName.clear();
-    strType.clear();
-    strGender.clear();
-    strDisambiguation.clear();
-    genre.clear();
-    strBiography.clear();
-    styles.clear();
-    moods.clear();
-    instruments.clear();
-    strBorn.clear();
-    strFormed.clear();
-    strDied.clear();
-    strDisbanded.clear();
-    yearsActive.clear();
-    thumbURL.Clear();
-    art.clear();
-    discography.clear();
-    idArtist = -1;
-    strPath.clear();
-    dateAdded.Reset();
-    bScrapedMBID = false;
-    strLastScraped.clear();
-  }
+  void Reset();
 
   /*! \brief Load artist information from an XML file.
    See CVideoInfoTag::Load for a description of the types of elements we load.
@@ -98,11 +73,11 @@ public:
   std::string strDisbanded;
   std::vector<std::string> yearsActive;
   std::string strPath;
-  CScraperUrl thumbURL; // Data for available thumbs
-  CFanart fanart;  // Data for available fanart, urls etc.
+  std::shared_ptr<CScraperUrl> thumbURL; // Data for available thumbs
+  std::shared_ptr<CFanart> fanart;  // Data for available fanart, urls etc.
   std::map<std::string, std::string> art;  // Current artwork - thumb, fanart etc.
   std::vector<std::pair<std::string,std::string> > discography;
-  CDateTime dateAdded;
+  std::shared_ptr<CDateTime> dateAdded;
   bool bScrapedMBID = false;
   std::string strLastScraped;
 };
@@ -174,13 +149,7 @@ public:
   long GetArtistId() const { return idArtist; }
   void SetArtistId(long iArtistId) { idArtist = iArtistId;  }
 
-  bool operator==(const CMusicRole& a) const
-  {
-    if (StringUtils::EqualsNoCase(m_strRole, a.m_strRole))
-      return StringUtils::EqualsNoCase(m_strArtist, a.m_strArtist);
-    else
-      return false;
-  }
+  bool operator==(const CMusicRole& a) const;
 private:
   int idRole;
   std::string m_strRole;
