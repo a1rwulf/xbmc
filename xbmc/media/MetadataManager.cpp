@@ -13,19 +13,33 @@
 #include "providers/ApiMetadataProvider.h"
 #include "providers/DatabaseMetadataProvider.h"
 #include "providers/MetadataProvider.h"
+#include "ServiceBroker.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
+#include "addons/binary-addons/BinaryAddonManager.h"
+#include "addons/MetadataProvider.h"
 
+using namespace ADDON;
 using namespace METADATA;
 
 CMetadataManager::CMetadataManager()
 {
-  std::shared_ptr<IMetadataProvider> dbprovider(new CDatabaseMetadataProvider());
-  std::shared_ptr<IMetadataProvider> apiprovider(new CApiMetadataProvider("http://omniyon.local:10101"));
-  AddProvider("commondb", dbprovider);
-  AddProvider("oam", apiprovider);
+  BinaryAddonBaseList addonInfos;
+  CServiceBroker::GetBinaryAddonManager().GetAddonInfos(addonInfos, true, ADDON_METADATAPROVIDER);
+  for (auto addonInfo : addonInfos)
+  {
+    std::shared_ptr<CMetadataProvider> apiprovider(new CMetadataProvider(addonInfo));
+    AddProvider("oam", apiprovider);
+  }
+
+  // std::shared_ptr<IMetadataProvider> dbprovider(new CDatabaseMetadataProvider());
+  // std::shared_ptr<IMetadataProvider> apiprovider(new CApiMetadataProvider("http://omniyon.local:10101"));
+  // AddProvider("commondb", dbprovider);
+  // AddProvider("oam", apiprovider);
 }
 
 void CMetadataManager::AddProvider(const std::string& name,
-                                   std::shared_ptr<IMetadataProvider> provider)
+                                   std::shared_ptr<CMetadataProvider> provider)
 {
   m_providers.insert(std::make_pair(name, provider));
 }
@@ -48,7 +62,7 @@ bool CMetadataManager::GetPlaylists(const std::string& strBaseDir,
   {
     for (auto& provider : m_providers)
     {
-      if (provider.second->GetSupportedEntities() & SupportedEntities::Playlist)
+      // if (provider.second->GetSupportedEntities() & SupportedEntities::Playlist)
         provider.second->GetPlaylists(strBaseDir, items, filter, sortDescription, countOnly);
     }
   }

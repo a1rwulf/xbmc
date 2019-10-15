@@ -16,12 +16,17 @@
 #include "FileItem.h"
 #include "dbwrappers/Database.h"
 
+namespace ADDON
+{
+  class CMetadataProvider;
+}
+
 namespace METADATA
 {
 class IMetadataProvider;
 class CMetadataProviders;
 
-typedef std::map<std::string, std::shared_ptr<IMetadataProvider>> ProviderMap;
+typedef std::map<std::string, std::shared_ptr<ADDON::CMetadataProvider>> ProviderMap;
 
 class CMetadataManager
 {
@@ -29,7 +34,7 @@ public:
   CMetadataManager();
   ~CMetadataManager() = default;
 
-  void AddProvider(const std::string& name, std::shared_ptr<IMetadataProvider> provider);
+  void AddProvider(const std::string& name, std::shared_ptr<ADDON::CMetadataProvider> provider);
   void RemoveProvider(const std::string& name);
 
   bool GetPlaylists(const std::string& strBaseDir,
