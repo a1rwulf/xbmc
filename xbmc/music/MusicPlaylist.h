@@ -15,12 +15,9 @@
 
 #include <map>
 #include <vector>
-#include "Artist.h"
 #include "Song.h"
 #include "XBDateTime.h"
-#include "utils/ScraperUrl.h"
 
-class TiXmlNode;
 class CFileItem;
 
 class CMusicPlaylist
