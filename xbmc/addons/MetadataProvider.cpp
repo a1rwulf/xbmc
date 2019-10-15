@@ -13,7 +13,7 @@ namespace ADDON
 {
 
 CMetadataProvider::CMetadataProvider(BinaryAddonBasePtr addonBase)
- : IAddonInstanceHandler(ADDON_INSTANCE_SCREENSAVER, addonBase)
+ : IAddonInstanceHandler(ADDON_INSTANCE_METADATAPROVIDER, addonBase)
 {
   //! @todo a1rwulf - check why this gives a compiler error (it works for screensaver/pvr)
   //m_struct = {{0}};

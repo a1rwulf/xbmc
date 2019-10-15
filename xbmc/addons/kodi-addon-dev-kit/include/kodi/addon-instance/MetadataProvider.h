@@ -197,6 +197,9 @@ private:
 
     m_instanceData = static_cast<AddonInstance_MetadataProvider*>(instance);
     m_instanceData->toAddon.addonInstance = this;
+
+    m_instanceData->toAddon.GetPlaylists = ADDON_GetPlaylists;
+    m_instanceData->toAddon.GetSongs = ADDON_GetSongs;
   }
 
   inline static bool ADDON_GetPlaylists(AddonInstance_MetadataProvider* instance,
