@@ -29,6 +29,9 @@ set(CORE_ADDON_BINDINGS_FILES
     ${CORE_SOURCE_DIR}/xbmc/SortFileItem.h
     ${CORE_SOURCE_DIR}/xbmc/utils/LabelFormatter.h
     ${CORE_SOURCE_DIR}/xbmc/dbwrappers/Database.h
+    ${CORE_SOURCE_DIR}/xbmc/music/MusicPlaylist.h
+    ${CORE_SOURCE_DIR}/xbmc/music/Song.h
+    ${CORE_SOURCE_DIR}/xbmc/music/Artist.h
 )
 
 set(CORE_ADDON_BINDINGS_DIRS
