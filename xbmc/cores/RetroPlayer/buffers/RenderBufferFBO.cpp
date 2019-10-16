@@ -33,6 +33,7 @@ CRenderBufferFBO::CRenderBufferFBO(CRenderContext &context) :
 
 bool CRenderBufferFBO::Allocate(AVPixelFormat format, unsigned int width, unsigned int height)
 {
+  CLog::Log(LOGDEBUG, "RetroPlayer[RENDER]: Allocate");
   // Initialize IRenderBuffer
   m_format = format;
   m_width = width;
@@ -118,13 +119,12 @@ bool CRenderBufferFBO::CheckFrameBufferStatus()
     return false;
   }
 
-  glBindRenderbuffer(GL_RENDERBUFFER, 0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
   return true;
 }
 
 uintptr_t CRenderBufferFBO:: GetCurrentFramebuffer()
 {
+  CLog::Log(LOGDEBUG, "RetroPlayer[RENDER]: GetCurrentFramebuffer");
+  glBindFramebuffer(GL_FRAMEBUFFER, m_texture.fbo_id);
   return m_texture.fbo_id;
 }

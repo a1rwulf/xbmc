@@ -43,6 +43,7 @@ bool CRenderBufferPoolFBO::IsCompatible(const CRenderVideoSettings &renderSettin
 
 IRenderBuffer *CRenderBufferPoolFBO::CreateRenderBuffer(void *header /* = nullptr */)
 {
+  CLog::Log(LOGERROR, "RenderBufferPoolFBO: CreateContext");
   if(m_eglContext == EGL_NO_CONTEXT)
   {
     if (!CreateContext())
@@ -96,37 +97,7 @@ bool CRenderBufferPoolFBO::CreateContext()
     CLog::Log(LOGERROR, "No suitable EGL configs found");
     return false;
   }
-
-  // m_surface = gbm_surface_create(winSystem->GetGBMDevice(),
-  //                                m_width,
-  //                                m_height,
-  //                                GBM_FORMAT_ARGB8888,
-  //                                GBM_BO_USE_RENDERING);
-
-  // if (!m_surface)
-  // {
-  //   CLog::Log(LOGERROR, "failed to create gbm surface");
-  //   return false;
-  // }
-
-  // const EGLint window_attribs[] =
-  // {
-  //   EGL_RENDER_BUFFER, EGL_SINGLE_BUFFER, EGL_NONE
-  // };
-
-  // m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig, (EGLNativeWindowType)m_surface, NULL); //window_attribs);
-  // if (m_eglSurface == EGL_NO_SURFACE)
-  // {
-  //   CLog::Log(LOGERROR, "failed to create egl window surface");
-  //   return false;
-  // }
-/*
-  int client_version = 2;
-
-  const EGLint context_attribs[] = {
-    EGL_CONTEXT_CLIENT_VERSION, client_version, EGL_NONE
-  };
-*/
+  
   const EGLint glMajor = 3;
   const EGLint glMinor = 2;
 

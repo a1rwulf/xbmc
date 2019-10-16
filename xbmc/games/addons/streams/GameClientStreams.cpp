@@ -39,7 +39,7 @@ void CGameClientStreams::Deinitialize()
   m_streamManager = nullptr;
 }
 
-IGameClientStream *CGameClientStreams::CreateStream(const game_stream_properties &properties)
+IGameClientStream* CGameClientStreams::OpenStream(const game_stream_properties &properties)
 {
   if (m_streamManager == nullptr)
     return nullptr;
@@ -65,25 +65,15 @@ IGameClientStream *CGameClientStreams::CreateStream(const game_stream_properties
     return nullptr;
   }
 
-  m_mystream = std::move(retroStream);
-  //m_streams[gameStream.get()] = std::move(retroStream);
-
-  return gameStream.release();
-}
-
-bool CGameClientStreams::OpenStream(IGameClientStream *stream, const game_stream_properties &properties)
-{
-  if (stream != nullptr)
+  if (!gameStream->OpenStream(retroStream.get(), properties))
   {
-    RETRO::StreamProperties renderingProperties{};
-    m_mystream->OpenStream(renderingProperties);
-    {
-      CLog::Log(LOGERROR, "GAME: Failed to open stream");
-      return false;
-    }
+    CLog::Log(LOGERROR, "GAME: Failed to open audio stream");
+    return nullptr;
   }
 
-  return true;
+  m_streams[gameStream.get()] = std::move(retroStream);
+
+  return gameStream.release();
 }
 
 void CGameClientStreams::CloseStream(IGameClientStream *stream)
@@ -108,7 +98,10 @@ game_proc_address_t CGameClientStreams::GetHwProcedureAddress(const char *symbol
 
 void CGameClientStreams::EnableHardwareRendering(const game_hw_rendering_properties& properties)
 {
-  // TODO
+  CLog::Log(LOGERROR, "GAME: EnableHardwareRendering was called");
+  game_stream_properties props;
+  props.type = GAME_STREAM_HW_FRAMEBUFFER;
+  //CreateStream(props);
 }
 
 std::unique_ptr<IGameClientStream> CGameClientStreams::CreateStream(GAME_STREAM_TYPE streamType) const

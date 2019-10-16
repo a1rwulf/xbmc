@@ -23,6 +23,8 @@ const char *CRenderTranslator::TranslatePixelFormat(AVPixelFormat format)
     return "RGB565";
   case AV_PIX_FMT_RGB555:
     return "RGB555";
+  case AV_PIX_FMT_BGRA:
+    return "BGRA";
   default:
     break;
   }

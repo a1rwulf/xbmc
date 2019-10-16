@@ -225,6 +225,8 @@ bool CGameClient::OpenFile(const CFileItem& file, RETRO::IStreamManager& streamM
 
   GAME_ERROR error = GAME_ERROR_FAILED;
 
+  Streams().Initialize(streamManager);
+
   try
   {
     LogError(error = m_struct.toAddon.LoadGame(&m_struct, path.c_str()), "LoadGame()");
@@ -258,6 +260,8 @@ bool CGameClient::OpenStandalone(RETRO::IStreamManager& streamManager, IGameInpu
 
   GAME_ERROR error = GAME_ERROR_FAILED;
 
+  Streams().Initialize(streamManager);
+
   try
   {
     LogError(error = m_struct.toAddon.LoadStandalone(&m_struct), "LoadStandalone()");
@@ -282,7 +286,6 @@ bool CGameClient::InitializeGameplay(const std::string& gamePath, RETRO::IStream
 {
   if (LoadGameInfo())
   {
-    Streams().Initialize(streamManager);
     Input().Start(input);
 
     m_bIsPlaying      = true;
@@ -544,10 +547,9 @@ void CGameClient::LogException(const char* strFunctionName) const
 
 void CGameClient::CreateHwContext()
 {
-  game_stream_properties properties;
-
-  properties.type = GAME_STREAM_HW_FRAMEBUFFER;
-  Streams().OpenStream((IGameClientStream*)m_stream, properties);
+  game_stream_properties props;
+  props.type = GAME_STREAM_HW_FRAMEBUFFER;
+  m_stream = Streams().OpenStream(props);
 }
 
 void CGameClient::HardwareContextReset()
@@ -586,13 +588,11 @@ void* CGameClient::cb_open_stream(void* kodiInstance, const game_stream_properti
 
   if (properties->type == GAME_STREAM_HW_FRAMEBUFFER)
   {
-    gameClient->m_stream = gameClient->Streams().CreateStream(*properties);
     gameClient->m_hwrendering = true;
   }
   else
   {
-    gameClient->m_stream = gameClient->Streams().CreateStream(*properties);
-    gameClient->Streams().OpenStream((IGameClientStream*)gameClient->m_stream, *properties);
+    gameClient->Streams().OpenStream(*properties);
   }
 
   return gameClient->m_stream;

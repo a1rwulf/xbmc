@@ -35,8 +35,7 @@ public:
   void Initialize(RETRO::IStreamManager& streamManager);
   void Deinitialize();
 
-  IGameClientStream* CreateStream(const game_stream_properties &properties);
-  bool OpenStream(IGameClientStream*stream, const game_stream_properties &properties);
+  IGameClientStream* OpenStream(const game_stream_properties &properties);
   void CloseStream(IGameClientStream* stream);
 
   game_proc_address_t GetHwProcedureAddress(const char *sym);

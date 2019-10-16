@@ -9,6 +9,7 @@
 #include "GameLoop.h"
 
 #include "threads/SystemClock.h"
+#include "utils/log.h"
 
 #include <cmath>
 
@@ -61,6 +62,7 @@ void CGameLoop::PauseAsync()
 
 void CGameLoop::Process(void)
 {
+  CLog::Log(LOGERROR, "GameLoop: Process");
   m_hwcallback->CreateHwContext();
   Sleep(200);
   m_hwcallback->HardwareContextReset();
