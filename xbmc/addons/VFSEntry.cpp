@@ -334,9 +334,9 @@ bool CVFSEntry::CreateDirectory(const CURL& url)
   return m_struct.toAddon.create_directory(&m_struct, &url2.url);
 }
 
-static void VFSDirEntriesToCFileItemList(int num_entries,
-                                         VFSDirEntry* entries,
-                                         CFileItemList& items)
+void CVFSEntry::VFSDirEntriesToCFileItemList(int num_entries,
+                                             VFSDirEntry* entries,
+                                             CFileItemList& items)
 {
   for (int i=0;i<num_entries;++i)
   {

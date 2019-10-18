@@ -96,6 +96,11 @@ namespace ADDON
     bool HasFileDirectories() const { return m_filedirectories; }
     const std::string& GetZeroconfType() const { return m_zeroconf; }
     const ProtocolInfo& GetProtocolInfo() const { return m_protocolInfo; }
+
+    static void VFSDirEntriesToCFileItemList(int num_entries,
+                                             VFSDirEntry* entries,
+                                             CFileItemList& items);
+
   protected:
     std::string m_protocols;  //!< Protocols for VFS entry.
     std::string m_extensions; //!< Extensions for VFS entry.

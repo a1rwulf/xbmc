@@ -7,6 +7,7 @@
  */
 
 #include "MetadataProvider.h"
+#include "VFSEntry.h"
 #include "utils/log.h"
 
 namespace ADDON
@@ -15,10 +16,14 @@ namespace ADDON
 CMetadataProvider::CMetadataProvider(BinaryAddonBasePtr addonBase)
  : IAddonInstanceHandler(ADDON_INSTANCE_METADATAPROVIDER, addonBase)
 {
-  //! @todo a1rwulf - check why this gives a compiler error (it works for screensaver/pvr)
-  //m_struct = {{0}};
+  m_struct.props = new AddonProps_MetadataProvider;
 
-  m_struct.toKodi.kodiInstance = this;
+  m_struct.toKodi = new AddonToKodiFuncTable_MetadataProvider;
+  m_struct.toKodi->kodiInstance = this;
+  m_struct.toKodi->transfer_list_entry = transfer_list_entry;
+
+  m_struct.toAddon = new KodiToAddonFuncTable_MetadataProvider;
+  memset(m_struct.toAddon, 0, sizeof(AddonToKodiFuncTable_MetadataProvider));
 
   /* Open the class "kodi::addon::CInstanceMetadataProvider" on add-on side */
   if (CreateInstance(&m_struct) != ADDON_STATUS_OK)
@@ -29,6 +34,10 @@ CMetadataProvider::~CMetadataProvider()
 {
   /* Destroy the class "kodi::addon::CInstanceMetadataProvider" on add-on side */
   DestroyInstance();
+
+  delete m_struct.toAddon;
+  delete m_struct.toKodi;
+  delete m_struct.props;
 }
 
 bool CMetadataProvider::GetPlaylists(const std::string& strBaseDir,
@@ -37,7 +46,19 @@ bool CMetadataProvider::GetPlaylists(const std::string& strBaseDir,
                   const SortDescription& sortDescription,
                   bool countOnly)
 {
-  return m_struct.toAddon.GetPlaylists(&m_struct, strBaseDir, items, filter, sortDescription, countOnly);
+  if (!m_struct.toAddon->GetPlaylists)
+    return false;
+
+  std::string strSQL;
+  CDatabase::BuildSQL("", filter, strSQL);
+
+  return m_struct.toAddon->GetPlaylists(&m_struct, &items, strBaseDir.c_str(), strSQL.c_str(),
+                                        kodi::addon::TransToAddonSortBy(sortDescription.sortBy),
+                                        kodi::addon::TransToAddonSortOrder(sortDescription.sortOrder),
+                                        kodi::addon::TransToAddonSortAttribute(sortDescription.sortAttributes),
+                                        sortDescription.limitStart,
+                                        sortDescription.limitEnd,
+                                        countOnly);
 }
 
 bool CMetadataProvider::GetSongs(const std::string& strBaseDir,
@@ -48,7 +69,28 @@ bool CMetadataProvider::GetSongs(const std::string& strBaseDir,
               int idPlaylist,
               const SortDescription &sortDescription)
 {
-  return m_struct.toAddon.GetSongs(&m_struct, strBaseDir, items, idGenre, idArtist, idAlbum, idPlaylist, sortDescription);
+  if (!m_struct.toAddon->GetSongs)
+    return false;
+
+  return m_struct.toAddon->GetSongs(&m_struct, &items, strBaseDir.c_str(), idGenre, idArtist, idAlbum, idPlaylist,
+                                    kodi::addon::TransToAddonSortBy(sortDescription.sortBy),
+                                    kodi::addon::TransToAddonSortOrder(sortDescription.sortOrder),
+                                    kodi::addon::TransToAddonSortAttribute(sortDescription.sortAttributes),
+                                    sortDescription.limitStart,
+                                    sortDescription.limitEnd);
 }
+
+void CMetadataProvider::transfer_list_entry(void* ctx, void* hdl, struct VFSDirEntry* entry)
+{
+  CFileItemList* items = static_cast<CFileItemList*>(hdl);
+  if (!ctx || !items)
+  {
+    CLog::Log(LOGERROR, "CMetadataProvider::%s - invalid data (ctx='%p', hdl='%p')", __func__, ctx, hdl);
+    return;
+  }
+
+  CVFSEntry::VFSDirEntriesToCFileItemList(1, entry, *items);
+}
+
 
 } /* namespace ADDON */

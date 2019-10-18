@@ -203,7 +203,7 @@ protected:
 
   int GetDBVersion();
 
-  bool BuildSQL(const std::string &strQuery, const Filter &filter, std::string &strSQL);
+  static bool BuildSQL(const std::string &strQuery, const Filter &filter, std::string &strSQL);
 
   bool m_sqlite; ///< \brief whether we use sqlite (defaults to true)
 

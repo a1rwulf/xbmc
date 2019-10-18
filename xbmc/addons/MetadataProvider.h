@@ -35,6 +35,8 @@ public:
                 const SortDescription &sortDescription = SortDescription());
 
 private:
+  static void transfer_list_entry(void* ctx, void* hdl, struct VFSDirEntry* entry);
+
   AddonInstance_MetadataProvider m_struct;
 };
 

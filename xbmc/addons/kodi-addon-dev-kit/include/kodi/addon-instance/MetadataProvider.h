@@ -8,16 +8,9 @@
 
 #pragma once
 
-
-
-#ifdef BUILD_KODI_ADDON
-#include "omniplayer/AddonBase.h"
-#include "../FileItem.h"
-#else
-#include "FileItem.h"
-#include "dbwrappers/Database.h"
+#include "MetadataUtils.h"
+#include "../Filesystem.h"
 #include "../AddonBase.h"
-#endif
 
 namespace kodi
 {
@@ -39,6 +32,7 @@ extern "C"
  */
   typedef struct AddonProps_MetadataProvider
   {
+    int dummy;
     //! @todo
     // Add addon properties
   } AddonProps_MetadataProvider;
@@ -51,6 +45,7 @@ extern "C"
   typedef struct AddonToKodiFuncTable_MetadataProvider
   {
     KODI_HANDLE kodiInstance;
+    void (__cdecl* transfer_list_entry)(void* ctx, void* hdl, struct VFSDirEntry* entry);
   } AddonToKodiFuncTable_MetadataProvider;
 
   /*!
@@ -63,20 +58,28 @@ extern "C"
     kodi::addon::CInstanceMetadataProvider* addonInstance;
 
     bool(__cdecl* GetPlaylists)(AddonInstance_MetadataProvider* instance,
-                                const std::string& strBaseDir,
-                                CFileItemList& items,
-                                const CDatabase::Filter& filter,
-                                const SortDescription& sortDescription,
+                                void* hdl,
+                                const char* strBaseDir,
+                                const char* sqlFilter,
+                                int sortBy,
+                                int sortOrder,
+                                int sortAttributes,
+                                int sortLimitStart,
+                                int sortLimitEnd,
                                 bool countOnly);
 
     bool(__cdecl* GetSongs)(AddonInstance_MetadataProvider* instance,
-                            const std::string& strBaseDir,
-                            CFileItemList& items,
+                            void* hdl,
+                            const char* strBaseDir,
                             int idGenre,
                             int idArtist,
                             int idAlbum,
                             int idPlaylist,
-                            const SortDescription& sortDescription);
+                            int sortBy,
+                            int sortOrder,
+                            int sortAttributes,
+                            int sortLimitStart,
+                            int sortLimitEnd);
 
   } KodiToAddonFuncTable_MetadataProvider;
 
@@ -87,9 +90,9 @@ extern "C"
  */
   typedef struct AddonInstance_MetadataProvider
   {
-    AddonProps_MetadataProvider props;
-    AddonToKodiFuncTable_MetadataProvider toKodi;
-    KodiToAddonFuncTable_MetadataProvider toAddon;
+    AddonProps_MetadataProvider* props;
+    AddonToKodiFuncTable_MetadataProvider* toKodi;
+    KodiToAddonFuncTable_MetadataProvider* toAddon;
   } AddonInstance_MetadataProvider;
 
 } /* extern "C" */
@@ -169,21 +172,21 @@ public:
   //--------------------------------------------------------------------------
 
   virtual bool GetPlaylists(const std::string& strBaseDir,
-                            CFileItemList& items,
-                            const CDatabase::Filter& filter,
-                            const SortDescription& sortDescription,
+                            std::vector<vfs::CDirEntry>& items,
+                            const std::string& sqlFilter,
+                            const AddonSortDescription& sortDescription,
                             bool countOnly)
   {
     return true;
   }
 
   virtual bool GetSongs(const std::string& strBaseDir,
-                        CFileItemList& items,
+                        std::vector<vfs::CDirEntry>& items,
                         int idGenre,
                         int idArtist,
                         int idAlbum,
                         int idPlaylist,
-                        const SortDescription& sortDescription = SortDescription())
+                        const AddonSortDescription& sortDescription)
   {
     return true;
   }
@@ -196,34 +199,99 @@ private:
                              "structure not allowed, table must be given from Kodi!");
 
     m_instanceData = static_cast<AddonInstance_MetadataProvider*>(instance);
-    m_instanceData->toAddon.addonInstance = this;
+    m_instanceData->toAddon->addonInstance = this;
 
-    m_instanceData->toAddon.GetPlaylists = ADDON_GetPlaylists;
-    m_instanceData->toAddon.GetSongs = ADDON_GetSongs;
+    m_instanceData->toAddon->GetPlaylists = ADDON_GetPlaylists;
+    m_instanceData->toAddon->GetSongs = ADDON_GetSongs;
   }
 
   inline static bool ADDON_GetPlaylists(AddonInstance_MetadataProvider* instance,
-                                        const std::string& strBaseDir,
-                                        CFileItemList& items,
-                                        const CDatabase::Filter& filter,
-                                        const SortDescription& sortDescription,
+                                        void* hdl,
+                                        const char* strBaseDir,
+                                        const char* sqlFilter,
+                                        int sortBy,
+                                        int sortOrder,
+                                        int sortAttributes,
+                                        int sortLimitStart,
+                                        int sortLimitEnd,
                                         bool countOnly)
   {
-    return instance->toAddon.addonInstance->GetPlaylists(strBaseDir, items, filter, sortDescription,
-                                                         countOnly);
+    AddonSortDescription sortDescription;
+    sortDescription.sortBy = static_cast<AddonSortBy>(sortBy);
+    sortDescription.sortOrder = static_cast<AddonSortOrder>(sortOrder);
+    sortDescription.sortAttributes = static_cast<AddonSortAttribute>(sortAttributes);
+    sortDescription.limitStart = sortLimitStart;
+    sortDescription.limitEnd = sortLimitEnd;
+
+    std::vector<vfs::CDirEntry> items;
+    bool ret = instance->toAddon->addonInstance->GetPlaylists(strBaseDir, items, sqlFilter, sortDescription,
+                                                              countOnly);
+    if (ret)
+      instance->toAddon->addonInstance->TransferListEntries(items, hdl);
+    return ret;
   }
 
   inline static bool ADDON_GetSongs(AddonInstance_MetadataProvider* instance,
-                                    const std::string& strBaseDir,
-                                    CFileItemList& items,
+                                    void* hdl,
+                                    const char* strBaseDir,
                                     int idGenre,
                                     int idArtist,
                                     int idAlbum,
                                     int idPlaylist,
-                                    const SortDescription& sortDescription)
+                                    int sortBy,
+                                    int sortOrder,
+                                    int sortAttributes,
+                                    int sortLimitStart,
+                                    int sortLimitEnd)
   {
-    return instance->toAddon.addonInstance->GetSongs(strBaseDir, items, idGenre, idArtist, idAlbum,
-                                                     idPlaylist, sortDescription);
+    AddonSortDescription sortDescription;
+    sortDescription.sortBy = static_cast<AddonSortBy>(sortBy);
+    sortDescription.sortOrder = static_cast<AddonSortOrder>(sortOrder);
+    sortDescription.sortAttributes = static_cast<AddonSortAttribute>(sortAttributes);
+    sortDescription.limitStart = sortLimitStart;
+    sortDescription.limitEnd = sortLimitEnd;
+
+    std::vector<vfs::CDirEntry> items;
+    bool ret = instance->toAddon->addonInstance->GetSongs(strBaseDir, items, idGenre, idArtist, idAlbum,
+                                                         idPlaylist, sortDescription);
+    if (ret)
+      instance->toAddon->addonInstance->TransferListEntries(items, hdl);
+
+    return ret;
+  }
+
+  void TransferListEntries(std::vector<vfs::CDirEntry>& items, void* hdl)
+  {
+    VFSDirEntry entry;
+    entry.properties = nullptr;
+
+    for (auto& item : items)
+    {
+      entry.label = const_cast<char*>(item.Label().c_str());
+      entry.title = const_cast<char*>(item.Title().c_str());
+      entry.path = const_cast<char*>(item.Path().c_str());
+      entry.date_time = item.DateTime();
+      entry.folder = item.IsFolder();
+      entry.size = item.Size();
+
+      entry.num_props = 0;
+      const std::map<std::string, std::string>& props = item.GetProperties();
+      if (!props.empty())
+      {
+        entry.properties = static_cast<VFSProperty*>(realloc(entry.properties, entry.num_props*sizeof(VFSProperty)));
+        for (const auto& prop : props)
+        {
+          entry.properties[entry.num_props].name = const_cast<char*>(prop.first.c_str());
+          entry.properties[entry.num_props].val = const_cast<char*>(prop.second.c_str());
+          ++entry.num_props;
+        }
+      }
+
+      m_instanceData->toKodi->transfer_list_entry(m_instanceData->toKodi->kodiInstance, hdl, &entry);
+    }
+
+    if (entry.properties)
+      free(entry.properties);
   }
 
   AddonInstance_MetadataProvider* m_instanceData;
