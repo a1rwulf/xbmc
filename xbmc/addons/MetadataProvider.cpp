@@ -17,13 +17,12 @@ CMetadataProvider::CMetadataProvider(BinaryAddonBasePtr addonBase)
  : IAddonInstanceHandler(ADDON_INSTANCE_METADATAPROVIDER, addonBase)
 {
   m_struct.props = new AddonProps_MetadataProvider;
-
   m_struct.toKodi = new AddonToKodiFuncTable_MetadataProvider;
   m_struct.toKodi->kodiInstance = this;
   m_struct.toKodi->transfer_list_entry = transfer_list_entry;
 
   m_struct.toAddon = new KodiToAddonFuncTable_MetadataProvider;
-  memset(m_struct.toAddon, 0, sizeof(AddonToKodiFuncTable_MetadataProvider));
+  memset(m_struct.toAddon, 0, sizeof(KodiToAddonFuncTable_MetadataProvider));
 
   /* Open the class "kodi::addon::CInstanceMetadataProvider" on add-on side */
   if (CreateInstance(&m_struct) != ADDON_STATUS_OK)
