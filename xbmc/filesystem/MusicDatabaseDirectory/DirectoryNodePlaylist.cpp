@@ -36,8 +36,7 @@ bool CDirectoryNodePlaylist::GetContent(CFileItemList& items) const
   CollectQueryParams(params);
 
   std::string strBaseDir=BuildPath();
-  const CDatabase::Filter filter;
-  bool bSuccess = CServiceBroker::GetMetadataManager().GetPlaylists(strBaseDir, items, filter, SortDescription(), false);
+  bool bSuccess = CServiceBroker::GetMetadataManager().GetPlaylists(strBaseDir, items, SortDescription(), false);
   musicdatabase.Close();
 
   return bSuccess;

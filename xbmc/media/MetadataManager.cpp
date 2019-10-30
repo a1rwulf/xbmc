@@ -51,7 +51,6 @@ void CMetadataManager::RemoveProvider(const std::string& name)
 
 bool CMetadataManager::GetPlaylists(const std::string& strBaseDir,
                                     CFileItemList& items,
-                                    const CDatabase::Filter& filter,
                                     const SortDescription& sortDescription,
                                     bool countOnly)
 {
@@ -63,14 +62,14 @@ bool CMetadataManager::GetPlaylists(const std::string& strBaseDir,
     for (auto& provider : m_providers)
     {
       // if (provider.second->GetSupportedEntities() & SupportedEntities::Playlist)
-        provider.second->GetPlaylists(strBaseDir, items, filter, sortDescription, countOnly);
+        provider.second->GetPlaylists(strBaseDir, items, sortDescription, countOnly);
     }
   }
   else
   {
     ProviderMap::iterator it = m_providers.find(url.GetProtocol());
     if (it != m_providers.end())
-      it->second->GetPlaylists(strBaseDir, items, filter, sortDescription, countOnly);
+      it->second->GetPlaylists(strBaseDir, items, sortDescription, countOnly);
   }
 
   return true;

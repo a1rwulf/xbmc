@@ -41,15 +41,13 @@ CMetadataProvider::~CMetadataProvider()
 
 bool CMetadataProvider::GetPlaylists(const std::string& strBaseDir,
                   CFileItemList& items,
-                  const CDatabase::Filter& filter,
                   const SortDescription& sortDescription,
                   bool countOnly)
 {
   if (!m_struct.toAddon->GetPlaylists)
     return false;
 
-  std::string strSQL = "";
-  return m_struct.toAddon->GetPlaylists(&m_struct, &items, strBaseDir.c_str(), strSQL.c_str(),
+  return m_struct.toAddon->GetPlaylists(&m_struct, &items, strBaseDir.c_str(),
                                         kodi::addon::TransToAddonSortBy(sortDescription.sortBy),
                                         kodi::addon::TransToAddonSortOrder(sortDescription.sortOrder),
                                         kodi::addon::TransToAddonSortAttribute(sortDescription.sortAttributes),

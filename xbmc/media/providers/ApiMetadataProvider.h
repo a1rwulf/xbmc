@@ -26,7 +26,6 @@ public:
 
   virtual bool GetPlaylists(const std::string& strBaseDir,
                             CFileItemList& items,
-                            const CDatabase::Filter& filter,
                             const SortDescription& sortDescription,
                             bool countOnly) override;
 

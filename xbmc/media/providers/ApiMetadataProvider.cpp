@@ -28,7 +28,6 @@ CApiMetadataProvider::CApiMetadataProvider(std::string baseUrl)
 
 bool CApiMetadataProvider::GetPlaylists(const std::string& strBaseDir,
                                         CFileItemList& items,
-                                        const CDatabase::Filter& filter,
                                         const SortDescription& sortDescription,
                                         bool countOnly)
 {
@@ -87,11 +86,11 @@ bool CApiMetadataProvider::GetPlaylists(const std::string& strBaseDir,
   }
   catch (std::exception& e)
   {
-    CLog::Log(LOGERROR, "%s (%s) exception - %s", __FUNCTION__, filter.where.c_str(), e.what());
+    CLog::Log(LOGERROR, "%s exception - %s", __FUNCTION__, e.what());
   }
   catch (...)
   {
-    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
   }
   return false;
 }

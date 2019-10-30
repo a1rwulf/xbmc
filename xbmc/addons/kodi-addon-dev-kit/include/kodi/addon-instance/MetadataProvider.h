@@ -60,7 +60,6 @@ extern "C"
     bool(__cdecl* GetPlaylists)(AddonInstance_MetadataProvider* instance,
                                 void* hdl,
                                 const char* strBaseDir,
-                                const char* sqlFilter,
                                 int sortBy,
                                 int sortOrder,
                                 int sortAttributes,
@@ -173,7 +172,6 @@ public:
 
   virtual bool GetPlaylists(const std::string& strBaseDir,
                             std::vector<vfs::CDirEntry>& items,
-                            const std::string& sqlFilter,
                             const AddonSortDescription& sortDescription,
                             bool countOnly)
   {
@@ -208,7 +206,6 @@ private:
   inline static bool ADDON_GetPlaylists(AddonInstance_MetadataProvider* instance,
                                         void* hdl,
                                         const char* strBaseDir,
-                                        const char* sqlFilter,
                                         int sortBy,
                                         int sortOrder,
                                         int sortAttributes,
@@ -224,7 +221,7 @@ private:
     sortDescription.limitEnd = sortLimitEnd;
 
     std::vector<vfs::CDirEntry> items;
-    bool ret = instance->toAddon->addonInstance->GetPlaylists(strBaseDir, items, sqlFilter, sortDescription,
+    bool ret = instance->toAddon->addonInstance->GetPlaylists(strBaseDir, items, sortDescription,
                                                               countOnly);
     if (ret)
       instance->toAddon->addonInstance->TransferListEntries(items, hdl);

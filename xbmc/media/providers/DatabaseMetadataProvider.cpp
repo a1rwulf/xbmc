@@ -23,12 +23,12 @@ CDatabaseMetadataProvider::CDatabaseMetadataProvider()
 
 bool CDatabaseMetadataProvider::GetPlaylists(const std::string& strBaseDir,
                                              CFileItemList& items,
-                                             const CDatabase::Filter& filter,
                                              const SortDescription& sortDescription,
                                              bool countOnly)
 {
   CLog::Log(LOGNOTICE, "CDatabaseMetadataProvider::%s - GetPlaylists", __FUNCTION__);
   CMusicDatabase musicdb;
+  CDatabase::Filter filter;
   musicdb.Open();
   return musicdb.GetPlaylistsNav(strBaseDir, items, filter, sortDescription, countOnly);
 }
