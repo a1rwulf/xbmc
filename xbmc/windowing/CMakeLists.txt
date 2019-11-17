@@ -1,8 +1,7 @@
 set(SOURCES GraphicContext.cpp
             OSScreenSaver.cpp
             Resolution.cpp
-            WinSystem.cpp
-            DisplayUdevMonitor.cpp)
+            WinSystem.cpp)
 
 set(HEADERS GraphicContext.h
             OSScreenSaver.h
@@ -10,7 +9,6 @@ set(HEADERS GraphicContext.h
             WinEvents.h
             WinSystem.h
             XBMC_events.h
-            VideoSync.h
-            DisplayUdevMonitor.h)
+            VideoSync.h)
 
 core_add_library(windowing)

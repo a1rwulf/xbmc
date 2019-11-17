@@ -1,6 +1,7 @@
 set(SOURCES OptionalsReg.cpp
             WinSystemGbm.cpp
             GBMUtils.cpp
+            DisplayUdevMonitor.cpp
             DRMUtils.cpp
             DRMLegacy.cpp
             DRMAtomic.cpp
@@ -11,6 +12,7 @@ set(SOURCES OptionalsReg.cpp
 set(HEADERS OptionalsReg.h
             WinSystemGbm.h
             GBMUtils.h
+            DisplayUdevMonitor.h
             DRMUtils.h
             DRMLegacy.h
             DRMAtomic.h
