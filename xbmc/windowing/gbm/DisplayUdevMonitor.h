@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2018 Team Kodi
+ *      Copyright (C) 2019 Team Kodi
  *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,6 +22,13 @@
 #include <string>
 #include <vector>
 
+namespace KODI
+{
+namespace WINDOWING
+{
+namespace GBM
+{
+
 class CDisplayUdevMonitor
 {
 public:
@@ -39,3 +46,7 @@ private:
   struct udev *m_udev;
   struct udev_monitor* m_udevMonitor;
 };
+
+}
+}
+}

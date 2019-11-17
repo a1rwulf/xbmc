@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2018 Team Kodi
+ *      Copyright (C) 2019 Team Kodi
  *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 #include "rendering/gles/RenderSystemGLES.h"
 
 using namespace KODI::MESSAGING;
+using namespace KODI::WINDOWING::GBM;
 
 CDisplayUdevMonitor::CDisplayUdevMonitor() :
   m_fdMonitorId(0),
