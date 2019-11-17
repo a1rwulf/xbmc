@@ -1,39 +1,37 @@
 /*
- *      Copyright (C) 2019 Team Kodi
- *      http://kodi.tv
+ *  Copyright (C) 2019 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Kodi; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
-#include <libudev.h>
 #include "DisplayUdevMonitor.h"
-#include "messaging/ApplicationMessenger.h"
-#include "platform/linux/FDEventMonitor.h"
-#include "utils/log.h"
+
 #include "ServiceBroker.h"
-#include "windowing/WinSystem.h"
+#include "cores/AudioEngine/Interfaces/AE.h"
+#include "messaging/ApplicationMessenger.h"
 #include "rendering/gles/RenderSystemGLES.h"
+#include "utils/log.h"
+#include "windowing/WinSystem.h"
+
+#include "platform/linux/FDEventMonitor.h"
+
+#include <libudev.h>
+
+static struct udev* udev;
+static struct udev_monitor* udevMonitor;
 
 using namespace KODI::MESSAGING;
-using namespace KODI::WINDOWING::GBM;
 
-CDisplayUdevMonitor::CDisplayUdevMonitor() :
-  m_fdMonitorId(0),
-  m_udev(NULL),
-  m_udevMonitor(NULL)
+namespace KODI
+{
+namespace WINDOWING
+{
+namespace GBM
+{
+
+CDisplayUdevMonitor::CDisplayUdevMonitor() : m_fdMonitorId(0)
 {
 }
 
@@ -48,81 +46,87 @@ void CDisplayUdevMonitor::Start()
 
   CLog::Log(LOGWARNING, "CDisplayUdevMonitor::Start");
 
-  if (!m_udev)
+  if (!udev)
   {
-    m_udev = udev_new();
-    if (!m_udev)
+    udev = udev_new();
+    if (!udev)
     {
       CLog::Log(LOGWARNING, "CDisplayUdevMonitor::Start - Unable to open udev handle");
       return;
     }
 
-    m_udevMonitor = udev_monitor_new_from_netlink(m_udev, "udev");
-    if (!m_udevMonitor)
+    udevMonitor = udev_monitor_new_from_netlink(udev, "udev");
+    if (!udevMonitor)
     {
       CLog::Log(LOGERROR, "CDisplayUdevMonitor::Start - udev_monitor_new_from_netlink() failed");
       goto err_unref_udev;
     }
 
-    err = udev_monitor_filter_add_match_subsystem_devtype(m_udevMonitor, "drm", NULL);
+    err = udev_monitor_filter_add_match_subsystem_devtype(udevMonitor, "drm", NULL);
     if (err)
     {
-      CLog::Log(LOGERROR, "CDisplayUdevMonitor::Start - udev_monitor_filter_add_match_subsystem_devtype() failed");
+      CLog::Log(
+          LOGERROR,
+          "CDisplayUdevMonitor::Start - udev_monitor_filter_add_match_subsystem_devtype() failed");
       goto err_unref_monitor;
     }
 
-    err = udev_monitor_enable_receiving(m_udevMonitor);
+    err = udev_monitor_enable_receiving(udevMonitor);
     if (err)
     {
       CLog::Log(LOGERROR, "CDisplayUdevMonitor::Start - udev_monitor_enable_receiving() failed");
       goto err_unref_monitor;
     }
 
-    g_fdEventMonitor.AddFD(
-        CFDEventMonitor::MonitoredFD(udev_monitor_get_fd(m_udevMonitor),
-                                     EPOLLIN, FDEventCallback, m_udevMonitor),
-        m_fdMonitorId);
+    g_fdEventMonitor.AddFD(CFDEventMonitor::MonitoredFD(udev_monitor_get_fd(udevMonitor), EPOLLIN,
+                                                        FDEventCallback, udevMonitor),
+                           m_fdMonitorId);
   }
 
   return;
 
 err_unref_monitor:
-  udev_monitor_unref(m_udevMonitor);
-  m_udevMonitor = NULL;
+  udev_monitor_unref(udevMonitor);
+  udevMonitor = NULL;
 err_unref_udev:
-  udev_unref(m_udev);
-  m_udev = NULL;
+  udev_unref(udev);
+  udev = NULL;
 }
 
 void CDisplayUdevMonitor::Stop()
 {
-  if (m_udev)
+  if (udev)
   {
     g_fdEventMonitor.RemoveFD(m_fdMonitorId);
 
-    udev_monitor_unref(m_udevMonitor);
-    m_udevMonitor = NULL;
-    udev_unref(m_udev);
-    m_udev = NULL;
+    udev_monitor_unref(udevMonitor);
+    udevMonitor = NULL;
+    udev_unref(udev);
+    udev = NULL;
   }
 }
 
-void CDisplayUdevMonitor::FDEventCallback(int id, int fd, short revents, void *data)
+void CDisplayUdevMonitor::FDEventCallback(int id, int fd, short revents, void* data)
 {
-  struct udev_monitor *udevMonitor = (struct udev_monitor *)data;
-  struct udev_device *device;
+  struct udev_monitor* udevMonitor = (struct udev_monitor*)data;
+  struct udev_device* device;
 
   while ((device = udev_monitor_receive_device(udevMonitor)) != NULL)
   {
     const char* action = udev_device_get_action(device);
-    //const char* soundInitialized = udev_device_get_property_value(device, "SOUND_INITIALIZED");
 
     CLog::Log(LOGERROR, "CDisplayUdevMonitor - Action %s (\"%s\", \"%s\")", action,
-                                                                            udev_device_get_syspath(device),
-                                                                            udev_device_get_devpath(device));
+              udev_device_get_syspath(device), udev_device_get_devpath(device));
 
-    CApplicationMessenger::GetInstance().PostMsg(TMSG_RENDERER_REINIT);
+    // There was a change of the HDMI device.
+    // Reenumerate audio devices in case there is
+    // a change in audio capabilities.
+    CServiceBroker::GetActiveAE()->DeviceChange();
 
     udev_device_unref(device);
   }
 }
+
+} // namespace GBM
+} // namespace WINDOWING
+} // namespace KODI

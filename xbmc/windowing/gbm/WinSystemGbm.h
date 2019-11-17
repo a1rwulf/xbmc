@@ -11,7 +11,7 @@
 #include "DRMUtils.h"
 #include "VideoLayerBridge.h"
 #include "threads/CriticalSection.h"
-#include "windowing/DisplayUdevMonitor.h"
+#include "windowing/gbm/DisplayUdevMonitor.h"
 #include "windowing/WinSystem.h"
 
 #include "platform/linux/OptionalsReg.h"
