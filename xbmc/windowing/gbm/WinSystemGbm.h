@@ -69,6 +69,7 @@ protected:
   CCriticalSection m_resourceSection;
   std::vector<IDispResource*>  m_resources;
 
+  bool m_lostDevice = false;
   bool m_delayDispReset = false;
   XbmcThreads::EndTime m_dispResetTimer;
   std::unique_ptr<OPTIONALS::CLircContainer, OPTIONALS::delete_CLircContainer> m_lirc;

@@ -274,6 +274,7 @@ void CWinSystemGbm::Unregister(IDispResource *resource)
 void CWinSystemGbm::OnLostDevice()
 {
   CLog::Log(LOGDEBUG, "%s - notify display change event", __FUNCTION__);
+  m_lostDevice = true;
 
   CSingleLock lock(m_resourceSection);
   for (auto resource : m_resources)

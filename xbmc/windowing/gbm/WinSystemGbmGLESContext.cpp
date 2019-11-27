@@ -119,19 +119,21 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
       }
     }
     CWinSystemGbm::FlipPage(rendered, videoLayer);
+
+    if (m_lostDevice && (!m_delayDispReset || (m_delayDispReset && m_dispResetTimer.IsTimePast())))
+    {
+      CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::%s - Sending display reset to all clients", __FUNCTION__);
+      m_delayDispReset = false;
+      m_lostDevice = false;
+      CSingleLock lock(m_resourceSection);
+
+      for (auto resource : m_resources)
+        resource->OnResetDisplay();
+    }
   }
   else
   {
     Sleep(10);
-  }
-
-  if (m_delayDispReset && m_dispResetTimer.IsTimePast())
-  {
-    m_delayDispReset = false;
-    CSingleLock lock(m_resourceSection);
-
-    for (auto resource : m_resources)
-      resource->OnResetDisplay();
   }
 }
 
