@@ -604,17 +604,17 @@ bool CActiveAEBufferPoolAtempo::ProcessBuffers()
           m_outputSamples.push_back(m_procSample);
 
         m_procSample = nullptr;
-
-        if (m_changeFilter)
-        {
-          ChangeFilter();
-        }
       }
       // some methods like encode require completely filled packets
       else if (!m_fillPackets || (m_procSample->pkt->nb_samples == m_procSample->pkt->max_nb_samples))
       {
         m_outputSamples.push_back(m_procSample);
         m_procSample = nullptr;
+      }
+
+      if (m_changeFilter)
+      {
+        ChangeFilter();
       }
 
       if (in)
