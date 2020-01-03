@@ -12,6 +12,7 @@
 #include "ActiveAEFilter.h"
 #include "cores/AudioEngine/AEResampleFactory.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
+#include "utils/log.h"
 
 using namespace ActiveAE;
 
@@ -486,6 +487,7 @@ bool CActiveAEBufferPoolAtempo::Create(unsigned int totaltime)
 
 void CActiveAEBufferPoolAtempo::ChangeFilter()
 {
+  CLog::Log(LOGNOTICE,"ActiveAE::ChangeFilter - Recreate filter with tempo: %f", m_tempo);
   m_pTempoFilter->SetTempo(m_tempo);
   m_changeFilter = false;
 }

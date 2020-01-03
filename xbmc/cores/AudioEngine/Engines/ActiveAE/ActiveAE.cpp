@@ -2350,7 +2350,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
   {
     stream->m_syncState = CAESyncInfo::AESyncState::SYNC_MUTE;
     stream->m_syncError.Flush(100);
-    stream->m_processingBuffers->SetRR(1.0, m_settings.atempoThreshold);
+    stream->m_processingBuffers->SetRR(1.55, m_settings.atempoThreshold);
     stream->m_resampleIntegral = 0;
     CLog::Log(LOGDEBUG,"ActiveAE - start sync of audio stream");
   }
@@ -2374,7 +2374,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
   if (newerror && fabs(error) > threshold && stream->m_syncState == CAESyncInfo::AESyncState::SYNC_INSYNC)
   {
     stream->m_syncState = CAESyncInfo::AESyncState::SYNC_ADJUST;
-    stream->m_processingBuffers->SetRR(1.0, m_settings.atempoThreshold);
+    stream->m_processingBuffers->SetRR(1.55, m_settings.atempoThreshold);
     stream->m_resampleIntegral = 0;
     stream->m_lastSyncError = error;
     CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f above threshold of %f", error, threshold);
@@ -2499,7 +2499,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
         stream->m_syncState = CAESyncInfo::AESyncState::SYNC_INSYNC;
         stream->m_syncError.Flush(1000);
         stream->m_resampleIntegral = 0;
-        stream->m_processingBuffers->SetRR(1.0, m_settings.atempoThreshold);
+        stream->m_processingBuffers->SetRR(1.55, m_settings.atempoThreshold);
         CLog::Log(LOGDEBUG,"ActiveAE::SyncStream - average error %f below threshold of %f", error, 30.0);
       }
     }
@@ -2519,7 +2519,7 @@ CSampleBuffer* CActiveAE::SyncStream(CActiveAEStream *stream)
   }
   else if (stream->m_processingBuffers)
   {
-    stream->m_processingBuffers->SetRR(1.0, m_settings.atempoThreshold);
+    stream->m_processingBuffers->SetRR(1.55, m_settings.atempoThreshold);
   }
 
   stream->m_syncError.SetErrorInterval(stream->GetErrorInterval());

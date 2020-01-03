@@ -55,6 +55,7 @@ protected:
   int m_sampleOffset;
   int64_t m_SamplesIn;
   int64_t m_SamplesOut;
+  int m_error = 1;
 };
 
 }

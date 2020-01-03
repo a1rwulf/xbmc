@@ -226,10 +226,11 @@ int CActiveAEFilter::ProcessFilter(uint8_t **dst_buffer, int dst_samples, uint8_
 
     result = av_buffersrc_write_frame(m_pFilterCtxIn, frame);
     av_frame_free(&frame);
-    if (result < 0)
+    if (result < 0 || m_error == 1)
     {
       CLog::Log(LOGERROR, "CActiveAEFilter::ProcessFilter - av_buffersrc_add_frame failed");
       m_filterEof = true;
+      m_error = 0;
       return -1;
     }
 
