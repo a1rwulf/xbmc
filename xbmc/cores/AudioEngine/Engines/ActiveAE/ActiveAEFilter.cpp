@@ -331,7 +331,7 @@ bool CActiveAEFilter::NeedData() const
 
 bool CActiveAEFilter::IsActive() const
 {
-  return m_pFilterGraph != nullptr;
+  return m_pFilterGraph != nullptr && !m_filterEof;
 }
 
 int CActiveAEFilter::GetBufferedSamples() const
