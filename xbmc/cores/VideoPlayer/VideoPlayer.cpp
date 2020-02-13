@@ -707,23 +707,9 @@ bool CVideoPlayer::CloseFile(bool reopen)
 
   m_renderManager.UnInit();
 
-  CLog::Log(LOGNOTICE, "VideoPlayer: waiting for threads to exit");
-
-  // wait for the main thread to finish up
-  // since this main thread cleans up all other resources and threads
-  // we are done after the StopThread call
-  {
-    CSingleExit exitlock(CServiceBroker::GetWinSystem()->GetGfxContext());
-    StopThread();
-  }
-
   m_Edl.Clear();
   CServiceBroker::GetDataCacheCore().SetCutList(m_Edl.GetCutList());
 
-  m_HasVideo = false;
-  m_HasAudio = false;
-
-  CLog::Log(LOGNOTICE, "VideoPlayer: finished waiting");
   return true;
 }
 
@@ -2405,6 +2391,11 @@ void CVideoPlayer::OnExit()
   // no sense here. waitForBuffers is abused to clear overlay container (false clears container)
   // subtitles are added from video player. after video player has finished, overlays have to be cleared.
   CloseStream(m_CurrentSubtitle, false);  // clear overlay container
+
+  // After we stopped processing streams by calling CloseStream
+  // there will be no audio or video anymore
+  m_HasVideo = false;
+  m_HasAudio = false;
 
   CServiceBroker::GetWinSystem()->UnregisterRenderLoop(this);
 
