@@ -11,9 +11,9 @@
 #include "ServiceBroker.h"
 #include "utils/BufferObject.h"
 #include "utils/EGLImage.h"
-#include "windowing/gbm/WinSystemGbmEGLContext.h"
+#include "windowing/WinSystem.h"
+#include "windowing/linux/WinSystemEGL.h"
 
-using namespace KODI::WINDOWING::GBM;
 using namespace KODI;
 using namespace RETRO;
 
@@ -21,7 +21,8 @@ CRenderBufferDMA::CRenderBufferDMA(CRenderContext& context, int fourcc)
   : m_context(context),
     m_fourcc(fourcc),
     m_egl(new CEGLImage(
-        static_cast<CWinSystemGbmEGLContext*>(CServiceBroker::GetWinSystem())->GetEGLDisplay())),
+        dynamic_cast<KODI::WINDOWING::LINUX::CWinSystemEGL*>(CServiceBroker::GetWinSystem())
+            ->GetEGLDisplay())),
     m_bo(CBufferObject::GetBufferObject())
 {
 }
