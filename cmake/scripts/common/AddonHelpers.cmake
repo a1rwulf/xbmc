@@ -95,7 +95,7 @@ macro (build_addon target prefix libs)
     message(STATUS "Addon dependency check ...")
     # Set defines used in addon.xml.in and read from versions.h to set add-on
     # version parts automatically
-    file(STRINGS ${KODI_INCLUDE_DIR}/versions.h BIN_ADDON_PARTS)
+    file(STRINGS ${${APP_NAME_UC}_INCLUDE_DIR}/versions.h BIN_ADDON_PARTS)
     foreach(loop_var ${BIN_ADDON_PARTS})
       # Only pass strings with "#define ADDON_" from versions.h
       if(loop_var MATCHES "#define ADDON_")
