@@ -126,9 +126,10 @@ bool CUDMABufferObject::CreateBufferObject(uint64_t size)
   }
 
   struct udmabuf_create_item create = {
-      .memfd = static_cast<uint32_t>(m_memfd),
-      .offset = 0,
-      .size = m_size,
+      memfd: static_cast<uint32_t>(m_memfd),
+      __pad: 0,
+      offset: 0,
+      size: m_size,
   };
 
   m_fd = ioctl(m_udmafd, UDMABUF_CREATE, &create);
