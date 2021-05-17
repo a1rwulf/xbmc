@@ -107,6 +107,7 @@ bool CVideoPlayerVideo::OpenStream(CDVDStreamInfo hint)
   if (hint.extrasize == 0)
   {
     // codecs which require extradata
+    // clang-format off
     if (hint.codec == AV_CODEC_ID_NONE ||
         hint.codec == AV_CODEC_ID_MPEG1VIDEO ||
         hint.codec == AV_CODEC_ID_MPEG2VIDEO ||
@@ -114,7 +115,9 @@ bool CVideoPlayerVideo::OpenStream(CDVDStreamInfo hint)
         hint.codec == AV_CODEC_ID_HEVC ||
         hint.codec == AV_CODEC_ID_MPEG4 ||
         hint.codec == AV_CODEC_ID_WMV3 ||
-        hint.codec == AV_CODEC_ID_VC1)
+        hint.codec == AV_CODEC_ID_VC1 ||
+        hint.codec == AV_CODEC_ID_AV1)
+      // clang-format on
       return false;
   }
 
