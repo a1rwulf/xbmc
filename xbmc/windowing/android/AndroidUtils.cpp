@@ -24,6 +24,8 @@
 
 #include <androidjni/Build.h>
 #include <androidjni/Display.h>
+#include <androidjni/MediaCodecInfo.h>
+#include <androidjni/MediaCodecList.h>
 #include <androidjni/System.h>
 #include <androidjni/SystemProperties.h>
 #include <androidjni/View.h>
@@ -403,4 +405,21 @@ void CAndroidUtils::LogDisplaySupportedHdrTypes() const
 
   CLog::Log(LOGDEBUG, "CAndroidUtils: Display supported HDR types:{}",
             text.empty() ? " None" : text);
+}
+
+bool CAndroidUtils::SupportsMediaCodecMimeType(const std::string& mimeType)
+{
+  int num_codecs = CJNIMediaCodecList::getCodecCount();
+  for (int i = 0; i < num_codecs; i++)
+  {
+    CJNIMediaCodecInfo codec_info = CJNIMediaCodecList::getCodecInfoAt(i);
+    if (codec_info.isEncoder())
+      continue;
+
+    std::vector<std::string> types = codec_info.getSupportedTypes();
+    if (std::find(types.begin(), types.end(), mimeType) != types.end())
+      return true;
+  }
+
+  return false;
 }

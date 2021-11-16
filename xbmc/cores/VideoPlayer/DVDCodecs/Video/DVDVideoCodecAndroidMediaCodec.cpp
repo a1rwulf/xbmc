@@ -31,6 +31,8 @@
 #include "utils/CPUInfo.h"
 #include "utils/TimeUtils.h"
 #include "utils/log.h"
+#include "windowing/WinSystem.h"
+#include "windowing/android/AndroidUtils.h"
 
 #include "platform/android/activity/AndroidFeatures.h"
 #include "platform/android/activity/JNIXBMCSurfaceTextureOnFrameAvailableListener.h"
@@ -506,21 +508,35 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
         goto FAIL;
       }
 
-      if (m_hints.codec_tag == MKTAG('d', 'v', 'h', 'e'))
+      m_mime = "video/hevc";
+      m_formatname = "amc-hevc";
+
+      const bool isDvhe = (m_hints.codec_tag == MKTAG('d', 'v', 'h', 'e'));
+      const bool isDvh1 = (m_hints.codec_tag == MKTAG('d', 'v', 'h', '1'));
+
+      if (isDvhe || isDvh1)
       {
-        m_mime = "video/dolby-vision";
-        m_formatname = "amc-dvhe";
+        bool displaySupportsDovi =
+            CServiceBroker::GetWinSystem()->GetDisplayHDRCapabilities().SupportsDolbyVision();
+        bool mediaCodecSupportsDovi =
+            CAndroidUtils::SupportsMediaCodecMimeType("video/dolby-vision");
+
+        CLog::Log(LOGDEBUG,
+                  "CDVDVideoCodecAndroidMediaCodec::Open Dolby Vision support: "
+                  "Display {}, MediaCodec: {}",
+                  displaySupportsDovi, mediaCodecSupportsDovi);
+
+        if (displaySupportsDovi && mediaCodecSupportsDovi)
+        {
+          m_mime = "video/dolby-vision";
+
+          if (isDvhe)
+            m_formatname = "amc-dvhe";
+          else if (isDvh1)
+            m_formatname = "amc-dvh1";
+        }
       }
-      else if (m_hints.codec_tag == MKTAG('d', 'v', 'h', '1'))
-      {
-        m_mime = "video/dolby-vision";
-        m_formatname = "amc-dvh1";
-      }
-      else
-      {
-        m_mime = "video/hevc";
-        m_formatname = "amc-hevc";
-      }
+
       // check for hevc-hvcC and convert to h265-annex-b
       if (m_hints.extradata && !m_hints.cryptoSession)
       {

@@ -31,6 +31,8 @@ public:
   static const std::string SETTING_LIMITGUI;
   void OnSettingChanged(const std::shared_ptr<const CSetting>& setting) override;
 
+  static bool SupportsMediaCodecMimeType(const std::string& mimeType);
+
   // Android specific HDR type mapping
   // https://developer.android.com/reference/android/view/Display.HdrCapabilities#constants_1
   enum HDRTypes
