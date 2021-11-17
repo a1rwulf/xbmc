@@ -43,7 +43,7 @@ public:
     HDR10_PLUS = 4
   };
 
-  std::vector<int> GetDisplaySupportedHdrTypes() const;
+  static std::vector<int> GetDisplaySupportedHdrTypes();
 
 protected:
   mutable int m_width;

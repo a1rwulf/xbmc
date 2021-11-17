@@ -329,7 +329,7 @@ std::unique_ptr<WINDOWING::IOSScreenSaver> CWinSystemAndroid::GetOSScreenSaverIm
 CHDRCapabilities CWinSystemAndroid::GetDisplayHDRCapabilities() const
 {
   CHDRCapabilities caps;
-  const std::vector<int> types = m_android->GetDisplaySupportedHdrTypes();
+  const std::vector<int> types = CAndroidUtils::GetDisplaySupportedHdrTypes();
 
   if (std::find(types.begin(), types.end(), CAndroidUtils::HDRTypes::HDR10) != types.end())
     caps.SetHDR10();

@@ -371,7 +371,7 @@ void CAndroidUtils::OnSettingChanged(const std::shared_ptr<const CSetting>& sett
     CDisplaySettings::GetInstance().ClearCalibrations();
 }
 
-std::vector<int> CAndroidUtils::GetDisplaySupportedHdrTypes() const
+std::vector<int> CAndroidUtils::GetDisplaySupportedHdrTypes()
 {
   CJNIWindow window = CXBMCApp::getWindow();
 
@@ -395,7 +395,7 @@ std::vector<int> CAndroidUtils::GetDisplaySupportedHdrTypes() const
 
 void CAndroidUtils::LogDisplaySupportedHdrTypes() const
 {
-  const std::vector<int> hdrTypes = GetDisplaySupportedHdrTypes();
+  const std::vector<int> hdrTypes = CAndroidUtils::GetDisplaySupportedHdrTypes();
   std::string text;
 
   for (const int& type : hdrTypes)

@@ -517,7 +517,7 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       if (isDvhe || isDvh1)
       {
         bool displaySupportsDovi =
-            CServiceBroker::GetWinSystem()->GetDisplayHDRCapabilities().SupportsDolbyVision();
+            CAndroidUtils::GetDisplayHDRCapabilities().SupportsDolbyVision();
         bool mediaCodecSupportsDovi =
             CAndroidUtils::SupportsMediaCodecMimeType("video/dolby-vision");
 
