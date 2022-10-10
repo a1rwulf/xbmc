@@ -57,6 +57,16 @@ CGUIWindowPVRChannelsBase::~CGUIWindowPVRChannelsBase()
       this);
 }
 
+std::string CGUIWindowPVRChannelsBase::GetRootPath() const
+{
+  //! @todo make CGUIMediaWindow::GetRootPath() non-const.
+  CGUIWindowPVRChannelsBase* pThis = const_cast<CGUIWindowPVRChannelsBase*>(this);
+  if (pThis->InitChannelGroup())
+    return pThis->GetDirectoryPath();
+
+  return CGUIWindowPVRBase::GetRootPath();
+}
+
 void CGUIWindowPVRChannelsBase::GetContextButtons(int itemNumber, CContextButtons& buttons)
 {
   // Add parent buttons before the Manage button
