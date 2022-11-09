@@ -46,6 +46,14 @@ $(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 -i ../add-dl-as-private-lib.patch
+<<<<<<< HEAD
+=======
+ifeq ($(findstring apple-darwin, $(HOST)), apple-darwin)
+	cd $(PLATFORM); patch -p1 -i ../01-macos-clang-accel.patch
+else ifeq ($(findstring aarch64, $(HOST)), aarch64)
+	cd $(PLATFORM); patch -p1 -i ../01-macos-clang-accel.patch
+endif
+>>>>>>> d797446c84 (gnutls patch clang -march=all)
 	cd $(PLATFORM); patch -p1 -i ../03-support-correct-cisdigit.patch
 	cd $(PLATFORM); patch -p1 -i ../android-fpending.patch
 	cd $(PLATFORM); $(AUTORECONF) -vif
