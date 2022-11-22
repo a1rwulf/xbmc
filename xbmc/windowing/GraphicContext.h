@@ -57,6 +57,12 @@ enum AdjustRefreshRate
   ADJUST_REFRESHRATE_ON_START,
 };
 
+enum AdjustRefreshRateMode
+{
+  ADJUST_REFRESHRATE_MODE_WHITELIST = 0,
+  ADJUST_REFRESHRATE_MODE_AUTO,
+};
+
 class CGraphicContext : public CCriticalSection
 {
 public:
@@ -179,15 +185,20 @@ public:
   const std::string& GetMediaDir() const;
   void SetMediaDir(const std::string& strMediaDir);
 
+<<<<<<< HEAD
   void SetTransferPQ(bool PQ) { m_isTransferPQ = PQ; }
   bool IsTransferPQ() const { return m_isTransferPQ; }
 
+=======
+  void SetVideoRefreshRate(double refreshRate);
+>>>>>>> 998ff7435f (Use new framerate API)
 protected:
 
   void UpdateCameraPosition(const CPoint &camera, const float &factor);
   void SetVideoResolutionInternal(RESOLUTION res, bool forceUpdate);
   void ApplyVideoResolution(RESOLUTION res);
   void UpdateInternalStateWithResolution(RESOLUTION res);
+  void SetVideoRefreshRateInternal(double refreshRate);
 
   int m_iScreenHeight = 576;
   int m_iScreenWidth = 720;

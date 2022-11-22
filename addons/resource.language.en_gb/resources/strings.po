@@ -23700,6 +23700,7 @@ msgctxt "#39189"
 msgid "Available only with manual subtitle position"
 msgstr ""
 
+<<<<<<< HEAD
 #. Help text for setting "Use system HDR/SDR brightness balance" of label #36096
 #: system/settings/settings.xml
 msgctxt "#39190"
@@ -23710,10 +23711,21 @@ msgstr ""
 #: system/settings/settings.xml
 msgctxt "#39191"
 msgid "HDR"
+=======
+#: system/settings/settings.xml
+msgctxt "#39190"
+msgid "Adjust display refresh rate mode"
+msgstr ""
+
+#: system/settings/settings.xml
+msgctxt "#39191"
+msgid "Whitelist"
+>>>>>>> 998ff7435f (Use new framerate API)
 msgstr ""
 
 #: system/settings/settings.xml
 msgctxt "#39192"
+<<<<<<< HEAD
 msgid "Disable screensaver when playing audio"
 msgstr ""
 
@@ -24293,3 +24305,7 @@ msgid "50th Anniversary Edition"
 msgstr ""
 
 # 40000 to 40800 are reserved for Video Versions feature
+=======
+msgid "Auto"
+msgstr ""
+>>>>>>> 998ff7435f (Use new framerate API)

@@ -235,6 +235,7 @@ public:
 
   virtual std::vector<std::string> GetConnectedOutputs() { return {}; }
 
+<<<<<<< HEAD
   /*!
    * \brief Return true when HDR display is available and enabled in settings
    *
@@ -260,6 +261,9 @@ public:
    */
   std::pair<bool, int> GetDitherSettings();
 
+=======
+  virtual void SetRefreshRate(double refreshRate) {}
+>>>>>>> 998ff7435f (Use new framerate API)
 protected:
   void UpdateDesktopResolution(RESOLUTION_INFO& newRes, const std::string &output, int width, int height, float refreshRate, uint32_t dwFlags);
   void UpdateDesktopResolution(RESOLUTION_INFO& newRes,

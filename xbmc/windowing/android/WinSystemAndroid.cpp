@@ -321,10 +321,16 @@ CHDRCapabilities CWinSystemAndroid::GetDisplayHDRCapabilities() const
   return CAndroidUtils::GetDisplayHDRCapabilities();
 }
 
+<<<<<<< HEAD
 float CWinSystemAndroid::GetGuiSdrPeakLuminance() const
 {
   const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
   const int guiSdrPeak = settings->GetInt(CSettings::SETTING_VIDEOSCREEN_GUISDRPEAKLUMINANCE);
 
   return ((0.7f * guiSdrPeak + 30.0f) / 100.0f);
+=======
+void CWinSystemAndroid::SetRefreshRate(double refreshRate)
+{
+  CAndroidUtils::SetRefreshRate(refreshRate);
+>>>>>>> 998ff7435f (Use new framerate API)
 }

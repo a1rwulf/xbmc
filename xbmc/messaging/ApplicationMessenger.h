@@ -83,6 +83,7 @@
 #define TMSG_RENDERER_PREINIT             TMSG_MASK_APPLICATION + 31
 #define TMSG_RENDERER_UNINIT              TMSG_MASK_APPLICATION + 32
 #define TMSG_EVENT                        TMSG_MASK_APPLICATION + 33
+<<<<<<< HEAD
 #define TMSG_MOVETOSCREEN                 TMSG_MASK_APPLICATION + 34
 
 /// @brief Called from the player when its current item is updated
@@ -90,6 +91,9 @@
 
 #define TMSG_SET_VOLUME                   TMSG_MASK_APPLICATION + 36
 #define TMSG_SET_MUTE                     TMSG_MASK_APPLICATION + 37
+=======
+#define TMSG_SETVIDEOREFRESHRATE           TMSG_MASK_APPLICATION + 34
+>>>>>>> 998ff7435f (Use new framerate API)
 
 #define TMSG_GUI_INFOLABEL                TMSG_MASK_GUIINFOMANAGER + 0
 #define TMSG_GUI_INFOBOOL                 TMSG_MASK_GUIINFOMANAGER + 1

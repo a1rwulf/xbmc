@@ -319,6 +319,7 @@ bool CAndroidUtils::SupportsMediaCodecMimeType(const std::string& mimeType)
   return false;
 }
 
+<<<<<<< HEAD
 std::pair<bool, bool> CAndroidUtils::GetDolbyVisionCapabilities()
 {
   const bool displaySupportsDovi = GetDisplayHDRCapabilities().SupportsDolbyVision();
@@ -328,4 +329,9 @@ std::pair<bool, bool> CAndroidUtils::GetDolbyVisionCapabilities()
             displaySupportsDovi, mediaCodecSupportsDovi);
 
   return std::make_pair(displaySupportsDovi, mediaCodecSupportsDovi);
+=======
+void CAndroidUtils::SetRefreshRate(double refreshRate)
+{
+  CXBMCApp::Get().SetFrameRate(refreshRate);
+>>>>>>> 998ff7435f (Use new framerate API)
 }

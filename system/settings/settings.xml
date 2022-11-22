@@ -60,6 +60,7 @@
           </constraints>
           <control type="list" format="string" />
         </setting>
+<<<<<<< HEAD
         <setting id="winsystem.ishdrdisplay" type="boolean" label="13436" help="36299">
           <dependencies>
             <dependency type="visible">
@@ -69,6 +70,18 @@
           <level>2</level>
           <default>true</default>
           <control type="toggle" />
+=======
+        <setting id="videoplayer.adjustrefreshratemode" type="integer" label="39190" help="36166">
+          <level>1</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="39191">0</option> <!-- ADJUST_REFRESHRATE_WHITELIST -->
+              <option label="39192">1</option> <!-- ADJUST_REFRESHRATE_AUTO -->
+            </options>
+          </constraints>
+          <control type="list" format="string" />
+>>>>>>> 998ff7435f (Use new framerate API)
         </setting>
         <setting id="videoplayer.usedisplayasclock" type="boolean" label="13510" help="36166">
           <level>1</level>

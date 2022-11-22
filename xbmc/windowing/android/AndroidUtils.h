@@ -36,8 +36,12 @@ public:
 
   static std::vector<int> GetDisplaySupportedHdrTypes();
   static CHDRCapabilities GetDisplayHDRCapabilities();
+<<<<<<< HEAD
   static std::pair<bool, bool> GetDolbyVisionCapabilities();
 
+=======
+  static void SetRefreshRate(double refreshRate);
+>>>>>>> 998ff7435f (Use new framerate API)
 protected:
   mutable int m_width;
   mutable int m_height;
