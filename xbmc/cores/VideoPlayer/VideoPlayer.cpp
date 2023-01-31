@@ -2872,12 +2872,26 @@ void CVideoPlayer::HandleMessages()
           {
             m_dvd.iSelectedSPUStream = -1;
             CloseStream(m_CurrentSubtitle, false);
+            CDVDMsgPlayerSeek::CMode mode;
+            mode.time = (int)GetTime();
+            mode.backward = true;
+            mode.accurate = true;
+            mode.trickplay = true;
+            mode.sync = true;
+            m_messenger.Put(std::make_shared<CDVDMsgPlayerSeek>(mode));
           }
         }
         else
         {
           CloseStream(m_CurrentSubtitle, false);
           OpenStream(m_CurrentSubtitle, st.demuxerId, st.id, st.source);
+          CDVDMsgPlayerSeek::CMode mode;
+          mode.time = (int)GetTime();
+          mode.backward = true;
+          mode.accurate = true;
+          mode.trickplay = true;
+          mode.sync = true;
+          m_messenger.Put(std::make_shared<CDVDMsgPlayerSeek>(mode));
         }
       }
     }
