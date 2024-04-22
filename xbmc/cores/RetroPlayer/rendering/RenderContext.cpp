@@ -9,7 +9,7 @@
 #include "RenderContext.h"
 
 #include "games/GameServices.h"
-#include "games/agents/GameAgentManager.h"
+#include "games/agents/input/AgentInput.h"
 #include "rendering/RenderSystem.h"
 #include "settings/DisplaySettings.h"
 #include "settings/MediaSettings.h"
@@ -34,13 +34,15 @@ CRenderContext::CRenderContext(CRenderSystemBase* rendering,
                                CGraphicContext& graphicsContext,
                                CDisplaySettings& displaySettings,
                                CMediaSettings& mediaSettings,
-                               GAME::CGameServices& gameServices)
+                               GAME::CGameServices& gameServices,
+                               CGUIComponent* guiComponent)
   : m_rendering(rendering),
     m_windowing(windowing),
     m_graphicsContext(graphicsContext),
     m_displaySettings(displaySettings),
     m_mediaSettings(mediaSettings),
-    m_gameServices(gameServices)
+    m_gameServices(gameServices),
+    m_guiComponent(guiComponent)
 {
 }
 
@@ -253,7 +255,7 @@ RESOLUTION CRenderContext::GetVideoResolution()
   return m_graphicsContext.GetVideoResolution();
 }
 
-void CRenderContext::Clear(UTILS::COLOR::Color color /* = 0 */)
+void CRenderContext::Clear(UTILS::COLOR::Color color)
 {
   m_graphicsContext.Clear(color);
 }
@@ -308,12 +310,12 @@ RESOLUTION_INFO& CRenderContext::GetResolutionInfo(RESOLUTION resolution)
   return m_mediaSettings.GetDefaultGameSettings();
 }
 
-void CRenderContext::StartAgentManager(GAME::GameClientPtr gameClient)
+void CRenderContext::StartAgentInput(GAME::GameClientPtr gameClient)
 {
-  m_gameServices.GameAgentManager().Start(std::move(gameClient));
+  m_gameServices.AgentInput().Start(std::move(gameClient));
 }
 
-void CRenderContext::StopAgentManager()
+void CRenderContext::StopAgentInput()
 {
-  m_gameServices.GameAgentManager().Stop();
+  m_gameServices.AgentInput().Stop();
 }

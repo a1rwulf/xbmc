@@ -185,7 +185,13 @@ public:
   const std::string& GetMediaDir() const;
   void SetMediaDir(const std::string& strMediaDir);
 
+<<<<<<< HEAD
   void SetVideoRefreshRate(double refreshRate);
+=======
+  void SetTransferPQ(bool PQ) { m_isTransferPQ = PQ; }
+  bool IsTransferPQ() const { return m_isTransferPQ; }
+
+>>>>>>> c48c9e6fab75a437bbdbbdc330bd25d640d195f8
 protected:
 
   void UpdateCameraPosition(const CPoint &camera, const float &factor);
@@ -237,4 +243,6 @@ protected:
   RENDER_STEREO_VIEW m_stereoView = RENDER_STEREO_VIEW_OFF;
   RENDER_STEREO_MODE m_stereoMode = RENDER_STEREO_MODE_OFF;
   RENDER_STEREO_MODE m_nextStereoMode = RENDER_STEREO_MODE_OFF;
+
+  bool m_isTransferPQ{false};
 };

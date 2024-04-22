@@ -1,5 +1,6 @@
 set(SOURCES ../linux/AppParamParserLinux.cpp
             CPUInfoFreebsd.cpp
+            GPUInfoFreebsd.cpp
             OptionalsReg.cpp
             ../linux/OptionalsReg.cpp
             ../linux/TimeUtils.cpp
@@ -8,17 +9,18 @@ set(SOURCES ../linux/AppParamParserLinux.cpp
 
 set(HEADERS ../linux/AppParamParserLinux.cpp
             CPUInfoFreebsd.h
+            GPUInfoFreebsd.h
             OptionalsReg.h
             ../linux/OptionalsReg.h
             ../linux/TimeUtils.h
             PlatformFreebsd.h)
 
-if(ALSA_FOUND)
+if(TARGET ALSA::ALSA)
   list(APPEND SOURCES ../linux/FDEventMonitor.cpp)
   list(APPEND HEADERS ../linux/FDEventMonitor.h)
 endif()
 
-if(DBUS_FOUND)
+if(TARGET DBus::DBus)
   list(APPEND SOURCES ../linux/DBusMessage.cpp
                       ../linux/DBusUtil.cpp)
   list(APPEND HEADERS ../linux/DBusMessage.h

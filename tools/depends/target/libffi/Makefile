@@ -2,13 +2,17 @@ include ../../Makefile.include LIBFFI-VERSION ../../download-files.include
 DEPS = ../../Makefile.include Makefile LIBFFI-VERSION ../../download-files.include
 
 # configuration settings
-CONFIGURE= ./configure --prefix=$(PREFIX) --disable-shared --disable-builddir
+CONFIGURE= ./configure --prefix=$(PREFIX) \
+                       --libdir=$(PREFIX)/lib \
+                       --disable-multi-os-directory \
+                       --disable-shared \
+                       --disable-builddir
 
 LIBDYLIB=$(PLATFORM)/.libs/$(LIBNAME).a
 
 all: .installed-$(PLATFORM)
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); $(CONFIGURE)

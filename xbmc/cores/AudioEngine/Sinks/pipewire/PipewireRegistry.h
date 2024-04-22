@@ -8,27 +8,32 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <string>
 
 #include <pipewire/core.h>
 
-namespace AE
-{
-namespace SINK
+namespace KODI
 {
 namespace PIPEWIRE
 {
 
+class CPipewireCore;
+class CPipewireGlobal;
+
 class CPipewireRegistry
 {
 public:
-  explicit CPipewireRegistry(pw_core* core);
+  explicit CPipewireRegistry(CPipewireCore& core);
   CPipewireRegistry() = delete;
-  ~CPipewireRegistry() = default;
+  ~CPipewireRegistry();
 
   pw_registry* Get() const { return m_registry.get(); }
 
-  void AddListener(void* userdata);
+  CPipewireCore& GetCore() const { return m_core; }
+
+  std::map<uint32_t, std::unique_ptr<CPipewireGlobal>>& GetGlobals() { return m_globals; }
 
 private:
   static void OnGlobalAdded(void* userdata,
@@ -41,6 +46,8 @@ private:
 
   static pw_registry_events CreateRegistryEvents();
 
+  CPipewireCore& m_core;
+
   const pw_registry_events m_registryEvents;
 
   spa_hook m_registryListener;
@@ -50,8 +57,9 @@ private:
   };
 
   std::unique_ptr<pw_registry, PipewireRegistryDeleter> m_registry;
+
+  std::map<uint32_t, std::unique_ptr<CPipewireGlobal>> m_globals;
 };
 
 } // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE
+} // namespace KODI

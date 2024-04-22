@@ -30,6 +30,7 @@
 #ifdef TARGET_WINDOWS_DESKTOP
 #include <cassert>
 #endif
+#include <array>
 #include <locale.h>
 
 #include <shellapi.h>
@@ -839,7 +840,7 @@ extern "C" {
 
       case 'k':  /* The hour (24-hour clock representation). */
         LEGAL_ALT(0);
-        /* FALLTHROUGH */
+        [[fallthrough]];
       case 'H':
         bp = conv_num(bp, &tm->tm_hour, 0, 23);
         LEGAL_ALT(ALT_O);
@@ -847,7 +848,7 @@ extern "C" {
 
       case 'l':  /* The hour (12-hour clock representation). */
         LEGAL_ALT(0);
-        /* FALLTHROUGH */
+        [[fallthrough]];
       case 'I':
         bp = conv_num(bp, &tm->tm_hour, 1, 12);
         if (tm->tm_hour == 12)
@@ -1196,7 +1197,36 @@ HDR_STATUS CWIN32Util::ToggleWindowsHDR(DXGI_MODE_DESC& modeDesc)
   HDR_STATUS status = HDR_STATUS::HDR_TOGGLE_FAILED;
 
 #ifdef TARGET_WINDOWS_STORE
-  // Not supported - not implemented yet
+  auto hdmi = HdmiDisplayInformation::GetForCurrentView();
+
+  if (!hdmi)
+    return status;
+
+  const auto current = hdmi.GetCurrentDisplayMode();
+
+  for (const auto& mode : hdmi.GetSupportedDisplayModes())
+  {
+    if (mode.IsSmpte2084Supported() != current.IsSmpte2084Supported() &&
+        mode.ResolutionHeightInRawPixels() == current.ResolutionHeightInRawPixels() &&
+        mode.ResolutionWidthInRawPixels() == current.ResolutionWidthInRawPixels() &&
+        mode.StereoEnabled() == false &&
+        fabs(mode.RefreshRate() - current.RefreshRate()) <= 0.00001)
+    {
+      if (current.IsSmpte2084Supported()) // HDR is ON
+      {
+        CLog::LogF(LOGINFO, "Toggle Windows HDR Off (ON => OFF).");
+        if (Wait(hdmi.RequestSetCurrentDisplayModeAsync(mode, HdmiDisplayHdrOption::None)))
+          status = HDR_STATUS::HDR_OFF;
+      }
+      else // HDR is OFF
+      {
+        CLog::LogF(LOGINFO, "Toggle Windows HDR On (OFF => ON).");
+        if (Wait(hdmi.RequestSetCurrentDisplayModeAsync(mode, HdmiDisplayHdrOption::Eotf2084)))
+          status = HDR_STATUS::HDR_ON;
+      }
+      break;
+    }
+  }
 #else
   uint32_t pathCount = 0;
   uint32_t modeCount = 0;
@@ -1424,6 +1454,104 @@ HDR_STATUS CWIN32Util::GetWindowsHDRStatus()
   return status;
 }
 
+/*!
+ * \brief Retrieve from the system the max luminance of SDR content in HDR.
+ *
+ * Retrieve from the system the max luminance of SDR content in HDR.
+ * Note: always returns 80 nits when the screen is in SDR mode.
+ *
+ * \param gdiDeviceName The screen to retrieve the information for
+ * \param sdrWhiteLevel Max luminance in nits, clamped to 10000
+ * \return true if a value could be read from the system and copied to sdrWhiteLevel, false otherwise
+*/
+bool CWIN32Util::GetSystemSdrWhiteLevel(const std::wstring& gdiDeviceName, float* sdrWhiteLevel)
+{
+#ifdef TARGET_WINDOWS_STORE
+  auto displayInformation = DisplayInformation::GetForCurrentView();
+
+  if (displayInformation)
+  {
+    auto advancedColorInfo = displayInformation.GetAdvancedColorInfo();
+
+    if (advancedColorInfo)
+    {
+      const float sdrNits = advancedColorInfo.SdrWhiteLevelInNits();
+      if (sdrWhiteLevel)
+      {
+        if (sdrNits > 10000.0f)
+          *sdrWhiteLevel = 10000.0f;
+        else
+          *sdrWhiteLevel = sdrNits;
+      }
+      return true;
+    }
+  }
+  return false;
+#else
+  // DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL was added in Windows 10 1709
+
+  uint32_t pathCount{0};
+  uint32_t modeCount{0};
+  std::vector<DISPLAYCONFIG_PATH_INFO> paths;
+  std::vector<DISPLAYCONFIG_MODE_INFO> modes;
+
+  uint32_t flags = QDC_ONLY_ACTIVE_PATHS;
+  LONG result = ERROR_SUCCESS;
+
+  do
+  {
+    if (GetDisplayConfigBufferSizes(flags, &pathCount, &modeCount) != ERROR_SUCCESS)
+      return false;
+
+    paths.resize(pathCount);
+    modes.resize(modeCount);
+
+    result = QueryDisplayConfig(flags, &pathCount, paths.data(), &modeCount, modes.data(), nullptr);
+  } while (result == ERROR_INSUFFICIENT_BUFFER);
+
+  if (result == ERROR_SUCCESS)
+  {
+    paths.resize(pathCount);
+    modes.resize(modeCount);
+
+    for (const auto& path : paths)
+    {
+      DISPLAYCONFIG_SOURCE_DEVICE_NAME source{};
+      source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+      source.header.size = sizeof(source);
+      source.header.adapterId = path.sourceInfo.adapterId;
+      source.header.id = path.sourceInfo.id;
+
+      if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS)
+      {
+        if (gdiDeviceName == source.viewGdiDeviceName)
+        {
+          DISPLAYCONFIG_SDR_WHITE_LEVEL config{};
+          config.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+          config.header.size = sizeof(config);
+          config.header.adapterId = path.targetInfo.adapterId;
+          config.header.id = path.targetInfo.id;
+          if (DisplayConfigGetDeviceInfo(&config.header) == ERROR_SUCCESS)
+          {
+            if (sdrWhiteLevel)
+            {
+              const float sdrNits = static_cast<const float>(config.SDRWhiteLevel * 80 / 1000);
+              if (sdrNits > 10000.0f)
+                *sdrWhiteLevel = 10000.0f;
+              else
+                *sdrWhiteLevel = sdrNits;
+            }
+            return true;
+          }
+          break;
+        }
+      }
+    }
+  }
+  return (false);
+#endif
+}
+
 void CWIN32Util::PlatformSyslog()
 {
   CLog::Log(LOGINFO, "System has {:.1f} GB of RAM installed",
@@ -1502,9 +1630,9 @@ VideoDriverInfo CWIN32Util::GetVideoDriverInfo(const UINT vendorId, const std::w
       info.majorVersion = std::stoi(ver.substr(ver.length() - 5, 3));
       info.minorVersion = std::stoi(ver.substr(ver.length() - 2, 2));
     }
-    else // for Intel/AMD fill major version only
+    else // for Intel/AMD fill major version only. Single-digit for WDDM < 1.3.
     {
-      info.majorVersion = std::stoi(info.version.substr(0, 2));
+      info.majorVersion = std::stoi(info.version.substr(0, info.version.find('.')));
     }
 
   } while (sta == ERROR_SUCCESS && !info.valid);
@@ -1513,4 +1641,144 @@ VideoDriverInfo CWIN32Util::GetVideoDriverInfo(const UINT vendorId, const std::w
 #endif
 
   return info;
+}
+
+std::wstring CWIN32Util::GetDisplayFriendlyName(const std::wstring& gdiDeviceName)
+{
+#ifdef TARGET_WINDOWS_STORE
+  // Not supported
+  return std::wstring();
+#else
+
+  uint32_t pathCount{};
+  uint32_t modeCount{};
+  std::vector<DISPLAYCONFIG_PATH_INFO> paths;
+  std::vector<DISPLAYCONFIG_MODE_INFO> modes;
+
+  uint32_t flags = QDC_ONLY_ACTIVE_PATHS;
+  LONG result = ERROR_SUCCESS;
+
+  do
+  {
+    if (GetDisplayConfigBufferSizes(flags, &pathCount, &modeCount) != ERROR_SUCCESS)
+      return std::wstring();
+
+    paths.resize(pathCount);
+    modes.resize(modeCount);
+
+    result = QueryDisplayConfig(flags, &pathCount, paths.data(), &modeCount, modes.data(), nullptr);
+  } while (result == ERROR_INSUFFICIENT_BUFFER);
+
+  if (result == ERROR_SUCCESS)
+  {
+    paths.resize(pathCount);
+    modes.resize(modeCount);
+
+    for (const auto& path : paths)
+    {
+      DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {};
+      source.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+      source.header.size = sizeof(source);
+      source.header.adapterId = path.sourceInfo.adapterId;
+      source.header.id = path.sourceInfo.id;
+
+      if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS)
+      {
+        if (gdiDeviceName == source.viewGdiDeviceName)
+        {
+          DISPLAYCONFIG_TARGET_DEVICE_NAME target = {};
+          target.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+          target.header.size = sizeof(target);
+          target.header.adapterId = path.targetInfo.adapterId;
+          target.header.id = path.targetInfo.id;
+          if (DisplayConfigGetDeviceInfo(&target.header) == ERROR_SUCCESS)
+            return target.monitorFriendlyDeviceName;
+
+          break;
+        }
+      }
+    }
+  }
+  return std::wstring();
+#endif
+}
+
+using SETTHREADDESCRIPTION = HRESULT(WINAPI*)(HANDLE hThread, PCWSTR lpThreadDescription);
+
+bool CWIN32Util::SetThreadName(const HANDLE handle, const std::string& name)
+{
+#if defined(TARGET_WINDOWS_STORE)
+  //not supported
+  return false;
+#else
+  static bool initialized = false;
+  static HINSTANCE hinstLib = NULL;
+  static SETTHREADDESCRIPTION pSetThreadDescription = nullptr;
+
+  if (!initialized)
+  {
+    initialized = true;
+
+    // MS documentation: SetThreadDescription available since Windows 10 1607
+    // function located in Kernel32.dll
+    // except for Windows 10 1607, where it is located in KernelBase.dll
+    CSysInfo::WindowsVersion winver = CSysInfo::GetWindowsVersion();
+
+    if (winver < CSysInfo::WindowsVersion::WindowsVersionWin10_1607)
+      return false;
+    else if (winver == CSysInfo::WindowsVersion::WindowsVersionWin10_1607)
+      hinstLib = LoadLibrary(L"KernelBase.dll");
+    else if (winver > CSysInfo::WindowsVersion::WindowsVersionWin10_1607)
+      hinstLib = LoadLibrary(L"Kernel32.dll");
+
+    if (hinstLib != NULL)
+    {
+      pSetThreadDescription = reinterpret_cast<SETTHREADDESCRIPTION>(
+          ::GetProcAddress(hinstLib, "SetThreadDescription"));
+    }
+
+    if (pSetThreadDescription == nullptr && hinstLib)
+      FreeLibrary(hinstLib);
+  }
+
+  if (pSetThreadDescription != nullptr &&
+      SUCCEEDED(pSetThreadDescription(handle, KODI::PLATFORM::WINDOWS::ToW(name).c_str())))
+    return true;
+  else
+    return false;
+
+#endif
+}
+
+static std::array<int, 4> ParseVideoDriverInfo(const std::string& version)
+{
+  std::array<int, 4> result{};
+
+  // the string is destroyed in the process, make a copy first.
+  std::string v{version};
+
+  char* p = std::strtok(v.data(), ".");
+  for (int idx = 0; p && idx < 4; ++idx)
+  {
+    result[idx] = std::stoi(p);
+    p = std::strtok(NULL, ".");
+  }
+
+  return result;
+}
+
+bool CWIN32Util::IsDriverVersionAtLeast(const std::string& version1, const std::string& version2)
+{
+  const std::array<int, 4> v1 = ParseVideoDriverInfo(version1);
+  const std::array<int, 4> v2 = ParseVideoDriverInfo(version2);
+
+  for (int idx = 0; idx < 4; ++idx)
+  {
+    if (v1[idx] > v2[idx])
+      return true;
+    else if (v1[idx] < v2[idx])
+      return false;
+    // equality: compare the next segment.
+  }
+  return true;
 }

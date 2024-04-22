@@ -3,13 +3,7 @@
 # ----------
 # Finds the libdvdcss library
 #
-# This will define the following variables::
-#
-# LIBDVDCSS_FOUND - system has LibDvdCSS
-# LIBDVDCSS_INCLUDE_DIRS - the LibDvdCSS include directory
-# LIBDVDCSS_LIBRARIES - the LibDvdCSS libraries
-#
-# and the following imported targets::
+# This will define the following target:
 #
 #   LibDvdCSS::LibDvdCSS   - The LibDvdCSS library
 
@@ -49,6 +43,7 @@ if(ENABLE_DVDCSS)
     endif()
   elseif(CORE_SYSTEM_NAME STREQUAL windowsstore)
     set(LIBDVD_ADDITIONAL_ARGS "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}")
+    set(${MODULE}_CXX_FLAGS "/Zc:twoPhase-")
   endif()
 
   if(APPLE)
@@ -63,6 +58,9 @@ if(ENABLE_DVDCSS)
                    ${LIBDVD_ADDITIONAL_ARGS})
   else()
     find_program(AUTORECONF autoreconf REQUIRED)
+    if (CMAKE_HOST_SYSTEM_NAME MATCHES "(Free|Net|Open)BSD")
+      find_program(MAKE_EXECUTABLE gmake)
+    endif()
     find_program(MAKE_EXECUTABLE make REQUIRED)
 
     set(CONFIGURE_COMMAND ${AUTORECONF} -vif
@@ -96,16 +94,12 @@ find_package_handle_standard_args(LibDvdCSS
                                   VERSION_VAR LIBDVDCSS_VERSION)
 
 if(LIBDVDCSS_FOUND)
-  set(LIBDVDCSS_INCLUDE_DIRS ${LIBDVDCSS_INCLUDE_DIR})
-  set(LIBDVDCSS_LIBRARIES ${LIBDVDCSS_LIBRARY})
-  set(LIBDVDCSS_DEFINITIONS -DHAVE_DVDCSS_DVDCSS_H)
-
   if(NOT TARGET LibDvdCSS::LibDvdCSS)
     add_library(LibDvdCSS::LibDvdCSS UNKNOWN IMPORTED)
 
     set_target_properties(LibDvdCSS::LibDvdCSS PROPERTIES
                                                IMPORTED_LOCATION "${LIBDVDCSS_LIBRARY}"
-                                               INTERFACE_COMPILE_DEFINITIONS "${LIBDVDCSS_DEFINITIONS}"
+                                               INTERFACE_COMPILE_DEFINITIONS "HAVE_DVDCSS_DVDCSS_H"
                                                INTERFACE_INCLUDE_DIRECTORIES "${LIBDVDCSS_INCLUDE_DIR}")
 
     if(TARGET libdvdcss)

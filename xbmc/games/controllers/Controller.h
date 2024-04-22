@@ -27,6 +27,9 @@ class CPhysicalTopology;
 
 using JOYSTICK::FEATURE_TYPE;
 
+/*!
+ * \ingroup games
+ */
 class CController : public ADDON::CAddon
 {
 public:
@@ -35,6 +38,9 @@ public:
   ~CController() override;
 
   static const ControllerPtr EmptyPtr;
+
+  // Implementation of IAddon
+  bool CanHaveAddonOrInstanceSettings() override { return true; }
 
   /*!
    * \brief Get all controller features

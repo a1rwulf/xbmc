@@ -234,18 +234,18 @@ void CGUIFont::DrawScrollingText(float x,
       shadowColors.emplace_back((renderColor & 0xff000000) != 0 ? shadowColor : 0);
     for (float dx = -offset; dx < maxWidth; dx += scrollInfo.m_totalWidth)
     {
-      m_font->DrawTextInternal(context, x + dx + 1, y + 1, shadowColors, text, alignment,
-                               textPixelWidth, scroll);
-      m_font->DrawTextInternal(context, x + dx + scrollInfo.m_textWidth + 1, y + 1, shadowColors,
-                               scrollInfo.m_suffix, alignment, suffixPixelWidth, scroll);
+      m_font->DrawTextInternal(context, x + 1, y + 1, shadowColors, text, alignment, textPixelWidth,
+                               scroll, dx);
+      m_font->DrawTextInternal(context, x + scrollInfo.m_textWidth + 1, y + 1, shadowColors,
+                               scrollInfo.m_suffix, alignment, suffixPixelWidth, scroll, dx);
     }
   }
   for (float dx = -offset; dx < maxWidth; dx += scrollInfo.m_totalWidth)
   {
-    m_font->DrawTextInternal(context, x + dx, y, renderColors, text, alignment, textPixelWidth,
-                             scroll);
-    m_font->DrawTextInternal(context, x + dx + scrollInfo.m_textWidth, y, renderColors,
-                             scrollInfo.m_suffix, alignment, suffixPixelWidth, scroll);
+    m_font->DrawTextInternal(context, x, y, renderColors, text, alignment, textPixelWidth, scroll,
+                             dx);
+    m_font->DrawTextInternal(context, x + scrollInfo.m_textWidth, y, renderColors,
+                             scrollInfo.m_suffix, alignment, suffixPixelWidth, scroll, dx);
   }
 
   context.RestoreClipRegion();
@@ -256,8 +256,6 @@ bool CGUIFont::ClippedRegionIsEmpty(
 {
   if (alignment & XBFONT_CENTER_X)
     x -= width * 0.5f;
-  else if (alignment & XBFONT_RIGHT)
-    x -= width;
   if (alignment & XBFONT_CENTER_Y)
     y -= m_font->GetLineHeight(m_lineSpacing);
 

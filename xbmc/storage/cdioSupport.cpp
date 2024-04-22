@@ -25,6 +25,8 @@ namespace
 constexpr int CDIO_TRAY_STATUS_CLOSED = 0;
 /* Helper constexpr to hide the 1 return code for tray open */
 constexpr int CDIO_TRAY_STATUS_OPEN = 1;
+/* Helper constexpr to hide the -2 driver code for unsupported tray status get operation */
+constexpr int CDIO_TRAY_STATUS_OP_UNSUPPORTED = -2;
 } // namespace
 
 using namespace MEDIA_DETECT;
@@ -154,6 +156,8 @@ CdioTrayStatus CLibcdio::mmc_get_tray_status(const CdIo_t* p_cdio)
       return CdioTrayStatus::CLOSED;
     case CDIO_TRAY_STATUS_OPEN:
       return CdioTrayStatus::OPEN;
+    case CDIO_TRAY_STATUS_OP_UNSUPPORTED:
+      return CdioTrayStatus::UNKNOWN;
     default:
       break;
   }
@@ -243,10 +247,8 @@ char* CLibcdio::GetDeviceFileName()
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-CCdIoSupport::CCdIoSupport()
-: cdio(nullptr)
+CCdIoSupport::CCdIoSupport() : cdio(nullptr), m_cdio(CLibcdio::GetInstance())
 {
-  m_cdio = CLibcdio::GetInstance();
   m_nFirstData = -1;        /* # of first data track */
   m_nNumData = 0;                /* # of data tracks */
   m_nFirstAudio = -1;      /* # of first audio track */

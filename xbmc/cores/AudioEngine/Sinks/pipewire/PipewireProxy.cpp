@@ -8,41 +8,36 @@
 
 #include "PipewireProxy.h"
 
+#include "PipewireRegistry.h"
 #include "ServiceBroker.h"
 #include "cores/AudioEngine/Interfaces/AE.h"
 #include "utils/log.h"
 
 #include <stdexcept>
 
-namespace AE
-{
-namespace SINK
-{
-namespace PIPEWIRE
-{
+using namespace KODI;
+using namespace PIPEWIRE;
 
-CPipewireProxy::CPipewireProxy(pw_registry* registry,
+CPipewireProxy::CPipewireProxy(CPipewireRegistry& registry,
                                uint32_t id,
                                const char* type,
                                uint32_t version)
-  : m_proxyEvents(CreateProxyEvents())
+  : m_registry(registry), m_proxyEvents(CreateProxyEvents())
 {
-  m_proxy.reset(reinterpret_cast<pw_proxy*>(pw_registry_bind(registry, id, type, version, 0)));
+  m_proxy.reset(
+      reinterpret_cast<pw_proxy*>(pw_registry_bind(registry.Get(), id, type, version, 0)));
   if (!m_proxy)
   {
     CLog::Log(LOGERROR, "CPipewireProxy: failed to create proxy: {}", strerror(errno));
     throw std::runtime_error("CPipewireProxy: failed to create proxy");
   }
+
+  pw_proxy_add_listener(m_proxy.get(), &m_proxyListener, &m_proxyEvents, this);
 }
 
 CPipewireProxy::~CPipewireProxy()
 {
   spa_hook_remove(&m_proxyListener);
-}
-
-void CPipewireProxy::AddListener(void* userdata)
-{
-  pw_proxy_add_listener(m_proxy.get(), &m_proxyListener, &m_proxyEvents, nullptr);
 }
 
 void CPipewireProxy::Bound(void* userdata, uint32_t id)
@@ -72,7 +67,3 @@ pw_proxy_events CPipewireProxy::CreateProxyEvents()
 
   return proxyEvents;
 }
-
-} // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE

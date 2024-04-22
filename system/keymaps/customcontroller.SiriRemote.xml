@@ -19,7 +19,7 @@
 <!--    </customcontroller>                                                                       -->
 
 <!-- Note that the action can be a built-in function.                                            -->
-<!--            eg <button id="6">ActivateWindow(Favourites)</button>                            -->
+<!--            eg <button id="6">ActivateWindow(FavouritesBrowser)</button>                     -->
 <!-- would bring up Favourites when the button with the id of 6 is press. In this case, "Menu"   -->
 
 <!--                                                                                             -->
@@ -57,11 +57,13 @@
       <!-- Siri remote pan down                     --> <button id="24">Down</button>
       <!-- Siri remote pan left                     --> <button id="25">Left</button>
       <!-- Siri remote pan right                    --> <button id="26">Right</button>
+      <!-- Apple TV remote iPhone/iPad channel up   --> <button id="27">ChannelUp</button>
+      <!-- Apple TV remote iPhone/iPad channel down --> <button id="28">ChannelDown</button>
     </customcontroller>
   </global>
   <Home>
     <customcontroller name="SiriRemote">
-      <button id="6">ActivateWindow(Favourites)</button>
+      <button id="6">ActivateWindow(FavouritesBrowser)</button>
     </customcontroller>
   </Home>
   <FullscreenVideo>

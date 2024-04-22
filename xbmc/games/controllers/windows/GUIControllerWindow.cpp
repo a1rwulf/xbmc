@@ -32,7 +32,6 @@
 
 using namespace KODI;
 using namespace GAME;
-using namespace KODI::MESSAGING;
 
 CGUIControllerWindow::CGUIControllerWindow(void)
   : CGUIDialog(WINDOW_DIALOG_GAME_CONTROLLERS, "DialogGameControllers.xml"),
@@ -89,6 +88,11 @@ bool CGUIControllerWindow::OnMessage(CGUIMessage& message)
 
   switch (message.GetMessage())
   {
+    case GUI_MSG_WINDOW_INIT:
+    {
+      m_controllerId = message.GetStringParam();
+      break;
+    }
     case GUI_MSG_CLICKED:
     {
       int controlId = message.GetSenderId();
@@ -245,7 +249,7 @@ void CGUIControllerWindow::OnInitWindow(void)
 
   if (!m_controllerList && m_featureList)
   {
-    m_controllerList = new CGUIControllerList(this, m_featureList, m_gameClient);
+    m_controllerList = new CGUIControllerList(this, m_featureList, m_gameClient, m_controllerId);
     if (!m_controllerList->Initialize())
     {
       delete m_controllerList;
@@ -343,7 +347,7 @@ void CGUIControllerWindow::GetMoreControllers(void)
   {
     // "Controller profiles"
     // "All available controller profiles are installed."
-    HELPERS::ShowOKDialogText(CVariant{35050}, CVariant{35062});
+    MESSAGING::HELPERS::ShowOKDialogText(CVariant{35050}, CVariant{35062});
     return;
   }
 }
@@ -366,7 +370,7 @@ void CGUIControllerWindow::ShowHelp(void)
 {
   // "Help"
   // <help text>
-  HELPERS::ShowOKDialogText(CVariant{10043}, CVariant{35055});
+  MESSAGING::HELPERS::ShowOKDialogText(CVariant{10043}, CVariant{35055});
 }
 
 void CGUIControllerWindow::ShowButtonCaptureDialog(void)

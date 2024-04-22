@@ -17,6 +17,9 @@ namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup games
+ */
 class CDialogGameStretchMode : public CDialogGameVideoSelect
 {
 public:
@@ -31,6 +34,7 @@ protected:
   void OnItemFocus(unsigned int index) override;
   unsigned int GetFocusedItem() const override;
   void PostExit() override;
+  bool OnClickAction() override;
 
 private:
   struct StretchModeProperties

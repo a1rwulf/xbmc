@@ -21,6 +21,8 @@ namespace GAME
 class CControllerHub;
 
 /*!
+ * \ingroup games
+ *
  * \brief Node in the controller tree
  *
  * The node identifies the controller profile, and optionally the available
@@ -100,6 +102,13 @@ public:
    * \brief Check if this node provides input
    */
   bool ProvidesInput() const;
+
+  /*!
+   * \brief Get a list of ports that accept player input
+   *
+   * \param[out] inputPorts The list of input ports
+   */
+  void GetInputPorts(std::vector<std::string>& activePorts) const;
 
 private:
   ControllerPtr m_controller;

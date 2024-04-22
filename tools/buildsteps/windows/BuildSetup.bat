@@ -78,7 +78,6 @@ set WORKSPACE=%base_dir%\kodi-build.%TARGET_PLATFORM%
 
   set EXE="%WORKSPACE%\%buildconfig%\%APP_NAME%.exe"
   set PDB="%WORKSPACE%\%buildconfig%\%APP_NAME%.pdb"
-  set D3D="%WORKSPACE%\D3DCompile*.DLL"
 
   POPD
   ECHO Done!
@@ -101,11 +100,11 @@ set WORKSPACE=%base_dir%\kodi-build.%TARGET_PLATFORM%
   Echo xbmc.old.log>>exclude.txt
   Echo kodi.log>>exclude.txt
   Echo kodi.old.log>>exclude.txt
-  Echo .so>>exclude.txt
-  Echo .h>>exclude.txt
-  Echo .cpp>>exclude.txt
-  Echo .exp>>exclude.txt
-  Echo .lib>>exclude.txt
+  Echo .so\>>exclude.txt
+  Echo .h\>>exclude.txt
+  Echo .cpp\>>exclude.txt
+  Echo .exp\>>exclude.txt
+  Echo .lib\>>exclude.txt
   rem Exclude userdata files
   Echo userdata\advancedsettings.xml>>exclude.txt
   Echo userdata\guisettings.xml>>exclude.txt
@@ -128,17 +127,16 @@ set WORKSPACE=%base_dir%\kodi-build.%TARGET_PLATFORM%
   md BUILD_WIN32\application
 
   xcopy %EXE% BUILD_WIN32\application > NUL
-  xcopy %D3D% BUILD_WIN32\application > NUL
   xcopy %base_dir%\userdata BUILD_WIN32\application\userdata /E /Q /I /Y /EXCLUDE:exclude.txt > NUL
   copy %base_dir%\LICENSE.md BUILD_WIN32\application > NUL
   copy %base_dir%\privacy-policy.txt BUILD_WIN32\application > NUL
   copy %base_dir%\known_issues.txt BUILD_WIN32\application > NUL
 
-  xcopy %WORKSPACE%\addons BUILD_WIN32\application\addons /E /Q /I /Y /EXCLUDE:exclude.txt > NUL
-  xcopy %WORKSPACE%\*.dll BUILD_WIN32\application /Q /I /Y > NUL
-  xcopy %WORKSPACE%\libbluray-*.jar BUILD_WIN32\application /Q /I /Y > NUL
-  xcopy %WORKSPACE%\system BUILD_WIN32\application\system /E /Q /I /Y /EXCLUDE:exclude.txt+exclude_dll.txt  > NUL
-  xcopy %WORKSPACE%\media BUILD_WIN32\application\media /E /Q /I /Y /EXCLUDE:exclude.txt  > NUL
+  xcopy %WORKSPACE%\%buildconfig%\addons BUILD_WIN32\application\addons /E /Q /I /Y /EXCLUDE:exclude.txt > NUL
+  xcopy %WORKSPACE%\%buildconfig%\*.dll BUILD_WIN32\application /Q /I /Y > NUL
+  xcopy %WORKSPACE%\%buildconfig%\libbluray-*.jar BUILD_WIN32\application /Q /I /Y > NUL
+  xcopy %WORKSPACE%\%buildconfig%\system BUILD_WIN32\application\system /E /Q /I /Y /EXCLUDE:exclude.txt+exclude_dll.txt  > NUL
+  xcopy %WORKSPACE%\%buildconfig%\media BUILD_WIN32\application\media /E /Q /I /Y /EXCLUDE:exclude.txt  > NUL
 
   REM create AppxManifest.xml
   @PowerShell "(GC .\AppxManifest.xml.in)|%%{$_" ^
@@ -230,11 +228,11 @@ set WORKSPACE=%base_dir%\kodi-build.%TARGET_PLATFORM%
     goto DIE
   )
   copy %PDB% %APP_PDBFILE% > nul
-  POPD
   ECHO ------------------------------------------------------------
   ECHO Done!
   ECHO Setup is located at %CD%\%APP_SETUPFILE%
   ECHO ------------------------------------------------------------
+  POPD
   GOTO END
 
 :MAKE_APPX

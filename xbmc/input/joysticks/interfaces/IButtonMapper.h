@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Team Kodi
+ *  Copyright (C) 2014-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,10 +13,13 @@
 #include <map>
 #include <string>
 
-class IKeymap;
-
 namespace KODI
 {
+namespace KEYMAP
+{
+class IKeymap;
+} // namespace KEYMAP
+
 namespace JOYSTICK
 {
 class CDriverPrimitive;
@@ -25,6 +28,7 @@ class IButtonMapCallback;
 
 /*!
  * \ingroup joystick
+ *
  * \brief Button mapper interface to assign the driver's raw button/hat/axis
  *        elements to physical joystick features using a provided button map.
  *
@@ -74,7 +78,7 @@ public:
    * \return True if driver primitive was mapped to a feature
    */
   virtual bool MapPrimitive(IButtonMap* buttonMap,
-                            IKeymap* keyMap,
+                            KEYMAP::IKeymap* keyMap,
                             const CDriverPrimitive& primitive) = 0;
 
   /*!
@@ -110,15 +114,15 @@ public:
   virtual void OnLateAxis(const IButtonMap* buttonMap, unsigned int axisIndex) = 0;
 
   // Button map callback interface
-  void SetButtonMapCallback(const std::string& deviceName, IButtonMapCallback* callback)
+  void SetButtonMapCallback(const std::string& deviceLocation, IButtonMapCallback* callback)
   {
-    m_callbacks[deviceName] = callback;
+    m_callbacks[deviceLocation] = callback;
   }
   void ResetButtonMapCallbacks(void) { m_callbacks.clear(); }
   std::map<std::string, IButtonMapCallback*>& ButtonMapCallbacks(void) { return m_callbacks; }
 
 private:
-  std::map<std::string, IButtonMapCallback*> m_callbacks;
+  std::map<std::string, IButtonMapCallback*> m_callbacks; // Device location -> callback
 };
 } // namespace JOYSTICK
 } // namespace KODI

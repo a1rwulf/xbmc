@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "IEventScannerCallback.h"
 #include "bus/PeripheralBus.h"
 #include "devices/Peripheral.h"
 #include "interfaces/IAnnouncer.h"
 #include "messaging/IMessageTarget.h"
+#include "peripherals/events/interfaces/IEventScannerCallback.h"
 #include "settings/lib/ISettingCallback.h"
 #include "threads/CriticalSection.h"
 #include "threads/Thread.h"
@@ -25,9 +25,13 @@ class CFileItemList;
 class CInputManager;
 class CSetting;
 class CSettingsCategory;
-class TiXmlElement;
 class CAction;
 class CKey;
+
+namespace tinyxml2
+{
+class XMLElement;
+}
 
 namespace KODI
 {
@@ -46,6 +50,9 @@ namespace PERIPHERALS
 {
 class CEventScanner;
 
+/*!
+ * \ingroup peripherals
+ */
 class CPeripherals : public ISettingCallback,
                      public Observable,
                      public KODI::MESSAGING::IMessageTarget,
@@ -334,18 +341,32 @@ public:
   /*!
    * \brief Access the input manager passed to the constructor
    */
-  CInputManager& GetInputManager() { return m_inputManager; }
+  CInputManager& GetInputManager()
+  {
+    return m_inputManager;
+  }
 
   /*!
    * \brief Access controller profiles through the construction parameter
    */
-  KODI::GAME::CControllerManager& GetControllerProfiles() { return m_controllerProfiles; }
+  KODI::GAME::CControllerManager& GetControllerProfiles()
+  {
+    return m_controllerProfiles;
+  }
+
+  /*!
+   * \brief Get a mutex that allows for add-on install tasks to block on each other
+   */
+  CCriticalSection& GetAddonInstallMutex()
+  {
+    return m_addonInstallMutex;
+  }
 
 private:
   bool LoadMappings();
   bool GetMappingForDevice(const CPeripheralBus& bus, PeripheralScanResult& result) const;
   static void GetSettingsFromMappingsFile(
-      TiXmlElement* xmlNode, std::map<std::string, PeripheralDeviceSetting>& m_settings);
+      tinyxml2::XMLElement* xmlNode, std::map<std::string, PeripheralDeviceSetting>& m_settings);
 
   void OnDeviceChanged();
 
@@ -361,5 +382,6 @@ private:
   std::unique_ptr<CEventScanner> m_eventScanner;
   mutable CCriticalSection m_critSectionBusses;
   mutable CCriticalSection m_critSectionMappings;
+  CCriticalSection m_addonInstallMutex;
 };
 } // namespace PERIPHERALS

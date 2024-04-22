@@ -21,6 +21,8 @@ namespace GAME
 class CPhysicalPort;
 
 /*!
+ * \ingroup games
+ *
  * \brief Collection of nodes that can be connected to this port
  */
 class CPortNode
@@ -109,6 +111,13 @@ public:
    * \return True if the controller is compatible with the tree, false otherwise
    */
   bool IsControllerAccepted(const std::string& portAddress, const std::string& controllerId) const;
+
+  /*!
+   * \brief Get a list of ports that accept player input
+   *
+   * \param[out] inputPorts The list of input ports
+   */
+  void GetInputPorts(std::vector<std::string>& inputPorts) const;
 
 private:
   void GetPort(CPhysicalPort& port) const;

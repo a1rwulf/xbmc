@@ -105,6 +105,7 @@ public:
 
 protected:
   static int ConvertVideoCodecProfile(STREAMCODEC_PROFILE profile);
+  static int ConvertAudioCodecProfile(STREAMCODEC_PROFILE profile);
 
   IVideoPlayer* m_player;
 
@@ -120,6 +121,12 @@ private:
   int m_streamCount = 0;
 
   std::shared_ptr<CInputStreamProvider> m_subAddonProvider;
+
+  /*!
+   * This class takes ownership of the `CDemuxStream`s created
+   * in `cb_get_stream_transfer` by storing them in this vector
+   */
+  std::vector<std::unique_ptr<CDemuxStream>> m_streams;
 
   /*!
    * Callbacks from add-on to kodi

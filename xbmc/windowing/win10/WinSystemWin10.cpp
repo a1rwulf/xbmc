@@ -9,6 +9,7 @@
 #include "WinSystemWin10.h"
 
 #include "ServiceBroker.h"
+#include "WIN32Util.h"
 #include "WinEventsWin10.h"
 #include "application/Application.h"
 #include "cores/AudioEngine/AESinkFactory.h"
@@ -28,6 +29,7 @@
 #include "platform/win10/AsyncHelpers.h"
 #include "platform/win32/CharsetConverter.h"
 
+#include <cmath>
 #include <mutex>
 
 #pragma pack(push,8)
@@ -151,6 +153,11 @@ void CWinSystemWin10::FinishWindowResize(int newWidth, int newHeight)
 
   ApplicationView::PreferredLaunchViewSize(winrt::Windows::Foundation::Size(dipsWidth, dipsHeight));
   ApplicationView::PreferredLaunchWindowingMode(ApplicationViewWindowingMode::PreferredLaunchViewSize);
+}
+
+void CWinSystemWin10::ForceFullScreen(const RESOLUTION_INFO& resInfo)
+{
+  ResizeWindow(resInfo.iScreenWidth, resInfo.iScreenHeight, 0, 0);
 }
 
 void CWinSystemWin10::AdjustWindow()
@@ -309,11 +316,15 @@ bool CWinSystemWin10::ChangeResolution(const RESOLUTION_INFO& res, bool forceCha
   {
     bool changed = false;
     auto hdmiInfo = HdmiDisplayInformation::GetForCurrentView();
+    const bool needHDR = DX::DeviceResources::Get()->IsHDROutput();
+
     if (hdmiInfo != nullptr)
     {
       // default mode not in list of supported display modes
-      if (res.iScreenWidth == details->ScreenWidth && res.iScreenHeight == details->ScreenHeight
-        && fabs(res.fRefreshRate - details->RefreshRate) <= 0.00001)
+      // TO DO: is still necessary? (or now all modes are listed?)
+      if (!needHDR && res.iScreenWidth == details->ScreenWidth &&
+          res.iScreenHeight == details->ScreenHeight &&
+          fabs(res.fRefreshRate - details->RefreshRate) <= 0.00001)
       {
         Wait(hdmiInfo.SetDefaultDisplayModeAsync());
         changed = true;
@@ -323,11 +334,17 @@ bool CWinSystemWin10::ChangeResolution(const RESOLUTION_INFO& res, bool forceCha
         bool needStereo = CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode() == RENDER_STEREO_MODE_HARDWAREBASED;
         auto hdmiModes = hdmiInfo.GetSupportedDisplayModes();
 
+        // For backward compatibility (also old Xbox models) only match color space for HDR modes
+        // and keep SDR modes selection as it is (any color space). Assumes SDR modes listed first.
+        // TO DO: for HDR modes make use of IsSmpte2084Supported() but has issues with current code.
+        // TO DO: for SDR implement preference for BT.709 color space but also fallback to sRGB.
         HdmiDisplayMode selected = nullptr;
         for (const auto& mode : hdmiModes)
         {
-          if (res.iScreenWidth == mode.ResolutionWidthInRawPixels() && res.iScreenHeight == mode.ResolutionHeightInRawPixels()
-            && fabs(res.fRefreshRate - mode.RefreshRate()) <= 0.00001)
+          if ((!needHDR || (needHDR && mode.ColorSpace() == HdmiDisplayColorSpace::BT2020)) &&
+              res.iScreenWidth == mode.ResolutionWidthInRawPixels() &&
+              res.iScreenHeight == mode.ResolutionHeightInRawPixels() &&
+              fabs(res.fRefreshRate - mode.RefreshRate()) <= 0.00001)
           {
             selected = mode;
             if (needStereo == mode.StereoEnabled())
@@ -337,7 +354,8 @@ bool CWinSystemWin10::ChangeResolution(const RESOLUTION_INFO& res, bool forceCha
 
         if (selected != nullptr)
         {
-          changed = Wait(hdmiInfo.RequestSetCurrentDisplayModeAsync(selected));
+          changed = Wait(hdmiInfo.RequestSetCurrentDisplayModeAsync(
+              selected, needHDR ? HdmiDisplayHdrOption::Eotf2084 : HdmiDisplayHdrOption::None));
         }
       }
     }
@@ -604,7 +622,7 @@ void CWinSystemWin10::ResolutionChanged()
   OnDisplayBack();
 }
 
-std::unique_ptr<CVideoSync> CWinSystemWin10::GetVideoSync(void *clock)
+std::unique_ptr<CVideoSync> CWinSystemWin10::GetVideoSync(CVideoReferenceClock* clock)
 {
   std::unique_ptr<CVideoSync> pVSync(new CVideoSyncD3D(clock));
   return pVSync;
@@ -650,11 +668,48 @@ bool CWinSystemWin10::MessagePump()
   return m_winEvents->MessagePump();
 }
 
-int CWinSystemWin10::GetGuiSdrPeakLuminance() const
+/*!
+ * \brief Max luminance for GUI SDR content in HDR mode.
+ * \return Max luminance in nits, lower than 10000.
+*/
+float CWinSystemWin10::GetGuiSdrPeakLuminance() const
 {
   const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
 
-  return settings->GetInt(CSettings::SETTING_VIDEOSCREEN_GUISDRPEAKLUMINANCE);
+  // use cached system value as this is called for each frame
+  if (settings->GetBool(CSettings::SETTING_VIDEOSCREEN_USESYSTEMSDRPEAKLUMINANCE) &&
+      m_validSystemSdrPeakLuminance)
+    return m_systemSdrPeakLuminance;
+
+  // Max nits for 100% UI setting = 1000 nits, < 10000 nits, min 80 nits for 0%
+  const int guiSdrPeak = settings->GetInt(CSettings::SETTING_VIDEOSCREEN_GUISDRPEAKLUMINANCE);
+  return (80.0f * std::pow(std::exp(1.0f), 0.025257f * guiSdrPeak));
+}
+
+/*!
+ * \brief Test support of the OS for a SDR max luminance in HDR mode setting
+ * \return true when the OS supports that setting, false otherwise
+*/
+bool CWinSystemWin10::HasSystemSdrPeakLuminance()
+{
+  if (m_uiThreadId == GetCurrentThreadId())
+  {
+    const bool hasSystemSdrPeakLum = CWIN32Util::GetSystemSdrWhiteLevel(std::wstring(), nullptr);
+    m_cachedHasSystemSdrPeakLum = hasSystemSdrPeakLum;
+    return hasSystemSdrPeakLum;
+  }
+
+  return m_cachedHasSystemSdrPeakLum;
+}
+
+/*!
+ * \brief Cache the system HDR/SDR balance for use during rendering, instead of querying the API
+ for each frame.
+*/
+void CWinSystemWin10::CacheSystemSdrPeakLuminance()
+{
+  m_validSystemSdrPeakLuminance =
+      CWIN32Util::GetSystemSdrWhiteLevel(std::wstring(), &m_systemSdrPeakLuminance);
 }
 
 #pragma pack(pop)

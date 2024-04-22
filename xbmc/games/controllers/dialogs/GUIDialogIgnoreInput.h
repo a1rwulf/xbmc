@@ -18,6 +18,9 @@ namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup games
+ */
 class CGUIDialogIgnoreInput : public CGUIDialogButtonCapture
 {
 public:
@@ -33,7 +36,7 @@ protected:
   std::string GetDialogText() override;
   std::string GetDialogHeader() override;
   bool MapPrimitiveInternal(JOYSTICK::IButtonMap* buttonMap,
-                            IKeymap* keymap,
+                            KEYMAP::IKeymap* keymap,
                             const JOYSTICK::CDriverPrimitive& primitive) override;
   void OnClose(bool bAccepted) override;
 

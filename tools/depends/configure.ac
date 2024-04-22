@@ -87,9 +87,9 @@ AC_ARG_WITH([sdk],
 
 AC_ARG_WITH([ndk-api],
   [AS_HELP_STRING([--with-ndk-api],
-  [specify ndk level (optional for android), default is 21.])],
+  [specify ndk level (optional for android), default is 24.])],
   [use_ndk_api=$withval],
-  [use_ndk_api=21])
+  [use_ndk_api=24])
 
 AC_ARG_ENABLE([gplv3],
   [AS_HELP_STRING([--enable-gplv3],
@@ -101,11 +101,6 @@ AC_ARG_WITH([rendersystem],
   [AS_HELP_STRING([--with-rendersystem],
   [render system to use])],
   [app_rendersystem=$withval])
-
-AC_ARG_WITH([windowsystem],
-  [AS_HELP_STRING([--with-windowsystem],
-  [Windowing system to use])],
-  [app_winsystem=$withval])
 
 AC_ARG_WITH([target-cflags],
   [AS_HELP_STRING([--with-target-cflags],
@@ -128,7 +123,6 @@ AC_ARG_WITH([ffmpeg-options],
   [FFmpeg configure options, e.g. --enable-vaapi (target)])],
   [ffmpeg_options=$withval],
   [ffmpeg_options=default])
-
 
 if test "$use_ccache" = "yes"; then
   AC_CHECK_PROG(HAVE_CCACHE,ccache,"yes","no",)
@@ -188,7 +182,7 @@ case $build in
   *darwin*)
     build_os="osx"
     if test "x$build_cpu" = "xx86_64"; then
-      host_includes="-arch x86_64 -mmacosx-version-min=10.13"
+      host_includes="-arch x86_64 -mmacosx-version-min=10.14"
     else
       host_includes="-arch arm64 -mmacosx-version-min=11.0"
     fi
@@ -324,7 +318,7 @@ case $host in
           use_cpu="armeabi-v7a"
         fi
         if test "x$use_cpu" = "xarmeabi-v7a"; then
-          platform_cflags="${platform_cflags} -march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=neon"
+          platform_cflags="${platform_cflags} -mtune=cortex-a9 -mfloat-abi=softfp"
         fi
         platform_ldflags="${platform_ldflags} -Wl,--exclude-libs,libunwind.a"
         meson_cpu="arm"
@@ -334,7 +328,7 @@ case $host in
           use_cpu="arm64-v8a"
         fi
         if test "x$use_cpu" = "xarm64-v8a"; then
-          platform_cflags="${platform_cflags} -march=armv8-a -mtune=cortex-a53"
+          platform_cflags="${platform_cflags} -mtune=cortex-a53"
         fi
         meson_cpu="aarch64"
       ;;
@@ -342,12 +336,14 @@ case $host in
         if test "x$use_cpu" = "xauto"; then
           use_cpu=$host_cpu
         fi
+        platform_asflags="-DPIC"
         meson_cpu="x86"
       ;;
       x86_64*-linux-android*)
         if test "x$use_cpu" = "xauto"; then
           use_cpu=$host_cpu
         fi
+        platform_asflags="-DPIC"
         meson_cpu="x86_64"
       ;;
       *)
@@ -360,6 +356,21 @@ case $host in
     meson_system="android"
     #android builds are always cross
     cross_compiling="yes"
+  ;;
+  arm-webos-linux-gnueabi|arm-starfish-linux-gnueabi)
+    meson_cpu="arm"
+    if test "x$use_cpu" = "xauto"; then
+      use_cpu="armeabi-v7a"
+    fi
+    use_toolchain="${use_toolchain:-/usr}"
+    platform_cflags="-fPIC -DPIC -mcpu=cortex-a9 -mtune=cortex-a53 -mfloat-abi=softfp"
+    platform_cxxflags="$platform_cflags -static-libstdc++"
+    optimize_flags="-Os"
+    platform_ldflags="-Wl,-rpath-link=$prefix/$deps_dir/lib"
+    platform_os="linux"
+    meson_system="linux"
+    target_platform="webos"
+    app_rendersystem="gles"
   ;;
   arm*-*-linux-gnu*|arm*-*-linux-uclibc*|aarch64*-*-linux-gnu*|aarch*-*-linux-be*)
     case $host in
@@ -375,9 +386,9 @@ case $host in
     fi
     use_toolchain="${use_toolchain:-/usr}"
     platform_cflags="-fPIC -DPIC"
+    platform_cxxflags="$platform_cflags"
     optimize_flags="-Os"
     platform_ldflags="-Wl,-rpath-link=$prefix/$deps_dir/lib"
-    platform_cxxflags="$platform_cflags"
     platform_os="linux"
     meson_system="linux"
     target_platform="wayland gbm"
@@ -445,28 +456,17 @@ case $host in
           AC_MSG_ERROR(invalid architecture (--with-cpu=$use_cpu))
         fi
 
-        target_minver="10.13"
-
-        # check provided window system is valid_sdk
-        # if no window system supplied, default to SDL for now.
-        if test -n "$app_winsystem"; then
-          if test "$app_winsystem" != "native" && test "$app_winsystem" != "sdl"; then
-            AC_MSG_ERROR(Window system must be native or sdl)
-          fi
-        else
-          app_winsystem=sdl
-        fi
+        target_minver="10.14"
       ;;
       aarch64-apple-darwin*)
         MC_CHECK_NOT_CPU([$use_cpu], "*86")
 
         case $platform_os in
           darwin_embedded)
-            target_minver="11.0"
+            target_minver="12.0"
           ;;
           osx)
             target_minver="11.0"
-            app_winsystem=native
           ;;
           *)
             AC_MSG_ERROR(invalid platform for architecture ($host))
@@ -504,6 +504,8 @@ esac
 case $use_platform in
   ios|tvos|macos)
     ;;
+  webos)
+    ;;
   auto)
     ;;
   *)
@@ -522,7 +524,7 @@ case $build in
     fi
 esac
 
-if test "$platform_os" = "android"; then
+if test "$platform_os" = "android" || test "$target_platform" = "webos"; then
   need_libiconv=1
 else
   AC_SEARCH_LIBS([iconv_open],iconv, link_iconv=$ac_cv_search_iconv_open, link_iconv=-liconv; AC_MSG_WARN("No iconv support in toolchain. Will build libiconv."); need_libiconv=1)
@@ -568,7 +570,7 @@ if test "$platform_os" = "android"; then
     AC_MSG_ERROR("SDK path is required for android")
   fi
 
-  if [ ! test -f $use_sdk_path/tools/bin/sdkmanager ]; then
+  if [ ! test -f $use_sdk_path/tools/bin/sdkmanager ] && [ ! test -f $use_sdk_path/cmdline-tools/bin/sdkmanager ]; then
     AC_MSG_ERROR(verify sdk path)
   fi
 
@@ -696,6 +698,7 @@ AC_SUBST(use_tarballs)
 AC_SUBST(target_platform)
 AC_SUBST(use_firmware)
 AC_SUBST(cross_compiling)
+AC_SUBST(platform_asflags)
 AC_SUBST(platform_cflags)
 AC_SUBST(platform_cxxflags)
 AC_SUBST(platform_cflags_release)
@@ -715,7 +718,6 @@ AC_SUBST(host_includes)
 AC_SUBST(host_sysroot)
 AC_SUBST(host_cxxflags)
 AC_SUBST(app_rendersystem)
-AC_SUBST(app_winsystem)
 AC_SUBST(ffmpeg_options)
 
 [
@@ -843,9 +845,11 @@ echo -e "cpu:\t\t\t $use_cpu"
 echo -e "host:\t\t $use_host"
 echo -e "CC:\t\t $CC"
 echo -e "CXX:\t\t $CXX"
+echo -e "asflags:\t\t $platform_asflags"
 echo -e "cflags:\t\t $platform_cflags"
 echo -e "cxxflags:\t\t $platform_cxxflags"
 echo -e "ldflags:\t\t $platform_ldflags"
+echo -e "target_platform:\t $target_platform"
 echo -e "platform_includes:\t $platform_includes"
 echo -e "ffmpeg options:\t $ffmpeg_options"
 echo -e "prefix:\t\t $prefix"

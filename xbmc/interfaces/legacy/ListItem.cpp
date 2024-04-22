@@ -23,6 +23,7 @@
 #include "video/VideoInfoTag.h"
 
 #include <cstdlib>
+#include <memory>
 #include <sstream>
 #include <utility>
 
@@ -39,7 +40,7 @@ namespace XBMCAddon
       item.reset();
 
       // create CFileItem
-      item.reset(new CFileItem());
+      item = std::make_shared<CFileItem>();
       if (!item) // not sure if this is really possible
         return;
 
@@ -508,6 +509,8 @@ namespace XBMCAddon
               InfoTagVideo::setSetOverviewRaw(videotag, value);
             else if (key == "tag")
               InfoTagVideo::setTagsRaw(videotag, getVideoStringArray(alt, key, value));
+            else if (key == "videoassettitle")
+              InfoTagVideo::setVideoAssetTitleRaw(videotag, value);
             else if (key == "imdbnumber")
               InfoTagVideo::setIMDBNumberRaw(videotag, value);
             else if (key == "code")
@@ -901,17 +904,13 @@ namespace XBMCAddon
     xbmc::InfoTagPicture* ListItem::getPictureInfoTag()
     {
       XBMCAddonUtils::GuiLock lock(languageHook, m_offscreen);
-      if (item->HasPictureInfoTag())
-        return new xbmc::InfoTagPicture(item->GetPictureInfoTag(), m_offscreen);
-      return new xbmc::InfoTagPicture();
+      return new xbmc::InfoTagPicture(item->GetPictureInfoTag(), m_offscreen);
     }
 
     xbmc::InfoTagGame* ListItem::getGameInfoTag()
     {
       XBMCAddonUtils::GuiLock lock(languageHook, m_offscreen);
-      if (item->HasGameInfoTag())
-        return new xbmc::InfoTagGame(item->GetGameInfoTag(), m_offscreen);
-      return new xbmc::InfoTagGame();
+      return new xbmc::InfoTagGame(item->GetGameInfoTag(), m_offscreen);
     }
 
     std::vector<std::string> ListItem::getStringArray(const InfoLabelValue& alt,

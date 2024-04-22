@@ -105,7 +105,7 @@ bool CVideoLayerBridgeDRMPRIME::Map(CVideoBufferDRMPRIME* buffer)
   {
     int object = layer->planes[plane].object_index;
     uint32_t handle = buffer->m_handles[object];
-    if (handle && layer->planes[plane].pitch)
+    if (handle)
     {
       handles[plane] = handle;
       pitches[plane] = layer->planes[plane].pitch;
@@ -166,15 +166,15 @@ void CVideoLayerBridgeDRMPRIME::Configure(CVideoBufferDRMPRIME* buffer)
 
   auto plane = m_DRM->GetVideoPlane();
 
-  bool result;
-  uint64_t value;
-  std::tie(result, value) = plane->GetPropertyValue("COLOR_ENCODING", GetColorEncoding(picture));
-  if (result)
-    m_DRM->AddProperty(plane, "COLOR_ENCODING", value);
+  std::optional<uint64_t> colorEncoding =
+      plane->GetPropertyValue("COLOR_ENCODING", GetColorEncoding(picture));
+  if (colorEncoding)
+    m_DRM->AddProperty(plane, "COLOR_ENCODING", colorEncoding.value());
 
-  std::tie(result, value) = plane->GetPropertyValue("COLOR_RANGE", GetColorRange(picture));
-  if (result)
-    m_DRM->AddProperty(plane, "COLOR_RANGE", value);
+  std::optional<uint64_t> colorRange =
+      plane->GetPropertyValue("COLOR_RANGE", GetColorRange(picture));
+  if (colorRange)
+    m_DRM->AddProperty(plane, "COLOR_RANGE", colorRange.value());
 }
 
 void CVideoLayerBridgeDRMPRIME::SetVideoPlane(CVideoBufferDRMPRIME* buffer, const CRect& destRect)

@@ -23,7 +23,7 @@ if(NOT TARGET TexturePacker::TexturePacker::Executable)
                                           IMPORTED_LOCATION "${TEXTUREPACKER_EXECUTABLE}")
     message(STATUS "External TexturePacker for KODI_DEPENDSBUILD will be executed during build: ${TEXTUREPACKER_EXECUTABLE}")
   elseif(WIN32)
-    get_filename_component(_tppath "${DEPENDS_PATH}/tools/TexturePacker" ABSOLUTE)
+    get_filename_component(_tppath "${NATIVEPREFIX}/tools/TexturePacker" ABSOLUTE)
     find_program(TEXTUREPACKER_EXECUTABLE NAMES "${APP_NAME_LC}-TexturePacker.exe" TexturePacker.exe
                                           HINTS ${_tppath})
 
@@ -50,9 +50,13 @@ if(NOT TARGET TexturePacker::TexturePacker::Executable)
         # and unset TEXTUREPACKER_EXECUTABLE variable
         message(WARNING "Could not find '${APP_NAME_LC}-TexturePacker' or 'TexturePacker' executable in ${_tppath} supplied by -DWITH_TEXTUREPACKER. Make sure the executable file name matches these names!")
       endif()
-    else()
-      # Ship TexturePacker only on Linux and FreeBSD
-      if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    endif()
+
+    # Ship TexturePacker only on Linux and FreeBSD
+    if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      # But skip shipping it if build architecture can be executed on host
+      # and TEXTUREPACKER_EXECUTABLE is found
+      if(NOT (HOST_CAN_EXECUTE_TARGET AND TEXTUREPACKER_EXECUTABLE))
         set(INTERNAL_TEXTUREPACKER_INSTALLABLE TRUE CACHE BOOL "" FORCE)
       endif()
     endif()
@@ -65,7 +69,9 @@ if(NOT TARGET TexturePacker::TexturePacker::Executable)
 
     # Build and install internal TexturePacker if needed
     if (INTERNAL_TEXTUREPACKER_EXECUTABLE OR INTERNAL_TEXTUREPACKER_INSTALLABLE)
-      add_subdirectory(${CMAKE_SOURCE_DIR}/tools/depends/native/TexturePacker build/texturepacker)
+      set(KODI_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+      add_subdirectory(${CMAKE_SOURCE_DIR}/tools/depends/native/TexturePacker/src build/texturepacker)
+      unset(KODI_SOURCE_DIR)
       message(STATUS "Building internal TexturePacker")
     endif()
 

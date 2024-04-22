@@ -9,6 +9,7 @@
 #include "PVRRecordings.h"
 
 #include "ServiceBroker.h"
+#include "addons/kodi-dev-kit/include/kodi/c-api/addon-instance/pvr/pvr_epg.h" // EPG_TAG_INVALID_UID
 #include "pvr/PVRCachedImages.h"
 #include "pvr/PVRManager.h"
 #include "pvr/addons/PVRClients.h"
@@ -89,7 +90,6 @@ void CPVRRecordings::UpdateInProgressSize()
     return;
   m_bIsUpdating = true;
 
-  CLog::LogFC(LOGDEBUG, LOGPVR, "Updating recordings size");
   bool bHaveUpdatedInProgessRecording = false;
   for (auto& recording : m_recordings)
   {
@@ -219,7 +219,7 @@ void CPVRRecordings::UpdateFromClient(const std::shared_ptr<CPVRRecording>& tag,
 }
 
 std::shared_ptr<CPVRRecording> CPVRRecordings::GetRecordingForEpgTag(
-    const std::shared_ptr<CPVREpgInfoTag>& epgTag) const
+    const std::shared_ptr<const CPVREpgInfoTag>& epgTag) const
 {
   if (!epgTag)
     return {};
@@ -329,7 +329,7 @@ CVideoDatabase& CPVRRecordings::GetVideoDatabase()
 {
   if (!m_database)
   {
-    m_database.reset(new CVideoDatabase());
+    m_database = std::make_unique<CVideoDatabase>();
     m_database->Open();
 
     if (!m_database->IsOpen())

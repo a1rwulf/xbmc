@@ -27,6 +27,9 @@ namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup game
+ */
 class CGUIPortList : public IPortList
 {
 public:
@@ -43,7 +46,7 @@ public:
   void Refresh() override;
   void FrameMove() override;
   void SetFocused() override;
-  void OnSelect() override;
+  bool OnSelect() override;
   void ResetPorts() override;
 
 private:

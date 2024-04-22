@@ -28,36 +28,41 @@ JENKINS_BUILD_STRING="${JENKINS_BUILD_TIMESTAMP}-${JENKINS_BUILD_COMMIT}-${JENKI
 #$XBMC_PLATFORM_DIR matches the platform subdirs!
 case $XBMC_PLATFORM_DIR in
   ios)
-    DEFAULT_SDK_VERSION=14.4
+    DEFAULT_SDK_VERSION=16.2
     DEFAULT_XBMC_DEPENDS_ROOT=$WORKSPACE/tools/depends/xbmc-depends
     DEFAULT_CONFIGURATION="Debug"
-    DEFAULT_XCODE_APP="Xcode12.4.app"
+    DEFAULT_XCODE_APP="Xcode_14.2.app"
     ;;
 
   tvos)
-    DEFAULT_SDK_VERSION=14.3
+    DEFAULT_SDK_VERSION=16.1
     DEFAULT_XBMC_DEPENDS_ROOT=$WORKSPACE/tools/depends/xbmc-depends
     DEFAULT_CONFIGURATION="Debug"
-    DEFAULT_XCODE_APP="Xcode12.4.app"
+    DEFAULT_XCODE_APP="Xcode_14.2.app"
     ;;
 
   osx64)
-    DEFAULT_SDK_VERSION=11.1
+    DEFAULT_SDK_VERSION=13.1
     DEFAULT_XBMC_DEPENDS_ROOT=$WORKSPACE/tools/depends/xbmc-depends
     DEFAULT_CONFIGURATION="Debug"
-    DEFAULT_XCODE_APP="Xcode12.4.app"
+    DEFAULT_XCODE_APP="Xcode_14.2.app"
     ;;
 
   osx-arm64)
-    DEFAULT_SDK_VERSION=11.1
+    DEFAULT_SDK_VERSION=13.1
     DEFAULT_XBMC_DEPENDS_ROOT=$WORKSPACE/tools/depends/xbmc-depends
     DEFAULT_CONFIGURATION="Debug"
-    DEFAULT_XCODE_APP="Xcode12.4.app"
+    DEFAULT_XCODE_APP="Xcode_14.2.app"
     ;;
 
   android)
+<<<<<<< HEAD
     DEFAULT_NDK_VERSION="25b" # NDK package version (newer API can be inside)
     DEFAULT_NDK_API="21" # Lollipop API level (21) defined in package ./sysroot/usr/include/android/api-level.h
+=======
+    DEFAULT_NDK_VERSION="26c" # NDK package version (newer API can be inside)
+    DEFAULT_NDK_API="24" # Nougat API level (24) defined in package ./sysroot/usr/include/android/api-level.h
+>>>>>>> c48c9e6fab75a437bbdbbdc330bd25d640d195f8
     DEFAULT_XBMC_DEPENDS_ROOT=$WORKSPACE/tools/depends/xbmc-depends
     DEFAULT_CONFIGURATION="RelWithDebInfo"
     ;;

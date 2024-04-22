@@ -13,6 +13,15 @@
 @interface OSXGLView : NSOpenGLView
 
 - (id)initWithFrame:(NSRect)frameRect;
-- (NSOpenGLContext*)getGLContext;
+- (CGLContextObj)getGLContextObj;
+
+/**
+ * @brief Update the current OpenGL context (view is set before updating)
+ */
+- (void)Update;
+/**
+ * @brief Copies the back buffer to the front buffer of the OpenGL context.
+ */
+- (void)FlushBuffer;
 
 @end

@@ -40,9 +40,9 @@ void VideoPicture::Reset()
   iFrameType = 0;
   color_space = AVCOL_SPC_UNSPECIFIED;
   color_range = 0;
-  chroma_position = 0;
+  chroma_position = AVCHROMA_LOC_UNSPECIFIED;
   color_primaries = AVColorPrimaries::AVCOL_PRI_UNSPECIFIED;
-  color_transfer = 0;
+  color_transfer = AVCOL_TRC_UNSPECIFIED;
   colorBits = 8;
   stereoMode.clear();
 
@@ -50,6 +50,8 @@ void VideoPicture::Reset()
   qstride = 0;
   qscale_type = 0;
   pict_type = 0;
+
+  hdrType = StreamHdrType::HDR_TYPE_NONE;
 
   hasDisplayMetadata = false;
   hasLightMetadata = false;

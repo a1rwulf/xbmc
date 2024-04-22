@@ -17,6 +17,10 @@ ifeq ($(CROSS_COMPILING),no)
 PC_PATH:=$(PC_PATH):/usr/lib/pkgconfig:/usr/lib/$(HOST)/pkgconfig:/usr/share/pkgconfig
 endif
 
+# LLVM 15 has raised this to error by default. drop back to warning
+CFLAGS=$(NATIVE_CFLAGS) -Wno-error=int-conversion
+export CFLAGS
+
 # configuration settings
 CONFIGURE=./configure --prefix=$(PREFIX) --enable-indirect-deps --with-pc-path=$(PC_PATH) --with-internal-glib
 LIBDYLIB=$(PLATFORM)/pkg-config
@@ -24,7 +28,7 @@ LIBDYLIB=$(PLATFORM)/pkg-config
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	-rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); $(CONFIGURE)

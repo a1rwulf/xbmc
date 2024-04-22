@@ -21,6 +21,8 @@ else ifeq ($(OS),darwin_embedded)
   PILPATH=$(PREFIX)/share/$(APP_NAME)/addons/script.module.pil
   PILPATHLIB=$(PILPATH)/lib
   PYTHONPATH=$(PILPATH):$(PYTHON_SITE_PKG)
+else ifeq ($(TARGET_PLATFORM),webos)
+  PILPATHLIB=$(PYTHON_SITE_PKG)/..
 endif
 
 SED_FLAG=-i
@@ -56,11 +58,12 @@ BUILD_OPTS=--plat-name $(OS)-$(CPU) --disable-jpeg2000 --disable-webp --disable-
 export CC CFLAGS
 export PYTHONXINCLUDE=$(PREFIX)/include/python$(PYTHON_VERSION)
 export LDSHARED LDFLAGS PYTHONPATH
+export SETUPTOOLS_EXT_SUFFIX=.so
 
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 -i ../pillow-crosscompile.patch
@@ -85,6 +88,8 @@ ifeq ($(OS),android)
 else ifeq ($(OS),darwin_embedded)
 	cd $(PILPATHLIB) && unzip -o ../Pillow-*.egg
 	cd $(PILPATH) && rm -rf Pillow-*.egg
+else ifeq ($(TARGET_PLATFORM),webos)
+	cd $(PILPATHLIB) && unzip -o $(PILPATH)/Pillow-*.egg && rm -f $(PILPATH)/Pillow-*.egg
 endif
 	touch $@
 

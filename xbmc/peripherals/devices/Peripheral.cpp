@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,18 +11,22 @@
 #include "Util.h"
 #include "XBDateTime.h"
 #include "games/controllers/Controller.h"
+#include "games/controllers/ControllerLayout.h"
 #include "guilib/LocalizeStrings.h"
 #include "input/joysticks/interfaces/IInputHandler.h"
+#include "input/keyboard/generic/DefaultKeyboardHandling.h"
+#include "input/mouse/generic/DefaultMouseHandling.h"
 #include "peripherals/Peripherals.h"
 #include "peripherals/addons/AddonButtonMapping.h"
 #include "peripherals/addons/AddonInputHandling.h"
 #include "peripherals/addons/PeripheralAddon.h"
 #include "peripherals/bus/PeripheralBus.h"
 #include "peripherals/bus/virtual/PeripheralBusAddon.h"
+#include "settings/SettingAddon.h"
 #include "settings/lib/Setting.h"
 #include "utils/FileUtils.h"
 #include "utils/StringUtils.h"
-#include "utils/XBMCTinyXML.h"
+#include "utils/XBMCTinyXML2.h"
 #include "utils/XMLUtils.h"
 #include "utils/log.h"
 
@@ -52,9 +56,6 @@ CPeripheral::CPeripheral(CPeripherals& manager,
     m_iVendorId(scanResult.m_iVendorId),
     m_iProductId(scanResult.m_iProductId),
     m_strVersionInfo(g_localizeStrings.Get(13205)), // "unknown"
-    m_bInitialised(false),
-    m_bHidden(false),
-    m_bError(false),
     m_bus(bus)
 {
   PeripheralTypeTranslator::FormatHexString(scanResult.m_iVendorId, m_strVendorId);
@@ -149,10 +150,10 @@ bool CPeripheral::Initialise(void)
 
   if (m_iVendorId == 0x0000 && m_iProductId == 0x0000)
   {
-    m_strSettingsFile =
-        StringUtils::Format("special://profile/peripheral_data/{}_{}.xml",
-                            PeripheralTypeTranslator::BusTypeToString(m_mappedBusType),
-                            CUtil::MakeLegalFileName(safeDeviceName, LEGAL_WIN32_COMPAT));
+    m_strSettingsFile = StringUtils::Format(
+        "special://profile/peripheral_data/{}_{}.xml",
+        PeripheralTypeTranslator::BusTypeToString(m_mappedBusType),
+        CUtil::MakeLegalFileName(std::move(safeDeviceName), LEGAL_WIN32_COMPAT));
   }
   else
   {
@@ -165,7 +166,7 @@ bool CPeripheral::Initialise(void)
       m_strSettingsFile = StringUtils::Format(
           "special://profile/peripheral_data/{}_{}_{}_{}.xml",
           PeripheralTypeTranslator::BusTypeToString(m_mappedBusType), m_strVendorId, m_strProductId,
-          CUtil::MakeLegalFileName(safeDeviceName, LEGAL_WIN32_COMPAT));
+          CUtil::MakeLegalFileName(std::move(safeDeviceName), LEGAL_WIN32_COMPAT));
   }
 
   LoadPersistedSettings();
@@ -268,12 +269,21 @@ void CPeripheral::AddSetting(const std::string& strKey, const SettingConstPtr& s
       break;
       case SettingType::String:
       {
-        std::shared_ptr<const CSettingString> mappedSetting =
-            std::static_pointer_cast<const CSettingString>(setting);
-        std::shared_ptr<CSettingString> stringSetting =
-            std::make_shared<CSettingString>(strKey, *mappedSetting);
-        if (stringSetting)
+        if (std::dynamic_pointer_cast<const CSettingAddon>(setting))
         {
+          std::shared_ptr<const CSettingAddon> mappedSetting =
+              std::static_pointer_cast<const CSettingAddon>(setting);
+          std::shared_ptr<CSettingAddon> addonSetting =
+              std::make_shared<CSettingAddon>(strKey, *mappedSetting);
+          addonSetting->SetVisible(mappedSetting->IsVisible());
+          deviceSetting.m_setting = addonSetting;
+        }
+        else
+        {
+          std::shared_ptr<const CSettingString> mappedSetting =
+              std::static_pointer_cast<const CSettingString>(setting);
+          std::shared_ptr<CSettingString> stringSetting =
+              std::make_shared<CSettingString>(strKey, *mappedSetting);
           stringSetting->SetVisible(mappedSetting->IsVisible());
           deviceSetting.m_setting = stringSetting;
         }
@@ -476,13 +486,19 @@ bool CPeripheral::SetSetting(const std::string& strKey, const std::string& strVa
 
 void CPeripheral::PersistSettings(bool bExiting /* = false */)
 {
-  CXBMCTinyXML doc;
-  TiXmlElement node("settings");
+  CXBMCTinyXML2 doc;
+  auto* node = doc.NewElement("settings");
+  if (node == nullptr)
+    return;
+
   doc.InsertEndChild(node);
   for (const auto& itr : m_settings)
   {
-    TiXmlElement nodeSetting("setting");
-    nodeSetting.SetAttribute("id", itr.first.c_str());
+    auto* nodeSetting = doc.NewElement("setting");
+    if (nodeSetting == nullptr)
+      continue;
+
+    nodeSetting->SetAttribute("id", itr.first.c_str());
     std::string strValue;
     switch (itr.second.m_setting->GetType())
     {
@@ -521,7 +537,7 @@ void CPeripheral::PersistSettings(bool bExiting /* = false */)
       default:
         break;
     }
-    nodeSetting.SetAttribute("value", strValue.c_str());
+    nodeSetting->SetAttribute("value", strValue.c_str());
     doc.RootElement()->InsertEndChild(nodeSetting);
   }
 
@@ -537,11 +553,11 @@ void CPeripheral::PersistSettings(bool bExiting /* = false */)
 
 void CPeripheral::LoadPersistedSettings(void)
 {
-  CXBMCTinyXML doc;
+  CXBMCTinyXML2 doc;
   if (doc.LoadFile(m_strSettingsFile))
   {
-    const TiXmlElement* setting = doc.RootElement()->FirstChildElement("setting");
-    while (setting)
+    const auto* setting = doc.RootElement()->FirstChildElement("setting");
+    while (setting != nullptr)
     {
       std::string strId = XMLUtils::GetAttribute(setting, "id");
       std::string strValue = XMLUtils::GetAttribute(setting, "value");
@@ -577,10 +593,21 @@ void CPeripheral::RegisterInputHandler(IInputHandler* handler, bool bPromiscuous
   auto it = m_inputHandlers.find(handler);
   if (it == m_inputHandlers.end())
   {
-    CAddonInputHandling* addonInput =
-        new CAddonInputHandling(m_manager, this, handler, GetDriverReceiver());
-    RegisterJoystickDriverHandler(addonInput, bPromiscuous);
-    m_inputHandlers[handler].reset(addonInput);
+    PeripheralAddonPtr addon = m_manager.GetAddonWithButtonMap(this);
+    if (addon)
+    {
+      std::unique_ptr<CAddonInputHandling> addonInput = std::make_unique<CAddonInputHandling>(
+          this, std::move(addon), handler, GetDriverReceiver());
+      if (addonInput->Load())
+      {
+        RegisterJoystickDriverHandler(addonInput.get(), bPromiscuous);
+        m_inputHandlers[handler] = std::move(addonInput);
+      }
+    }
+    else
+    {
+      CLog::Log(LOGDEBUG, "Failed to locate add-on for \"{}\"", m_strLocation);
+    }
   }
 }
 
@@ -597,15 +624,43 @@ void CPeripheral::UnregisterInputHandler(IInputHandler* handler)
 }
 
 void CPeripheral::RegisterKeyboardHandler(KEYBOARD::IKeyboardInputHandler* handler,
-                                          bool bPromiscuous)
+                                          bool bPromiscuous,
+                                          bool forceDefaultMap)
 {
   auto it = m_keyboardHandlers.find(handler);
   if (it == m_keyboardHandlers.end())
   {
-    std::unique_ptr<CAddonInputHandling> addonInput(
-        new CAddonInputHandling(m_manager, this, handler));
-    RegisterKeyboardDriverHandler(addonInput.get(), bPromiscuous);
-    m_keyboardHandlers[handler] = std::move(addonInput);
+    std::unique_ptr<KODI::KEYBOARD::IKeyboardDriverHandler> keyboardDriverHandler;
+
+    if (!forceDefaultMap)
+    {
+      PeripheralAddonPtr addon = m_manager.GetAddonWithButtonMap(this);
+      if (addon)
+      {
+        std::unique_ptr<CAddonInputHandling> addonInput =
+            std::make_unique<CAddonInputHandling>(this, std::move(addon), handler);
+        if (addonInput->Load())
+          keyboardDriverHandler = std::move(addonInput);
+      }
+      else
+      {
+        CLog::Log(LOGDEBUG, "Failed to locate add-on for \"{}\"", m_strLocation);
+      }
+    }
+
+    if (!keyboardDriverHandler)
+    {
+      std::unique_ptr<KODI::KEYBOARD::CDefaultKeyboardHandling> defaultInput =
+          std::make_unique<KODI::KEYBOARD::CDefaultKeyboardHandling>(this, handler);
+      if (defaultInput->Load())
+        keyboardDriverHandler = std::move(defaultInput);
+    }
+
+    if (keyboardDriverHandler)
+    {
+      RegisterKeyboardDriverHandler(keyboardDriverHandler.get(), bPromiscuous);
+      m_keyboardHandlers[handler] = std::move(keyboardDriverHandler);
+    }
   }
 }
 
@@ -619,15 +674,44 @@ void CPeripheral::UnregisterKeyboardHandler(KEYBOARD::IKeyboardInputHandler* han
   }
 }
 
-void CPeripheral::RegisterMouseHandler(MOUSE::IMouseInputHandler* handler, bool bPromiscuous)
+void CPeripheral::RegisterMouseHandler(MOUSE::IMouseInputHandler* handler,
+                                       bool bPromiscuous,
+                                       bool forceDefaultMap)
 {
   auto it = m_mouseHandlers.find(handler);
   if (it == m_mouseHandlers.end())
   {
-    std::unique_ptr<CAddonInputHandling> addonInput(
-        new CAddonInputHandling(m_manager, this, handler));
-    RegisterMouseDriverHandler(addonInput.get(), bPromiscuous);
-    m_mouseHandlers[handler] = std::move(addonInput);
+    std::unique_ptr<KODI::MOUSE::IMouseDriverHandler> mouseDriverHandler;
+
+    if (!forceDefaultMap)
+    {
+      PeripheralAddonPtr addon = m_manager.GetAddonWithButtonMap(this);
+      if (addon)
+      {
+        std::unique_ptr<CAddonInputHandling> addonInput =
+            std::make_unique<CAddonInputHandling>(this, std::move(addon), handler);
+        if (addonInput->Load())
+          mouseDriverHandler = std::move(addonInput);
+      }
+      else
+      {
+        CLog::Log(LOGDEBUG, "Failed to locate add-on for \"{}\"", m_strLocation);
+      }
+    }
+
+    if (!mouseDriverHandler)
+    {
+      std::unique_ptr<KODI::MOUSE::CDefaultMouseHandling> defaultInput =
+          std::make_unique<KODI::MOUSE::CDefaultMouseHandling>(this, handler);
+      if (defaultInput->Load())
+        mouseDriverHandler = std::move(defaultInput);
+    }
+
+    if (mouseDriverHandler)
+    {
+      RegisterMouseDriverHandler(mouseDriverHandler.get(), bPromiscuous);
+      m_mouseHandlers[handler] = std::move(mouseDriverHandler);
+    }
   }
 }
 
@@ -674,8 +758,13 @@ std::string CPeripheral::GetIcon() const
 {
   std::string icon;
 
+  // Try controller profile
+  const GAME::ControllerPtr controller = ControllerProfile();
+  if (controller)
+    icon = controller->Layout().ImagePath();
+
   // Try add-on
-  if (m_busType == PERIPHERAL_BUS_ADDON)
+  if (icon.empty() && m_busType == PERIPHERAL_BUS_ADDON)
   {
     CPeripheralBusAddon* bus = static_cast<CPeripheralBusAddon*>(m_bus);
 
@@ -687,14 +776,6 @@ std::string CPeripheral::GetIcon() const
       if (!addonIcon.empty())
         icon = std::move(addonIcon);
     }
-  }
-
-  // Try controller profile
-  if (icon.empty())
-  {
-    const GAME::ControllerPtr controller = ControllerProfile();
-    if (controller)
-      icon = controller->Icon();
   }
 
   // Fallback
@@ -714,7 +795,7 @@ bool CPeripheral::operator!=(const PeripheralScanResult& right) const
   return !(*this == right);
 }
 
-CDateTime CPeripheral::LastActive()
+CDateTime CPeripheral::LastActive() const
 {
   return CDateTime();
 }

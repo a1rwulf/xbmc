@@ -34,19 +34,14 @@ public:
 
   static bool SupportsMediaCodecMimeType(const std::string& mimeType);
 
-  // Android specific HDR type mapping
-  // https://developer.android.com/reference/android/view/Display.HdrCapabilities#constants_1
-  enum HDRTypes
-  {
-    DOLBY_VISION = 1,
-    HDR10 = 2,
-    HLG = 3,
-    HDR10_PLUS = 4
-  };
-
   static std::vector<int> GetDisplaySupportedHdrTypes();
   static CHDRCapabilities GetDisplayHDRCapabilities();
+<<<<<<< HEAD
   static void SetRefreshRate(double refreshRate);
+=======
+  static std::pair<bool, bool> GetDolbyVisionCapabilities();
+
+>>>>>>> c48c9e6fab75a437bbdbbdc330bd25d640d195f8
 protected:
   mutable int m_width;
   mutable int m_height;

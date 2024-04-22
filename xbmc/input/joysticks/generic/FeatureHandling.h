@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Team Kodi
+ *  Copyright (C) 2014-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -26,6 +26,7 @@ using FeaturePtr = std::shared_ptr<CJoystickFeature>;
 
 /*!
  * \ingroup joystick
+ *
  * \brief Base class for joystick features
  *
  * See list of feature types in JoystickTypes.h.
@@ -109,6 +110,9 @@ private:
   std::chrono::time_point<std::chrono::steady_clock> m_motionStartTimeMs;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CScalarFeature : public CJoystickFeature
 {
 public:
@@ -129,17 +133,18 @@ private:
 
   // State variables
   INPUT_TYPE m_inputType = INPUT_TYPE::UNKNOWN;
-  bool m_bDigitalState;
+  bool m_bDigitalState = false;
   bool m_bInitialPressHandled = false;
 
   // Analog state variables
-  float m_analogState; // The current magnitude
-  float m_bActivated; // Set to true when first activated (magnitude > 0.0)
-  bool m_bDiscrete; // Set to false when a non-discrete axis is detected
+  float m_analogState = 0.0f; // The current magnitude
+  float m_bActivated = false; // Set to true when first activated (magnitude > 0.0)
+  bool m_bDiscrete = true; // Set to false when a non-discrete axis is detected
 };
 
 /*!
  * \ingroup joystick
+ *
  * \brief Axis of a feature (analog stick, accelerometer, etc)
  *
  * Axes are composed of two driver primitives, one for the positive semiaxis
@@ -203,6 +208,9 @@ protected:
   float m_negativeDistance;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CAxisFeature : public CJoystickFeature
 {
 public:
@@ -216,9 +224,12 @@ public:
 protected:
   CFeatureAxis m_axis;
 
-  float m_state;
+  float m_state = 0.0f;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CWheel : public CAxisFeature
 {
 public:
@@ -229,6 +240,9 @@ public:
   bool OnAnalogMotion(const CDriverPrimitive& source, float magnitude) override;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CThrottle : public CAxisFeature
 {
 public:
@@ -239,6 +253,9 @@ public:
   bool OnAnalogMotion(const CDriverPrimitive& source, float magnitude) override;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CAnalogStick : public CJoystickFeature
 {
 public:
@@ -254,10 +271,13 @@ protected:
   CFeatureAxis m_vertAxis;
   CFeatureAxis m_horizAxis;
 
-  float m_vertState;
-  float m_horizState;
+  float m_vertState = 0.0f;
+  float m_horizState = 0.0f;
 };
 
+/*!
+ * \ingroup joystick
+ */
 class CAccelerometer : public CJoystickFeature
 {
 public:
@@ -274,9 +294,9 @@ protected:
   CFeatureAxis m_yAxis;
   CFeatureAxis m_zAxis;
 
-  float m_xAxisState;
-  float m_yAxisState;
-  float m_zAxisState;
+  float m_xAxisState = 0.0f;
+  float m_yAxisState = 0.0f;
+  float m_zAxisState = 0.0f;
 };
 } // namespace JOYSTICK
 } // namespace KODI

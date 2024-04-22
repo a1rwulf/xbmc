@@ -8,21 +8,24 @@
 
 #include "GUIWindowFavourites.h"
 
+#include "ContextMenuManager.h"
 #include "FileItem.h"
 #include "ServiceBroker.h"
-#include "dialogs/GUIDialogFileBrowser.h"
 #include "favourites/FavouritesURL.h"
+#include "favourites/FavouritesUtils.h"
 #include "guilib/GUIComponent.h"
-#include "guilib/GUIKeyboardFactory.h"
+#include "guilib/GUIMessage.h"
 #include "guilib/GUIWindowManager.h"
-#include "guilib/LocalizeStrings.h"
 #include "input/actions/Action.h"
 #include "input/actions/ActionIDs.h"
 #include "messaging/ApplicationMessenger.h"
-#include "storage/MediaManager.h"
 #include "utils/PlayerUtils.h"
 #include "utils/StringUtils.h"
-#include "view/GUIViewState.h"
+#include "utils/guilib/GUIContentUtils.h"
+#include "video/VideoUtils.h"
+#include "video/guilib/VideoGUIUtils.h"
+#include "video/guilib/VideoPlayActionProcessor.h"
+#include "video/guilib/VideoSelectActionProcessor.h"
 
 CGUIWindowFavourites::CGUIWindowFavourites()
   : CGUIMediaWindow(WINDOW_FAVOURITES, "MyFavourites.xml")
@@ -45,62 +48,167 @@ void CGUIWindowFavourites::OnFavouritesEvent(const CFavouritesService::Favourite
 
 namespace
 {
-bool ExecuteAction(const std::string& execute)
+class CVideoSelectActionProcessor : public VIDEO::GUILIB::CVideoSelectActionProcessorBase
 {
-  if (!execute.empty())
+public:
+  explicit CVideoSelectActionProcessor(const std::shared_ptr<CFileItem>& item)
+    : CVideoSelectActionProcessorBase(item)
   {
-    CGUIMessage message(GUI_MSG_EXECUTE, 0, 0);
-    message.SetStringParam(execute);
-    CServiceBroker::GetGUI()->GetWindowManager().SendMessage(message);
+  }
+
+protected:
+  bool OnPlayPartSelected(unsigned int part) override
+  {
+    // part numbers are 1-based
+    FAVOURITES_UTILS::ExecuteAction(
+        {"PlayMedia", *m_item, StringUtils::Format("playoffset={}", part - 1)});
     return true;
   }
-  return false;
-}
+
+  bool OnResumeSelected() override
+  {
+    FAVOURITES_UTILS::ExecuteAction({"PlayMedia", *m_item, "resume"});
+    return true;
+  }
+
+  bool OnPlaySelected() override
+  {
+    FAVOURITES_UTILS::ExecuteAction({"PlayMedia", *m_item, "noresume"});
+    return true;
+  }
+
+  bool OnQueueSelected() override
+  {
+    FAVOURITES_UTILS::ExecuteAction({"QueueMedia", *m_item, ""});
+    return true;
+  }
+
+  bool OnInfoSelected() override
+  {
+    return UTILS::GUILIB::CGUIContentUtils::ShowInfoForItem(*m_item);
+  }
+
+  bool OnMoreSelected() override
+  {
+    CONTEXTMENU::ShowFor(m_item, CContextMenuManager::MAIN);
+    return true;
+  }
+};
+
+class CVideoPlayActionProcessor : public VIDEO::GUILIB::CVideoPlayActionProcessorBase
+{
+public:
+  explicit CVideoPlayActionProcessor(const ::std::shared_ptr<CFileItem>& item)
+    : CVideoPlayActionProcessorBase(item)
+  {
+  }
+
+protected:
+  bool OnResumeSelected() override
+  {
+    FAVOURITES_UTILS::ExecuteAction({"PlayMedia", *m_item, "resume"});
+    return true;
+  }
+
+  bool OnPlaySelected() override
+  {
+    FAVOURITES_UTILS::ExecuteAction({"PlayMedia", *m_item, "noresume"});
+    return true;
+  }
+};
 } // namespace
 
-bool CGUIWindowFavourites::OnSelect(int item)
+bool CGUIWindowFavourites::OnSelect(int itemIdx)
 {
-  if (item < 0 || item >= m_vecItems->Size())
+  if (itemIdx < 0 || itemIdx >= m_vecItems->Size())
     return false;
 
-  return ExecuteAction(CFavouritesURL(*(*m_vecItems)[item], GetID()).GetExecString());
+  const auto item{(*m_vecItems)[itemIdx]};
+  const CFavouritesURL favURL{*item, GetID()};
+  if (!favURL.IsValid())
+    return false;
+
+  const bool isPlayMedia{favURL.GetAction() == CFavouritesURL::Action::PLAY_MEDIA};
+
+  const auto target{CServiceBroker::GetFavouritesService().ResolveFavourite(*item)};
+  if (!target)
+    return false;
+
+  CFileItem targetItem{*target};
+
+  // video select action setting is for files only, except exec func is playmedia...
+  if (targetItem.HasVideoInfoTag() && (!targetItem.m_bIsFolder || isPlayMedia))
+  {
+    // play the given/default video version, even if multiple versions are available
+    targetItem.SetProperty("has_resolved_video_asset", true);
+
+    CVideoSelectActionProcessor proc{std::make_shared<CFileItem>(targetItem)};
+    if (proc.ProcessDefaultAction())
+      return true;
+  }
+
+  // exec the execute string for the original (!) item
+  return FAVOURITES_UTILS::ExecuteAction(favURL);
 }
 
 bool CGUIWindowFavourites::OnAction(const CAction& action)
 {
+  const int selectedItem = m_viewControl.GetSelectedItem();
+  if (selectedItem < 0 || selectedItem >= m_vecItems->Size())
+    return false;
+
   if (action.GetID() == ACTION_PLAYER_PLAY)
   {
-    const int selectedItem = m_viewControl.GetSelectedItem();
-    if (selectedItem < 0 || selectedItem >= m_vecItems->Size())
+    const auto target{
+        CServiceBroker::GetFavouritesService().ResolveFavourite(*(*m_vecItems)[selectedItem])};
+    if (!target)
       return false;
 
-    const CFavouritesURL favURL((*m_vecItems)[selectedItem]->GetPath());
-    if (!favURL.IsValid())
-      return false;
+    const auto item{std::make_shared<CFileItem>(*target)};
 
-    // If action is playmedia, just play it
-    if (favURL.GetAction() == CFavouritesURL::Action::PLAY_MEDIA)
-      return ExecuteAction(favURL.GetExecString());
+    // video play action setting is for files and folders...
+    if (item->HasVideoInfoTag() || (item->m_bIsFolder && VIDEO_UTILS::IsItemPlayable(*item)))
+    {
+      CVideoPlayActionProcessor proc{item};
+      if (proc.ProcessDefaultAction())
+        return true;
+    }
 
-    // Resolve and check the target
-    const auto item = std::make_shared<CFileItem>(favURL.GetTarget(), favURL.IsDir());
     if (CPlayerUtils::IsItemPlayable(*item))
     {
-      CFavouritesURL target(*item, {});
-      if (target.GetAction() == CFavouritesURL::Action::PLAY_MEDIA)
+      CFavouritesURL target{*item, {}};
+      if (target.GetAction() != CFavouritesURL::Action::PLAY_MEDIA)
       {
-        return ExecuteAction(target.GetExecString());
+        // build a playmedia execute string for given target
+        target = CFavouritesURL{CFavouritesURL::Action::PLAY_MEDIA,
+                                {StringUtils::Paramify(item->GetPath())}};
       }
-      else
-      {
-        // build and execute a playmedia execute string
-        target = CFavouritesURL(CFavouritesURL::Action::PLAY_MEDIA,
-                                {StringUtils::Paramify(item->GetPath())});
-        return ExecuteAction(target.GetExecString());
-      }
+      return FAVOURITES_UTILS::ExecuteAction(target);
     }
     return false;
   }
+  else if (action.GetID() == ACTION_SHOW_INFO)
+  {
+    const auto targetItem{
+        CServiceBroker::GetFavouritesService().ResolveFavourite(*(*m_vecItems)[selectedItem])};
+
+    return UTILS::GUILIB::CGUIContentUtils::ShowInfoForItem(*targetItem);
+  }
+  else if (action.GetID() == ACTION_MOVE_ITEM_UP)
+  {
+    if (FAVOURITES_UTILS::ShouldEnableMoveItems())
+      return MoveItem(selectedItem, -1);
+  }
+  else if (action.GetID() == ACTION_MOVE_ITEM_DOWN)
+  {
+    if (FAVOURITES_UTILS::ShouldEnableMoveItems())
+      return MoveItem(selectedItem, +1);
+  }
+  else if (action.GetID() == ACTION_DELETE_ITEM)
+  {
+    return RemoveItem(selectedItem);
+  }
+
   return CGUIMediaWindow::OnAction(action);
 }
 
@@ -143,80 +251,35 @@ bool CGUIWindowFavourites::Update(const std::string& strDirectory,
   return CGUIMediaWindow::Update(directory, updateFilterPath);
 }
 
-bool CGUIWindowFavourites::ChooseAndSetNewName(CFileItem& item)
+bool CGUIWindowFavourites::MoveItem(int item, int amount)
 {
-  std::string label = item.GetLabel();
-  if (CGUIKeyboardFactory::ShowAndGetInput(label, CVariant{g_localizeStrings.Get(16008)},
-                                           false)) // Enter new title
+  if (item < 0 || item >= m_vecItems->Size() || m_vecItems->Size() < 2 || amount == 0)
+    return false;
+
+  if (FAVOURITES_UTILS::MoveItem(*m_vecItems, (*m_vecItems)[item], amount) &&
+      CServiceBroker::GetFavouritesService().Save(*m_vecItems))
   {
-    item.SetLabel(label);
+    int selected = item + amount;
+    if (selected >= m_vecItems->Size())
+      selected = 0;
+    else if (selected < 0)
+      selected = m_vecItems->Size() - 1;
+
+    m_viewControl.SetSelectedItem(selected);
     return true;
   }
+
   return false;
 }
 
-bool CGUIWindowFavourites::ChooseAndSetNewThumbnail(CFileItem& item)
+bool CGUIWindowFavourites::RemoveItem(int item)
 {
-  CFileItemList prefilledItems;
-  if (item.HasArt("thumb"))
-  {
-    const auto current = std::make_shared<CFileItem>("thumb://Current", false);
-    current->SetArt("thumb", item.GetArt("thumb"));
-    current->SetLabel(g_localizeStrings.Get(20016)); // Current thumb
-    prefilledItems.Add(current);
-  }
+  if (item < 0 || item >= m_vecItems->Size())
+    return false;
 
-  const auto none = std::make_shared<CFileItem>("thumb://None", false);
-  none->SetArt("icon", item.GetArt("icon"));
-  none->SetLabel(g_localizeStrings.Get(20018)); // No thumb
-  prefilledItems.Add(none);
-
-  std::string thumb;
-  VECSOURCES sources;
-  CServiceBroker::GetMediaManager().GetLocalDrives(sources);
-  if (CGUIDialogFileBrowser::ShowAndGetImage(prefilledItems, sources, g_localizeStrings.Get(1030),
-                                             thumb)) // Browse for image
-  {
-    item.SetArt("thumb", thumb);
+  if (FAVOURITES_UTILS::RemoveItem(*m_vecItems, (*m_vecItems)[item]) &&
+      CServiceBroker::GetFavouritesService().Save(*m_vecItems))
     return true;
-  }
+
   return false;
-}
-
-bool CGUIWindowFavourites::MoveItem(CFileItemList& items, const CFileItem& item, int amount)
-{
-  if (items.Size() < 2 || amount == 0)
-    return false;
-
-  int itemPos = -1;
-  for (const auto& i : items)
-  {
-    itemPos++;
-
-    if (i->GetPath() == item.GetPath())
-      break;
-  }
-
-  if (itemPos < 0 || itemPos >= items.Size())
-    return false;
-
-  int nextItem = (itemPos + amount) % items.Size();
-  if (nextItem < 0)
-    nextItem += items.Size();
-
-  items.Swap(itemPos, nextItem);
-  return true;
-}
-
-bool CGUIWindowFavourites::ShouldEnableMoveItems()
-{
-  auto& mgr = CServiceBroker::GetGUI()->GetWindowManager();
-  CGUIWindowFavourites* window = mgr.GetWindow<CGUIWindowFavourites>(WINDOW_FAVOURITES);
-  if (window && window->IsActive())
-  {
-    const CGUIViewState* state = window->GetViewState();
-    if (state && state->GetSortMethod().sortBy != SortByUserPreference)
-      return false; // in favs window, allow move only if current sort method is by user preference
-  }
-  return true;
 }

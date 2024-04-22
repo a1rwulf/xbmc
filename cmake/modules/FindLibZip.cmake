@@ -19,7 +19,9 @@ set(MODULE_LC libzip)
 SETUP_BUILD_VARS()
 
 # Check for existing lib
-find_package(LIBZIP CONFIG QUIET)
+find_package(LIBZIP CONFIG QUIET
+                    HINTS ${DEPENDS_PATH}/lib
+                    ${${CORE_PLATFORM_NAME_LC}_SEARCH_CONFIG})
 
 if(NOT LIBZIP_FOUND OR LIBZIP_VERSION VERSION_LESS ${${MODULE}_VER})
   # Check for dependencies
@@ -39,9 +41,13 @@ if(NOT LIBZIP_FOUND OR LIBZIP_VERSION VERSION_LESS ${${MODULE}_VER})
 
   BUILD_DEP_TARGET()
 else()
-  find_path(LIBZIP_INCLUDE_DIR NAMES zip.h)
+  find_path(LIBZIP_INCLUDE_DIR NAMES zip.h
+                               HINTS ${DEPENDS_PATH}/include
+                               ${${CORE_PLATFORM_NAME_LC}_SEARCH_CONFIG})
 
-  find_library(LIBZIP_LIBRARY NAMES zip)
+  find_library(LIBZIP_LIBRARY NAMES zip
+                              HINTS ${DEPENDS_PATH}/lib
+                              ${${CORE_PLATFORM_NAME_LC}_SEARCH_CONFIG})
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -63,6 +69,12 @@ if(LIBZIP_FOUND)
     if(TARGET libzip)
       add_dependencies(libzip::zip libzip)
     endif()
+  else()
+    # ToDo: When we correctly import dependencies cmake targets for the following
+    # BZip2::BZip2, LibLZMA::LibLZMA, GnuTLS::GnuTLS, Nettle::Nettle,ZLIB::ZLIB
+    # For now, we just override 
+    set_target_properties(libzip::zip PROPERTIES
+                                      INTERFACE_LINK_LIBRARIES "")
   endif()
   set_property(GLOBAL APPEND PROPERTY INTERNAL_DEPS_PROP libzip::zip)
 else()

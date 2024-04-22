@@ -20,10 +20,12 @@ LIBDYLIB=$(PLATFORM)/lib/driver/.libs/$(LIBNAME).a
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+ifeq ($(TARGET_PLATFORM),macosx)
 	cd $(PLATFORM); patch -p1 -i ../osx.patch
+endif
 	cd $(PLATFORM); patch -p1 -i ../01-fix-glob-on-android.patch
 	cd $(PLATFORM); $(AUTORECONF) -vif
 	cd $(PLATFORM); $(CONFIGURE)

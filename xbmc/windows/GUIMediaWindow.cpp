@@ -59,6 +59,7 @@
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
 #include "utils/log.h"
+#include "video/VideoFileItemClassify.h"
 #include "view/GUIViewState.h"
 
 #include <inttypes.h>
@@ -78,6 +79,7 @@
 
 using namespace ADDON;
 using namespace KODI::MESSAGING;
+using namespace KODI::VIDEO;
 using namespace std::chrono_literals;
 
 namespace
@@ -1310,7 +1312,7 @@ void CGUIMediaWindow::SaveSelectedItemInHistory()
     GetDirectoryHistoryString(pItem.get(), strSelectedItem);
   }
 
-  m_history.SetSelectedItem(strSelectedItem, m_vecItems->GetPath());
+  m_history.SetSelectedItem(strSelectedItem, m_vecItems->GetPath(), iItem);
 }
 
 void CGUIMediaWindow::RestoreSelectedItemFromHistory()
@@ -1333,7 +1335,17 @@ void CGUIMediaWindow::RestoreSelectedItemFromHistory()
     }
   }
 
-  // if we haven't found the selected item, select the first item
+  // Exact item not found - maybe deleted, watched status change, filtered out, ...
+  // Attempt to restore the position of the selection
+  int selectedItemIndex = m_history.GetSelectedItemIndex(m_vecItems->GetPath());
+  if (selectedItemIndex >= 0 && m_vecItems->Size() > 0)
+  {
+    int newIndex = std::min(selectedItemIndex, m_vecItems->Size() - 1);
+    m_viewControl.SetSelectedItem(newIndex);
+    return;
+  }
+
+  // Fallback: select the first item
   m_viewControl.SetSelectedItem(0);
 }
 
@@ -1540,7 +1552,8 @@ bool CGUIMediaWindow::OnPlayAndQueueMedia(const CFileItemPtr& item, const std::s
       if (nItem->m_bIsFolder)
         continue;
 
-      if (!nItem->IsZIP() && !nItem->IsRAR() && (!nItem->IsDVDFile() || (URIUtils::GetFileName(nItem->GetDynPath()) == mainDVD)))
+      if (!nItem->IsZIP() && !nItem->IsRAR() &&
+          (!IsDVDFile(*nItem) || (URIUtils::GetFileName(nItem->GetDynPath()) == mainDVD)))
         CServiceBroker::GetPlaylistPlayer().Add(playlistId, nItem);
 
       if (item->IsSamePath(nItem.get()))
@@ -1593,7 +1606,7 @@ void CGUIMediaWindow::UpdateFileList()
   if (m_guiState.get() && m_guiState->IsCurrentPlaylistDirectory(m_vecItems->GetPath()))
   {
     PLAYLIST::Id playlistId = m_guiState->GetPlaylist();
-    int nSong = CServiceBroker::GetPlaylistPlayer().GetCurrentSong();
+    int nSong = CServiceBroker::GetPlaylistPlayer().GetCurrentItemIdx();
     CFileItem playlistItem;
     if (nSong > -1 && playlistId != PLAYLIST::TYPE_NONE)
       playlistItem = *CServiceBroker::GetPlaylistPlayer().GetPlaylist(playlistId)[nSong];
@@ -1612,7 +1625,7 @@ void CGUIMediaWindow::UpdateFileList()
 
       if (pItem->GetPath() == playlistItem.GetPath() &&
           pItem->GetStartOffset() == playlistItem.GetStartOffset())
-        CServiceBroker::GetPlaylistPlayer().SetCurrentSong(
+        CServiceBroker::GetPlaylistPlayer().SetCurrentItemIdx(
             CServiceBroker::GetPlaylistPlayer().GetPlaylist(playlistId).size() - 1);
     }
   }
@@ -1746,6 +1759,8 @@ bool CGUIMediaWindow::OnPopupMenu(int itemIdx)
   if (!item)
     return false;
 
+  item->SetProperty("ParentPath", m_vecItems->GetPath());
+
   CContextButtons buttons;
 
   //Add items from plugin
@@ -1804,34 +1819,6 @@ bool CGUIMediaWindow::OnPopupMenu(int itemIdx)
     return CONTEXTMENU::LoopFrom(*globalMenu[idx - globalMenuRange.first], item);
 
   return CONTEXTMENU::LoopFrom(*addonMenu[idx - addonMenuRange.first], item);
-}
-
-void CGUIMediaWindow::GetContextButtons(int itemNumber, CContextButtons &buttons)
-{
-  CFileItemPtr item = (itemNumber >= 0 && itemNumber < m_vecItems->Size()) ? m_vecItems->Get(itemNumber) : CFileItemPtr();
-
-  if (!item || item->IsParentFolder())
-    return;
-
-  if (item->IsFileFolder(EFILEFOLDER_MASK_ONBROWSE))
-    buttons.Add(CONTEXT_BUTTON_BROWSE_INTO, 37015);
-
-}
-
-bool CGUIMediaWindow::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
-{
-  switch (button)
-  {
-  case CONTEXT_BUTTON_BROWSE_INTO:
-    {
-      CFileItemPtr item = m_vecItems->Get(itemNumber);
-      Update(item->GetPath());
-      return true;
-    }
-  default:
-    break;
-  }
-  return false;
 }
 
 const CGUIViewState *CGUIMediaWindow::GetViewState() const
@@ -2269,6 +2256,7 @@ bool CGUIMediaWindow::WaitGetDirectoryItems(CGetDirectoryItems &items)
   else
   {
     m_updateJobActive = true;
+    m_updateAborted = false;
     m_updateEvent.Reset();
     CServiceBroker::GetJobManager()->Submit(
         [&]() {
@@ -2277,14 +2265,21 @@ bool CGUIMediaWindow::WaitGetDirectoryItems(CGetDirectoryItems &items)
         },
         nullptr, CJob::PRIORITY_NORMAL);
 
-    while (!m_updateEvent.Wait(1ms))
+    // Loop until either the job ended or update canceled via CGUIMediaWindow::CancelUpdateItems.
+    while (!m_updateAborted && !m_updateEvent.Wait(1ms))
     {
       if (!ProcessRenderLoop(false))
         break;
     }
 
-    if (m_updateAborted || !items.m_result)
+    if (m_updateAborted)
     {
+      CLog::LogF(LOGDEBUG, "Get directory items job was canceled.");
+      ret = false;
+    }
+    else if (!items.m_result)
+    {
+      CLog::LogF(LOGDEBUG, "Get directory items job was unsuccessful.");
       ret = false;
     }
   }

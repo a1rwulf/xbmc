@@ -64,7 +64,7 @@ namespace PVR
      * @brief Get the minimal database version that is required to operate correctly.
      * @return The minimal database version.
      */
-    int GetSchemaVersion() const override { return 40; }
+    int GetSchemaVersion() const override { return 44; }
 
     /*!
      * @brief Get the default sqlite database filename.
@@ -100,7 +100,7 @@ namespace PVR
      * @param client The client.
      * @return The priority.
      */
-    int GetPriority(const CPVRClient& client);
+    int GetPriority(const CPVRClient& client) const;
 
     /*! @name Channel methods */
     //@{
@@ -183,6 +183,12 @@ namespace PVR
      */
     bool Get(CPVRProviders& results, const std::vector<std::shared_ptr<CPVRClient>>& clients) const;
 
+    /*!
+     * @brief Get the maximum provider id in the database
+     * @return The maximum provider id in the database
+     */
+    int GetMaxProviderId() const;
+
     //@}
 
     /*! @name Channel group methods */
@@ -202,11 +208,20 @@ namespace PVR
     bool Delete(const CPVRChannelGroup& group);
 
     /*!
-     * @brief Get the channel groups.
+     * @brief Get all local channel groups.
      * @param results The container to store the results in.
      * @return The number of groups loaded.
      */
-    int Get(CPVRChannelGroups& results) const;
+    int GetLocalGroups(CPVRChannelGroups& results) const;
+
+    /*!
+     * @brief Get client-supplied channel groups.
+     * @param results The container to store the results in.
+     * @param clients The PVR clients the groups should be loaded for. Leave empty for all clients.
+     * @return The number of groups loaded.
+     */
+    int Get(CPVRChannelGroups& results,
+            const std::vector<std::shared_ptr<CPVRClient>>& clients) const;
 
     /*!
      * @brief Get the members of a channel group.
@@ -270,9 +285,10 @@ namespace PVR
     /*!
      * @brief Updates the last watched timestamp for the channel
      * @param channel the channel
+     * @param groupId the id of the group used to watch the channel
      * @return whether the update was successful
      */
-    bool UpdateLastWatched(const CPVRChannel& channel);
+    bool UpdateLastWatched(const CPVRChannel& channel, int groupId);
 
     /*!
      * @brief Updates the last watched timestamp for the channel group
@@ -302,6 +318,8 @@ namespace PVR
      */
     void UpdateTables(int version) override;
     int GetMinSchemaVersion() const override { return 11; }
+
+    int GetGroups(CPVRChannelGroups& results, const std::string& query) const;
 
     bool PersistGroupMembers(const CPVRChannelGroup& group);
 

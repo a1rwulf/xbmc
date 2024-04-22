@@ -16,6 +16,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 class CCriticalSection;
@@ -40,6 +41,9 @@ class CGameClientTopology;
 class CPortManager;
 class IGameInputCallback;
 
+/*!
+ * \ingroup games
+ */
 class CGameClientInput : protected CGameClientSubsystem, public Observable
 {
 public:
@@ -62,10 +66,11 @@ public:
   bool HasFeature(const std::string& controllerId, const std::string& featureName) const;
   bool AcceptsInput() const;
   bool InputEvent(const game_input_event& event);
+  float GetPortActivation(const std::string& portAddress);
 
   // Topology functions
   const CControllerTree& GetDefaultControllerTree() const;
-  const CControllerTree& GetActiveControllerTree() const;
+  CControllerTree GetActiveControllerTree() const;
   bool SupportsKeyboard() const;
   bool SupportsMouse() const;
   int GetPlayerLimit() const;
@@ -131,8 +136,18 @@ private:
    */
   JoystickMap m_joysticks;
 
-  // TODO: Guard with a mutex
+  /*!
+   * \brief Serializable port state
+   */
   std::unique_ptr<CPortManager> m_portManager;
+
+  /*!
+   * \brief Mutex for port state
+   *
+   * Mutex is recursive to allow for management of several ports within the
+   * function ResetPorts().
+   */
+  mutable std::recursive_mutex m_portMutex;
 
   /*!
    * \brief Keyboard handler

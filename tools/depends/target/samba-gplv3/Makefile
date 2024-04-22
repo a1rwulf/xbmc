@@ -10,13 +10,19 @@ DEPS= ../../Makefile.include Makefile SAMBA-GPLV3-VERSION ../../download-files.i
 # vfs_snapper requires dbus, so disable.
 CONFIGURE=./configure --prefix=$(PREFIX) \
           --cross-compile --cross-answers=cross-answers.txt \
-          --without-cluster-support --without-ldap \
-          --without-pam --enable-fhs \
-          --without-winbind --disable-cups --without-ads \
-          --disable-avahi --without-gettext \
-          --without-dnsupdate \
-          --without-ad-dc --without-acl-support \
-          --without-utmp --disable-iprint \
+          --without-cluster-support \
+          --without-ldap \
+          --without-pam \
+          --enable-fhs \
+          --without-winbind \
+          --without-ads \
+          --disable-avahi \
+          --disable-cups \
+          --without-gettext \
+          --without-ad-dc \
+          --without-acl-support \
+          --without-utmp \
+          --disable-iprint \
           --nopyc --nopyo \
           --builtin-libraries=!smbclient,!smbd_base,!smbstatus,ALL \
           --with-shared-modules=!vfs_snapper \
@@ -24,7 +30,8 @@ CONFIGURE=./configure --prefix=$(PREFIX) \
           --disable-symbol-versions \
           --without-json \
           --without-libarchive \
-          --without-regedit
+          --without-regedit \
+          --without-lttng
 
 LIBDYLIB=$(PLATFORM)/bin/default/source3/libsmb/libsmbclient.a
 
@@ -45,6 +52,9 @@ else
   endif
 endif
 
+# LLVM 15 has raised this to error by default. drop back to warning
+CFLAGS+= -Wno-error=int-conversion
+
 export PERL5LIB:=$(PERLMODULE):$(PERL5LIB)
 
 export CC CXX CPP AR RANLIB LD AS NM STRIP TOOLCHAIN
@@ -52,9 +62,12 @@ export CFLAGS CXXFLAGS CPPFLAGS LDFLAGS
 export HOST
 export PKG_CONFIG_LIBDIR=$(PREFIX)/lib/pkgconfig
 
+# samba doesn't build with distcc
+export DISTCC_HOSTS=
+
 all: .installed-$(PLATFORM)
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 -i ../01-fix-dependencies.patch
@@ -63,6 +76,7 @@ $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
 	cd $(PLATFORM); patch -p1 -i ../04-built-static.patch
 ifeq ($(OS),android)
 	cd $(PLATFORM); patch -p1 -i ../samba_android.patch
+	cd $(PLATFORM); patch -p1 -i ../07-innetgr-check.patch
 endif
 ifeq ($(OS), darwin_embedded)
 	cd $(PLATFORM); patch -p1 -i ../no_fork_and_exec.patch
@@ -71,6 +85,9 @@ endif
 ifeq ($(findstring apple-darwin, $(HOST)), apple-darwin)
 	cd $(PLATFORM); patch -p1 -i ../05-apple-disable-zlib-pkgconfig.patch
 	cd $(PLATFORM); patch -p1 -i ../06-apple-fix-st_atim.patch
+endif
+ifeq ($(TARGET_PLATFORM),webos)
+	cd $(PLATFORM); patch -p1 -i ../webos-no-readline.patch
 endif
 	cd $(PLATFORM); $(CONFIGURE)
 

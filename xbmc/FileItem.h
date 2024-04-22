@@ -157,30 +157,12 @@ public:
   bool Exists(bool bUseCache = true) const;
 
   /*!
-   \brief Check whether an item is an optical media folder or its parent.
-    This will return the non-empty path to the playable entry point of the media
-    one or two levels down (VIDEO_TS.IFO for DVDs or index.bdmv for BDs).
-    The returned path will be empty if folder does not meet this criterion.
-   \return non-empty string if item is optical media folder, empty otherwise.
-   */
-  std::string GetOpticalMediaPath() const;
-  /*!
-   \brief Check whether an item is a video item. Note that this returns true for
-    anything with a video info tag, so that may include eg. folders.
-   \return true if item is video, false otherwise.
-   */
-  bool IsVideo() const;
-
-  bool IsDiscStub() const;
-
-  /*!
    \brief Check whether an item is a picture item. Note that this returns true for
     anything with a picture info tag, so that may include eg. folders.
    \return true if item is picture, false otherwise.
    */
   bool IsPicture() const;
   bool IsLyrics() const;
-  bool IsSubtitle() const;
 
   /*!
    \brief Check whether an item is an audio item. Note that this returns true for
@@ -216,10 +198,7 @@ public:
   bool IsNFO() const;
   bool IsDiscImage() const;
   bool IsOpticalMediaFile() const;
-  bool IsDVDFile(bool bVobs = true, bool bIfos = true) const;
-  bool IsBDFile() const;
   bool IsBluray() const;
-  bool IsProtectedBlurayDisc() const;
   bool IsRAR() const;
   bool IsAPK() const;
   bool IsZIP() const;
@@ -239,7 +218,6 @@ public:
   bool IsFavourite() const;
   bool IsMultiPath() const;
   bool IsMusicDb() const;
-  bool IsVideoDb() const;
   bool IsEPG() const;
   bool IsPVRChannel() const;
   bool IsPVRChannelGroup() const;
@@ -260,6 +238,9 @@ public:
   bool IsLiveTV() const;
   bool IsRSS() const;
   bool IsAndroidApp() const;
+
+  bool HasVideoVersions() const;
+  bool HasVideoExtras() const;
 
   void RemoveExtension();
   void CleanString();
@@ -369,7 +350,9 @@ public:
 
   /*!
    * \brief Test if this item type can be resumed.
-   * \return True if this item can be resumed, false otherwise.
+   * \return True if this item is a folder and has at least one child with a partway resume bookmark
+   * or at least one unwatched child or if it is not a folder, if it has a partway resume bookmark,
+   * false otherwise.
    */
   bool IsResumable() const;
 
@@ -634,6 +617,12 @@ private:
    */
   void Initialize();
 
+  /*! \brief Recalculate item's MIME type if it is not set or is set to "application/octet-stream".
+   Resolve the MIME type based on file extension or a web lookup.
+   \sa FillInMimeType
+   */
+  void UpdateMimeType(bool lookup = true);
+
   /*!
    \brief Return the current resume point for this item.
    \return The resume point.
@@ -643,7 +632,7 @@ private:
   /*!
    \brief Fill item's music tag from given epg tag.
    */
-  void FillMusicInfoTag(const std::shared_ptr<PVR::CPVREpgInfoTag>& tag);
+  void FillMusicInfoTag(const std::shared_ptr<const PVR::CPVREpgInfoTag>& tag);
 
   std::string m_strPath;            ///< complete path to item
   std::string m_strDynPath;

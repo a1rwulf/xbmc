@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,6 +16,7 @@ class IMouseInputHandler;
 
 /*!
  * \ingroup mouse
+ *
  * \brief Interface for classes that can provide mouse input
  */
 class IMouseInputProvider
@@ -29,8 +30,12 @@ public:
    * \param handler The handler to receive mouse input provided by this class
    * \param bPromiscuous True to observe all events without affecting
    *        subsequent handlers
+   * \param forceDefaultMap Always use the default keyboard buttonmap, avoiding
+   *        buttonmaps provided by add-ons
    */
-  virtual void RegisterMouseHandler(IMouseInputHandler* handler, bool bPromiscuous) = 0;
+  virtual void RegisterMouseHandler(IMouseInputHandler* handler,
+                                    bool bPromiscuous,
+                                    bool forceDefaultMap) = 0;
 
   /*!
    * \brief Unregisters handler from mouse input

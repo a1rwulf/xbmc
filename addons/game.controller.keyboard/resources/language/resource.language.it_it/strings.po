@@ -5,9 +5,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Addons\n"
-"Report-Msgid-Bugs-To: translations@kodi.tv\n"
+"Report-Msgid-Bugs-To: alanwww1@xbmc.org\n"
 "POT-Creation-Date: 2014-05-30 17:00+8\n"
-"PO-Revision-Date: 2022-11-08 18:15+0000\n"
+"PO-Revision-Date: 2024-02-03 03:13+0000\n"
 "Last-Translator: Massimo Pissarello <mapi68@gmail.com>\n"
 "Language-Team: Italian <https://kodi.weblate.cloud/projects/kodi-add-ons-game/game-controller-keyboard/it_it/>\n"
 "Language: it_it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.2\n"
+"X-Generator: Weblate 5.3\n"
 
 msgctxt "Addon Summary"
 msgid "IBM Model M keyboard"
@@ -264,11 +264,11 @@ msgstr "Ctrl destro"
 
 msgctxt "#30059"
 msgid "Left Shift"
-msgstr "Tasto maiuscolo di sinistra"
+msgstr "Maiuscolo sinistro"
 
 msgctxt "#30060"
 msgid "Right Shift"
-msgstr "Tasto maiuscolo di destra"
+msgstr "Maiuscolo destro"
 
 msgctxt "#30061"
 msgid "Caps Lock"
@@ -332,7 +332,7 @@ msgstr "Pausa"
 
 msgctxt "#30076"
 msgid "Insert"
-msgstr ""
+msgstr "Inserisci"
 
 msgctxt "#30077"
 msgid "Home"
@@ -452,19 +452,19 @@ msgstr "F15"
 
 msgctxt "#30106"
 msgid "Left Meta"
-msgstr ""
+msgstr "Meta sinistro"
 
 msgctxt "#30107"
 msgid "Right Meta"
-msgstr ""
+msgstr "Meta destro"
 
 msgctxt "#30108"
-msgid "Left Super"
-msgstr ""
+msgid "Left Windows"
+msgstr "Windows sinistro"
 
 msgctxt "#30109"
-msgid "Right Super"
-msgstr ""
+msgid "Right Windows"
+msgstr "Windows destro"
 
 msgctxt "#30110"
 msgid "!"
@@ -547,12 +547,12 @@ msgid "~"
 msgstr "~"
 
 msgctxt "#30130"
-msgid "Mode"
-msgstr "Modalità"
+msgid "Mode/Option"
+msgstr "Modalità/Opzione"
 
 msgctxt "#30131"
 msgid "Compose"
-msgstr ""
+msgstr "Componi"
 
 msgctxt "#30132"
 msgid "Help"
@@ -560,11 +560,11 @@ msgstr "Aiuto"
 
 msgctxt "#30133"
 msgid "SysReq"
-msgstr ""
+msgstr "Richiesta sistema"
 
 msgctxt "#30134"
 msgid "Break"
-msgstr "Break"
+msgstr "Interrompi"
 
 msgctxt "#30135"
 msgid "Menu"
@@ -572,7 +572,7 @@ msgstr "Menu"
 
 msgctxt "#30136"
 msgid "Power"
-msgstr ""
+msgstr "Accendi"
 
 msgctxt "#30137"
 msgid "€"
@@ -580,12 +580,36 @@ msgstr "€"
 
 msgctxt "#30138"
 msgid "Undo"
-msgstr "Annullare"
+msgstr "Annulla"
 
 msgctxt "#30139"
-msgid "Num Pad Equals"
-msgstr "Tastierino numerico uguale"
+msgid "Num Pad ="
+msgstr ""
 
 msgctxt "#30140"
 msgid "Clear"
 msgstr "Pulisci"
+
+msgctxt "#30141"
+msgid "OEM 102nd Key"
+msgstr "Tasto 102 OEM"
+
+#~ msgctxt "#30139"
+#~ msgid "Num Pad Equals"
+#~ msgstr "Tastierino numerico uguale"
+
+#~ msgctxt "#30130"
+#~ msgid "Mode/Option/AltGr"
+#~ msgstr "Modalità/Opzione/AltGr"
+
+#~ msgctxt "#30108"
+#~ msgid "Left Super"
+#~ msgstr "Super sinistro"
+
+#~ msgctxt "#30109"
+#~ msgid "Right Super"
+#~ msgstr "Super destro"
+
+#~ msgctxt "#30130"
+#~ msgid "Mode"
+#~ msgstr "Modalità"

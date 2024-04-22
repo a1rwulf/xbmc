@@ -10,23 +10,17 @@
 
 #include "ServiceBroker.h"
 #include "application/AppInboundProtocol.h"
-#include "application/Application.h"
-#include "input/XBMC_keysym.h"
 #include "input/actions/Action.h"
 #include "input/actions/ActionIDs.h"
 #include "input/mouse/MouseStat.h"
 #include "messaging/ApplicationMessenger.h"
-#include "threads/CriticalSection.h"
 #include "utils/log.h"
-#include "windowing/osx/WinSystemOSX.h"
 
-#include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
 
 #import <AppKit/AppKit.h>
-#import <Carbon/Carbon.h> // kvk_ANSI_ keycodes
-#import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 
 #pragma mark - objc implementation
@@ -35,7 +29,16 @@
 {
   std::queue<XBMC_Event> events;
   CCriticalSection m_inputlock;
-  id mLocalMonitorId;
+  bool m_inputEnabled;
+
+  //! macOS requires the calls the NSCursor hide/unhide to be balanced
+  enum class NSCursorVisibilityBalancer
+  {
+    NONE,
+    HIDE,
+    UNHIDE
+  };
+  NSCursorVisibilityBalancer m_lastAppCursorVisibilityAction;
 }
 
 #pragma mark - init
@@ -44,8 +47,8 @@
 {
   self = [super init];
 
+  m_lastAppCursorVisibilityAction = NSCursorVisibilityBalancer::NONE;
   [self enableInputEvents];
-
   return self;
 }
 
@@ -91,42 +94,81 @@
 {
   switch (character)
   {
-    case kVK_ANSI_8:
     case NSLeftArrowFunctionKey:
       return XBMCK_LEFT;
-    case kVK_ANSI_0:
     case NSRightArrowFunctionKey:
       return XBMCK_RIGHT;
-    case kVK_ANSI_RightBracket:
     case NSUpArrowFunctionKey:
       return XBMCK_UP;
-    case kVK_ANSI_O:
     case NSDownArrowFunctionKey:
       return XBMCK_DOWN;
+    case NSBackspaceCharacter:
     case NSDeleteCharacter:
       return XBMCK_BACKSPACE;
+    case NSCarriageReturnCharacter:
+    case NSEnterCharacter:
+      return XBMCK_RETURN;
+    case NSF1FunctionKey:
+      return XBMCK_F1;
+    case NSF2FunctionKey:
+      return XBMCK_F2;
+    case NSF3FunctionKey:
+      return XBMCK_F3;
+    case NSF4FunctionKey:
+      return XBMCK_F4;
+    case NSF5FunctionKey:
+      return XBMCK_F5;
+    case NSF6FunctionKey:
+      return XBMCK_F6;
+    case NSF7FunctionKey:
+      return XBMCK_F7;
+    case NSF8FunctionKey:
+      return XBMCK_F8;
+    case NSF9FunctionKey:
+      return XBMCK_F9;
+    case NSF10FunctionKey:
+      return XBMCK_F10;
+    case NSF11FunctionKey:
+      return XBMCK_F11;
+    case NSF12FunctionKey:
+      return XBMCK_F12;
+    case NSF13FunctionKey:
+      return XBMCK_F13;
+    case NSF14FunctionKey:
+      return XBMCK_F14;
+    case NSF15FunctionKey:
+      return XBMCK_F15;
+    case NSHomeFunctionKey:
+      return XBMCK_HOME;
+    case NSEndFunctionKey:
+      return XBMCK_END;
+    case NSPageDownFunctionKey:
+      return XBMCK_PAGEDOWN;
+    case NSPageUpFunctionKey:
+      return XBMCK_PAGEUP;
+    case NSPauseFunctionKey:
+      return XBMCK_PAUSE;
+    case NSInsertCharFunctionKey:
+      return XBMCK_INSERT;
     default:
       return character;
   }
 }
 
-- (XBMCMod)OsxMod2XbmcMod:(CGEventFlags)appleModifier
+- (XBMCMod)OsxMod2XbmcMod:(NSEventModifierFlags)appleModifier
 {
   unsigned int xbmcModifier = XBMCKMOD_NONE;
-  // shift left
-  if (appleModifier & kCGEventFlagMaskAlphaShift)
-    xbmcModifier |= XBMCKMOD_LSHIFT;
-  // shift right
-  if (appleModifier & kCGEventFlagMaskShift)
-    xbmcModifier |= XBMCKMOD_RSHIFT;
+  // shift
+  if (appleModifier & NSEventModifierFlagShift)
+    xbmcModifier |= XBMCKMOD_SHIFT;
   // left ctrl
-  if (appleModifier & kCGEventFlagMaskControl)
-    xbmcModifier |= XBMCKMOD_LCTRL;
+  if (appleModifier & NSEventModifierFlagControl)
+    xbmcModifier |= XBMCKMOD_CTRL;
   // left alt/option
-  if (appleModifier & kCGEventFlagMaskAlternate)
-    xbmcModifier |= XBMCKMOD_LALT;
+  if (appleModifier & NSEventModifierFlagOption)
+    xbmcModifier |= XBMCKMOD_ALT;
   // left command
-  if (appleModifier & kCGEventFlagMaskCommand)
+  if (appleModifier & NSEventModifierFlagCommand)
     xbmcModifier |= XBMCKMOD_LMETA;
 
   return static_cast<XBMCMod>(xbmcModifier);
@@ -139,15 +181,6 @@
   {
     switch (event.key.keysym.sym)
     {
-      case XBMCK_q: // CMD-q to quit
-        if (!g_application.m_bStop)
-          CServiceBroker::GetAppMessenger()->PostMsg(TMSG_QUIT);
-        return true;
-
-      case XBMCK_CTRLF: // CMD-CTRL-f to toggle fullscreen
-        CServiceBroker::GetAppMessenger()->PostMsg(TMSG_TOGGLEFULLSCREEN);
-        return true;
-
       case XBMCK_s: // CMD-s to take a screenshot
       {
         CAction* action = new CAction(ACTION_TAKE_SCREENSHOT);
@@ -155,10 +188,6 @@
                                                    static_cast<void*>(action));
         return true;
       }
-      case XBMCK_h: // CMD-h to hide (but we minimize for now)
-      case XBMCK_m: // CMD-m to minimize
-        CServiceBroker::GetAppMessenger()->PostMsg(TMSG_MINIMIZE);
-        return true;
 
       default:
         return false;
@@ -170,140 +199,147 @@
 
 - (void)enableInputEvents
 {
-  [self disableInputEvents]; // allow only one registration at a time
-
-  // clang-format off
-  // Create an event tap. We are interested in mouse and keyboard events.
-  NSEventMask eventMask =
-      NSEventMaskKeyDown | NSEventMaskKeyUp |
-      NSEventMaskLeftMouseDown | NSEventMaskLeftMouseUp |
-      NSEventMaskRightMouseDown | NSEventMaskRightMouseUp |
-      NSEventMaskOtherMouseDown | NSEventMaskOtherMouseUp |
-      NSEventMaskScrollWheel |
-      NSEventMaskLeftMouseDragged |
-      NSEventMaskRightMouseDragged |
-      NSEventMaskOtherMouseDragged |
-      NSEventMaskMouseMoved;
-  // clang-format on
-
-  mLocalMonitorId = [NSEvent addLocalMonitorForEventsMatchingMask:eventMask
-                                                          handler:^(NSEvent* event) {
-                                                            return [self InputEventHandler:event];
-                                                          }];
+  m_inputEnabled = true;
 }
 
 - (void)disableInputEvents
 {
-  // Disable the local Monitor
-  if (mLocalMonitorId != nil)
-    [NSEvent removeMonitor:mLocalMonitorId];
-  mLocalMonitorId = nil;
+  m_inputEnabled = false;
 }
 
-- (NSEvent*)InputEventHandler:(NSEvent*)nsevent
+- (void)signalMouseEntered
+{
+  if (m_lastAppCursorVisibilityAction != NSCursorVisibilityBalancer::HIDE)
+  {
+    m_lastAppCursorVisibilityAction = NSCursorVisibilityBalancer::HIDE;
+    [NSCursor hide];
+  }
+}
+
+- (void)signalMouseExited
+{
+  if (m_lastAppCursorVisibilityAction != NSCursorVisibilityBalancer::UNHIDE)
+  {
+    m_lastAppCursorVisibilityAction = NSCursorVisibilityBalancer::UNHIDE;
+    [NSCursor unhide];
+  }
+}
+
+- (void)ProcessInputEvent:(NSEvent*)nsEvent
+{
+  if (m_inputEnabled)
+  {
+    [self InputEventHandler:nsEvent];
+  }
+}
+
+- (NSEvent*)InputEventHandler:(NSEvent*)nsEvent
 {
   bool passEvent = true;
-  CGEventRef event = nsevent.CGEvent;
-  CGEventType type = CGEventGetType(event);
-
-  // The incoming mouse position.
-  NSPoint location = nsevent.locationInWindow;
-  if (location.x < 0 || location.y < 0)
-    return nsevent;
-
-  // cocoa world is upside down ...
-  auto winSystem = dynamic_cast<CWinSystemOSX*>(CServiceBroker::GetWinSystem());
-  if (!winSystem)
-    return nsevent;
-
-  NSRect frame = winSystem->GetWindowDimensions();
-  location.y = frame.size.height - location.y;
-
   XBMC_Event newEvent = {};
 
-  switch (type)
+  switch (nsEvent.type)
   {
     // handle mouse events and transform them into the xbmc event world
-    case kCGEventLeftMouseUp:
-      newEvent.type = XBMC_MOUSEBUTTONUP;
-      newEvent.button.button = XBMC_BUTTON_LEFT;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    case NSEventTypeLeftMouseUp:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONUP
+                          buttonCode:XBMC_BUTTON_LEFT];
       break;
-    case kCGEventLeftMouseDown:
-      newEvent.type = XBMC_MOUSEBUTTONDOWN;
-      newEvent.button.button = XBMC_BUTTON_LEFT;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    }
+    case NSEventTypeLeftMouseDown:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONDOWN
+                          buttonCode:XBMC_BUTTON_LEFT];
       break;
-    case kCGEventRightMouseUp:
-      newEvent.type = XBMC_MOUSEBUTTONUP;
-      newEvent.button.button = XBMC_BUTTON_RIGHT;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    }
+    case NSEventTypeRightMouseUp:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONUP
+                          buttonCode:XBMC_BUTTON_RIGHT];
       break;
-    case kCGEventRightMouseDown:
-      newEvent.type = XBMC_MOUSEBUTTONDOWN;
-      newEvent.button.button = XBMC_BUTTON_RIGHT;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    }
+    case NSEventTypeRightMouseDown:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONDOWN
+                          buttonCode:XBMC_BUTTON_RIGHT];
       break;
-    case kCGEventOtherMouseUp:
-      newEvent.type = XBMC_MOUSEBUTTONUP;
-      newEvent.button.button = XBMC_BUTTON_MIDDLE;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    }
+    case NSEventTypeOtherMouseUp:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONUP
+                          buttonCode:XBMC_BUTTON_MIDDLE];
       break;
-    case kCGEventOtherMouseDown:
-      newEvent.type = XBMC_MOUSEBUTTONDOWN;
-      newEvent.button.button = XBMC_BUTTON_MIDDLE;
-      newEvent.button.x = location.x;
-      newEvent.button.y = location.y;
-      [self MessagePush:&newEvent];
+    }
+    case NSEventTypeOtherMouseDown:
+    {
+      [self SendXBMCMouseButtonEvent:nsEvent
+                           xbmcEvent:newEvent
+                      mouseEventType:XBMC_MOUSEBUTTONDOWN
+                          buttonCode:XBMC_BUTTON_MIDDLE];
       break;
-    case kCGEventMouseMoved:
-    case kCGEventLeftMouseDragged:
-    case kCGEventRightMouseDragged:
-    case kCGEventOtherMouseDragged:
-      newEvent.type = XBMC_MOUSEMOTION;
-      newEvent.motion.x = location.x;
-      newEvent.motion.y = location.y;
-      [self MessagePush:&newEvent];
-      break;
-    case kCGEventScrollWheel:
-      // very strange, real scrolls have non-zero deltaY followed by same number of events
-      // with a zero deltaY. This reverses our scroll which is WTF? anoying. Trap them out here.
-      if (nsevent.deltaY != 0.0)
+    }
+    case NSEventTypeMouseMoved:
+    case NSEventTypeLeftMouseDragged:
+    case NSEventTypeRightMouseDragged:
+    case NSEventTypeOtherMouseDragged:
+    {
+      auto location = [self TranslateMouseLocation:nsEvent];
+      if (location.has_value())
       {
-        newEvent.type = XBMC_MOUSEBUTTONDOWN;
-        newEvent.button.x = location.x;
-        newEvent.button.y = location.y;
-        newEvent.button.button =
-            CGEventGetIntegerValueField(event, kCGScrollWheelEventDeltaAxis1) > 0
-                ? XBMC_BUTTON_WHEELUP
-                : XBMC_BUTTON_WHEELDOWN;
-        [self MessagePush:&newEvent];
-
-        newEvent.type = XBMC_MOUSEBUTTONUP;
+        NSPoint locationCoordinates = location.value();
+        newEvent.type = XBMC_MOUSEMOTION;
+        newEvent.motion.x = locationCoordinates.x;
+        newEvent.motion.y = locationCoordinates.y;
         [self MessagePush:&newEvent];
       }
       break;
+    }
+    case NSEventTypeScrollWheel:
+    {
+      // very strange, real scrolls have non-zero deltaY followed by same number of events
+      // with a zero deltaY. This reverses our scroll which is WTF? anoying. Trap them out here.
+      if (nsEvent.deltaY != 0.0)
+      {
+        auto button = nsEvent.scrollingDeltaY > 0 ? XBMC_BUTTON_WHEELUP : XBMC_BUTTON_WHEELDOWN;
+        if ([self SendXBMCMouseButtonEvent:nsEvent
+                                 xbmcEvent:newEvent
+                            mouseEventType:XBMC_MOUSEBUTTONDOWN
+                                buttonCode:button])
+        {
+          // scrollwhell need a subsquent button press with no button code
+          [self SendXBMCMouseButtonEvent:nsEvent
+                               xbmcEvent:newEvent
+                          mouseEventType:XBMC_MOUSEBUTTONUP
+                              buttonCode:std::nullopt];
+        }
+      }
+      break;
+    }
 
     // handle keyboard events and transform them into the xbmc event world
-    case kCGEventKeyUp:
-      newEvent = [self keyPressEvent:&event];
+    case NSEventTypeKeyUp:
+    {
+      newEvent = [self keyPressEvent:nsEvent];
       newEvent.type = XBMC_KEYUP;
 
       [self MessagePush:&newEvent];
       passEvent = false;
       break;
-    case kCGEventKeyDown:
-      newEvent = [self keyPressEvent:&event];
+    }
+    case NSEventTypeKeyDown:
+    {
+      newEvent = [self keyPressEvent:nsEvent];
       newEvent.type = XBMC_KEYDOWN;
 
       if (![self ProcessOSXShortcuts:newEvent])
@@ -311,54 +347,87 @@
       passEvent = false;
 
       break;
+    }
     default:
-      return nsevent;
+      return nsEvent;
   }
   // We must return the event for it to be useful if not already handled
   if (passEvent)
-    return nsevent;
+    return nsEvent;
   else
     return nullptr;
 }
 
-- (XBMC_Event)keyPressEvent:(CGEventRef*)event
+- (XBMC_Event)keyPressEvent:(NSEvent*)nsEvent
 {
-  UniCharCount actualStringLength = 0;
-  // Get stringlength of event
-  CGEventKeyboardGetUnicodeString(*event, 0, &actualStringLength, nullptr);
-
-  // Create array with size of event string
-  UniChar unicodeString[actualStringLength];
-  memset(unicodeString, 0, sizeof(unicodeString));
-
-  auto keycode =
-      static_cast<CGKeyCode>(CGEventGetIntegerValueField(*event, kCGKeyboardEventKeycode));
-  CGEventKeyboardGetUnicodeString(*event, sizeof(unicodeString) / sizeof(*unicodeString),
-                                  &actualStringLength, unicodeString);
-
   XBMC_Event newEvent = {};
+
+  // use characters to propagate the actual unicode character
+  NSString* unicode = nsEvent.characters;
+  // use charactersIgnoringModifiers to get the corresponding char without modifiers. This will
+  // keep shift so, lower case it as kodi shortcuts might depend on it. modifiers are propagated
+  // anyway in keysym.mod
+  NSString* unicodeWithoutModifiers = [nsEvent.charactersIgnoringModifiers lowercaseString];
 
   // May be possible for actualStringLength > 1. Havent been able to replicate anything
   // larger than 1, but keep in mind for any regressions
-  if (actualStringLength == 0)
+  if (!unicode || unicode.length == 0 || !unicodeWithoutModifiers ||
+      unicodeWithoutModifiers.length == 0)
   {
     return newEvent;
   }
-  else if (actualStringLength > 1)
+  else if (unicode.length > 1)
   {
     CLog::Log(LOGERROR, "CWinEventsOSXImpl::keyPressEvent - event string > 1 - size: {}",
-              static_cast<int>(actualStringLength));
+              unicode.length);
     return newEvent;
   }
 
-  unicodeString[0] = [self OsxKey2XbmcKey:unicodeString[0]];
-
-  newEvent.key.keysym.scancode = keycode;
-  newEvent.key.keysym.sym = static_cast<XBMCKey>(unicodeString[0]);
-  newEvent.key.keysym.unicode = unicodeString[0];
-  newEvent.key.keysym.mod = [self OsxMod2XbmcMod:CGEventGetFlags(*event)];
+  newEvent.key.keysym.scancode = nsEvent.keyCode;
+  newEvent.key.keysym.sym =
+      static_cast<XBMCKey>([self OsxKey2XbmcKey:[unicodeWithoutModifiers characterAtIndex:0]]);
+  newEvent.key.keysym.unicode = [unicode characterAtIndex:0];
+  newEvent.key.keysym.mod = [self OsxMod2XbmcMod:nsEvent.modifierFlags];
 
   return newEvent;
+}
+
+- (BOOL)SendXBMCMouseButtonEvent:(NSEvent*)nsEvent
+                       xbmcEvent:(XBMC_Event&)xbmcEvent
+                  mouseEventType:(uint8_t)mouseEventType
+                      buttonCode:(std::optional<uint8_t>)buttonCode
+{
+  auto location = [self TranslateMouseLocation:nsEvent];
+  if (location.has_value())
+  {
+    NSPoint locationCoordinates = location.value();
+    xbmcEvent.type = mouseEventType;
+    if (buttonCode.has_value())
+    {
+      xbmcEvent.button.button = buttonCode.value();
+    }
+    xbmcEvent.button.x = locationCoordinates.x;
+    xbmcEvent.button.y = locationCoordinates.y;
+    [self MessagePush:&xbmcEvent];
+    return true;
+  }
+  return false;
+}
+
+- (std::optional<NSPoint>)TranslateMouseLocation:(NSEvent*)nsEvent
+{
+  NSPoint location = nsEvent.locationInWindow;
+  // ignore events if outside the view bounds
+  if (!nsEvent.window || !NSPointInRect(location, nsEvent.window.contentView.frame))
+  {
+    return std::nullopt;
+  }
+  // translate the location to backing units
+  location = [nsEvent.window convertPointToBacking:location];
+  NSRect frame = [nsEvent.window convertRectToBacking:nsEvent.window.contentView.frame];
+  // cocoa world is upside down ...
+  location.y = frame.size.height - location.y;
+  return location;
 }
 
 @end

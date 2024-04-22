@@ -48,6 +48,7 @@ enum RenderMethod
 
 enum class HDR_TYPE
 {
+  HDR_INVALID = -1,
   HDR_NONE_SDR = 0,
   HDR_HDR10 = 1,
   HDR_HLG = 2
@@ -75,6 +76,7 @@ public:
   AVPixelFormat av_format;
   CVideoBuffer* videoBuffer = nullptr;
   unsigned int pictureFlags = 0;
+  AVColorPrimaries m_originalPrimaries = AVCOL_PRI_BT709;
   AVColorPrimaries primaries = AVCOL_PRI_BT709;
   AVColorSpace color_space = AVCOL_SPC_BT709;
   AVColorTransferCharacteristic color_transfer = AVCOL_TRC_BT709;
@@ -114,6 +116,8 @@ public:
   virtual CRenderInfo GetRenderInfo();
   virtual bool Configure(const VideoPicture &picture, float fps, unsigned int orientation);
   virtual bool Supports(ESCALINGMETHOD method) const = 0;
+  virtual bool Supports(ERENDERFEATURE feature) const;
+
   virtual bool WantsDoublePass() { return false; }
   virtual bool NeedBuffer(int idx) { return false; }
 
@@ -139,13 +143,30 @@ public:
 protected:
   explicit CRendererBase(CVideoSettings& videoSettings);
 
-  bool CreateIntermediateTarget(unsigned int width, unsigned int height, bool dynamic = false);
+  bool CreateIntermediateTarget(unsigned int width,
+                                unsigned int height,
+                                bool dynamic = false,
+                                DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN);
   void OnCMSConfigChanged(AVColorPrimaries srcPrimaries);
   void ReorderDrawPoints(const CRect& destRect, CPoint(&rotatedPoints)[4]) const;
   bool CreateRenderBuffer(int index);
   void DeleteRenderBuffer(int index);
 
   void ProcessHDR(CRenderBuffer* rb);
+  /*!
+   * \brief Call before rendering begins to find out if rendering will be attempted as SDR or HDR.
+   * \param picture description of the source
+   * \return true: intent to render as HDR, false: intent to render as SDR
+   */
+  static bool IntendToRenderAsHDR(const VideoPicture& picture);
+  /*!
+   * \brief Call after rendering has started to find out if the output is configured as SDR or HDR.
+   * \return true: HDR output, false: SDR output
+  */
+  bool ActualRenderAsHDR()
+  {
+    return m_HdrType == HDR_TYPE::HDR_HDR10 || m_HdrType == HDR_TYPE::HDR_HLG;
+  }
 
   virtual void RenderImpl(CD3DTexture& target, CRect& sourceRect, CPoint (&destPoints)[4], uint32_t flags) = 0;
   virtual void FinalOutput(CD3DTexture& source, CD3DTexture& target, const CRect& sourceRect, const CPoint(&destPoints)[4]);
@@ -155,6 +176,7 @@ protected:
   virtual void CheckVideoParameters();
   virtual void OnViewSizeChanged() {}
   virtual void OnOutputReset() {}
+  virtual std::string GetRenderMethodDebugInfo() const { return {}; }
 
   bool m_toneMapping = false;
   bool m_useDithering = false;
@@ -186,6 +208,8 @@ protected:
   std::map<int, CRenderBuffer*> m_renderBuffers;
 
   DXGI_HDR_METADATA_HDR10 m_lastHdr10 = {};
-  HDR_TYPE m_HdrType = HDR_TYPE::HDR_NONE_SDR;
+  HDR_TYPE m_HdrType = HDR_TYPE::HDR_INVALID;
   bool m_AutoSwitchHDR = false;
+  bool m_initialHdrEnabled = false;
+  std::string m_renderMethodName;
 };

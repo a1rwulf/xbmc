@@ -32,7 +32,6 @@
 #include "view/ViewState.h"
 
 using namespace KODI;
-using namespace ADDON;
 using namespace GAME;
 
 CGUIPortList::CGUIPortList(CGUIWindow& window)
@@ -107,8 +106,10 @@ void CGUIPortList::Refresh()
 
   if (m_gameClient)
   {
+    CControllerTree controllerTree = m_gameClient->Input().GetActiveControllerTree();
+
     unsigned int itemIndex = 0;
-    for (const CPortNode& port : m_gameClient->Input().GetActiveControllerTree().GetPorts())
+    for (const CPortNode& port : controllerTree.GetPorts())
       AddItems(port, itemIndex, GetLabel(port));
 
     m_viewControl->SetItems(*m_vecItems);
@@ -139,11 +140,16 @@ void CGUIPortList::SetFocused()
   m_viewControl->SetFocused();
 }
 
-void CGUIPortList::OnSelect()
+bool CGUIPortList::OnSelect()
 {
   const int itemIndex = m_viewControl->GetSelectedItem();
   if (itemIndex >= 0)
+  {
     OnItemSelect(static_cast<unsigned int>(itemIndex));
+    return true;
+  }
+
+  return false;
 }
 
 void CGUIPortList::ResetPorts()
@@ -155,7 +161,6 @@ void CGUIPortList::ResetPorts()
     m_gameClient->Input().SavePorts();
 
     // Refresh the GUI
-    using namespace MESSAGING;
     CGUIMessage msg(GUI_MSG_REFRESH_LIST, m_guiWindow.GetID(), CONTROL_PORT_LIST);
     CServiceBroker::GetAppMessenger()->SendGUIMessage(msg, m_guiWindow.GetID());
   }
@@ -168,7 +173,6 @@ void CGUIPortList::OnEvent(const ADDON::AddonEvent& event)
       typeid(event) == typeid(ADDON::AddonEvents::ReInstalled) ||
       typeid(event) == typeid(ADDON::AddonEvents::UnInstalled))
   {
-    using namespace MESSAGING;
     CGUIMessage msg(GUI_MSG_REFRESH_LIST, m_guiWindow.GetID(), CONTROL_PORT_LIST);
     msg.SetStringParam(event.addonId);
     CServiceBroker::GetAppMessenger()->SendGUIMessage(msg, m_guiWindow.GetID());
@@ -205,6 +209,7 @@ bool CGUIPortList::AddItems(const CPortNode& port,
     for (const CPortNode& childPort : ports)
     {
       std::ostringstream childItemLabel;
+      childItemLabel << " - ";
       childItemLabel << controller->Layout().Label();
       childItemLabel << " - ";
       childItemLabel << GetLabel(childPort);
@@ -251,7 +256,7 @@ void CGUIPortList::OnItemSelect(unsigned int itemIndex)
     if (portAddress.empty())
       return;
 
-    const CPortNode& port = m_gameClient->Input().GetActiveControllerTree().GetPort(portAddress);
+    CPortNode port = m_gameClient->Input().GetActiveControllerTree().GetPort(portAddress);
 
     ControllerVector controllers;
     for (const CControllerNode& controllerNode : port.GetCompatibleControllers())
@@ -260,11 +265,12 @@ void CGUIPortList::OnItemSelect(unsigned int itemIndex)
     // Get current controller to give initial focus
     ControllerPtr controller = port.GetActiveController().GetController();
 
-    auto callback = [this, &port](const ControllerPtr& controller) {
-      OnControllerSelected(port, controller);
-    };
-
+    // Check if we should show a "disconnect" option
     const bool showDisconnect = !port.IsForceConnected();
+
+    auto callback = [this, port = std::move(port)](const ControllerPtr& controller)
+    { OnControllerSelected(port, controller); };
+
     m_controllerSelectDialog.Initialize(std::move(controllers), std::move(controller),
                                         showDisconnect, callback);
   }
@@ -296,7 +302,6 @@ void CGUIPortList::OnControllerSelected(const CPortNode& port, const ControllerP
     }
 
     // Send a GUI message to reload the port list
-    using namespace MESSAGING;
     CGUIMessage msg(GUI_MSG_REFRESH_LIST, m_guiWindow.GetID(), CONTROL_PORT_LIST);
     CServiceBroker::GetAppMessenger()->SendGUIMessage(msg, m_guiWindow.GetID());
   }

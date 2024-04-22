@@ -35,13 +35,13 @@ namespace ADDON
 class IAddon;
 class IAddonInstanceHandler;
 
-class CAddonSettings : public CSettingsBase,
+class CAddonSettings : public CSettingControlCreator,
                        public CSettingCreator,
-                       public CSettingControlCreator,
+                       public CSettingsBase,
                        public ISettingCallback
 {
 public:
-  CAddonSettings(const std::shared_ptr<const IAddon>& addon, AddonInstanceId instanceId);
+  CAddonSettings(const std::shared_ptr<IAddon>& addon, AddonInstanceId instanceId);
   ~CAddonSettings() override = default;
 
   // specialization of CSettingsBase
@@ -49,7 +49,7 @@ public:
 
   // implementations of CSettingsBase
   bool Load() override { return false; }
-  bool Save() override { return false; }
+  bool Save() override;
 
   // specialization of CSettingCreator
   std::shared_ptr<CSetting> CreateSetting(
@@ -192,8 +192,9 @@ private:
   const std::string m_addonPath;
   const std::string m_addonProfile;
   const AddonInstanceId m_instanceId{ADDON_SETTINGS_ID};
+  std::weak_ptr<IAddon> m_addon;
 
-  uint32_t m_unidentifiedSettingId;
+  uint32_t m_unidentifiedSettingId = 0;
   int m_unknownSettingLabelId;
   std::map<int, std::string> m_unknownSettingLabels;
 

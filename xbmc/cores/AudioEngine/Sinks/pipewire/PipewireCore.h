@@ -12,23 +12,24 @@
 
 #include <pipewire/core.h>
 
-namespace AE
-{
-namespace SINK
+namespace KODI
 {
 namespace PIPEWIRE
 {
 
+class CPipewireContext;
+
 class CPipewireCore
 {
 public:
-  explicit CPipewireCore(pw_context* context);
+  explicit CPipewireCore(CPipewireContext& context);
   CPipewireCore() = delete;
   ~CPipewireCore();
 
   pw_core* Get() const { return m_core.get(); }
 
-  void AddListener(void* userdata);
+  CPipewireContext& GetContext() const { return m_context; }
+
   void Sync();
   int GetSync() const { return m_sync; }
 
@@ -36,6 +37,8 @@ private:
   static void OnCoreDone(void* userdata, uint32_t id, int seq);
 
   static pw_core_events CreateCoreEvents();
+
+  CPipewireContext& m_context;
 
   const pw_core_events m_coreEvents;
 
@@ -52,5 +55,4 @@ private:
 };
 
 } // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE
+} // namespace KODI

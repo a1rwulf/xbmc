@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,10 +19,8 @@
 #include <string>
 #include <vector>
 
-class TiXmlDocument;
 class CDateTime;
 class CSetting;
-class IKeymap;
 
 namespace KODI
 {
@@ -37,12 +35,17 @@ class IInputHandler;
 namespace KEYBOARD
 {
 class IKeyboardDriverHandler;
-}
+} // namespace KEYBOARD
+
+namespace KEYMAP
+{
+class IKeymap;
+} // namespace KEYMAP
 
 namespace MOUSE
 {
 class IMouseDriverHandler;
-}
+} // namespace MOUSE
 } // namespace KODI
 
 namespace PERIPHERALS
@@ -52,6 +55,9 @@ class CGUIDialogPeripheralSettings;
 class CPeripheralBus;
 class CPeripherals;
 
+/*!
+ * \ingroup peripherals
+ */
 typedef enum
 {
   STATE_SWITCH_TOGGLE,
@@ -59,6 +65,9 @@ typedef enum
   STATE_STANDBY
 } CecStateChange;
 
+/*!
+ * \ingroup peripherals
+ */
 class CPeripheral : public KODI::JOYSTICK::IInputProvider,
                     public KODI::KEYBOARD::IKeyboardInputProvider,
                     public KODI::MOUSE::IMouseInputProvider
@@ -231,11 +240,14 @@ public:
 
   // implementation of IKeyboardInputProvider
   void RegisterKeyboardHandler(KODI::KEYBOARD::IKeyboardInputHandler* handler,
-                               bool bPromiscuous) override;
+                               bool bPromiscuous,
+                               bool forceDefaultMap) override;
   void UnregisterKeyboardHandler(KODI::KEYBOARD::IKeyboardInputHandler* handler) override;
 
   // implementation of IMouseInputProvider
-  void RegisterMouseHandler(KODI::MOUSE::IMouseInputHandler* handler, bool bPromiscuous) override;
+  void RegisterMouseHandler(KODI::MOUSE::IMouseInputHandler* handler,
+                            bool bPromiscuous,
+                            bool forceDefaultMap) override;
   void UnregisterMouseHandler(KODI::MOUSE::IMouseInputHandler* handler) override;
 
   virtual void RegisterJoystickButtonMapper(KODI::JOYSTICK::IButtonMapper* mapper);
@@ -243,23 +255,30 @@ public:
 
   virtual KODI::JOYSTICK::IDriverReceiver* GetDriverReceiver() { return nullptr; }
 
-  virtual IKeymap* GetKeymap(const std::string& controllerId) { return nullptr; }
+  virtual KODI::KEYMAP::IKeymap* GetKeymap(const std::string& controllerId) { return nullptr; }
 
   /*!
    * \brief Return the last time this peripheral was active
    *
    * \return The time of last activation, or invalid if unknown/never active
    */
-  virtual CDateTime LastActive();
+  virtual CDateTime LastActive() const;
 
   /*!
    * \brief Get the controller profile that best represents this peripheral
    *
    * \return The controller profile, or empty if unknown
    */
-  virtual KODI::GAME::ControllerPtr ControllerProfile() const
+  virtual KODI::GAME::ControllerPtr ControllerProfile() const { return m_controllerProfile; }
+
+  /*!
+   * \brief Set the controller profile for this peripheral
+   *
+   * \param controller The new controller profile
+   */
+  virtual void SetControllerProfile(const KODI::GAME::ControllerPtr& controller)
   {
-    return KODI::GAME::ControllerPtr{};
+    m_controllerProfile = controller;
   }
 
 protected:
@@ -278,9 +297,9 @@ protected:
   int m_iProductId;
   std::string m_strProductId;
   std::string m_strVersionInfo;
-  bool m_bInitialised;
-  bool m_bHidden;
-  bool m_bError;
+  bool m_bInitialised = false;
+  bool m_bHidden = false;
+  bool m_bError = false;
   std::vector<PeripheralFeature> m_features;
   PeripheralVector m_subDevices;
   std::map<std::string, PeripheralDeviceSetting> m_settings;
@@ -294,5 +313,6 @@ protected:
   std::map<KODI::MOUSE::IMouseInputHandler*, std::unique_ptr<KODI::MOUSE::IMouseDriverHandler>>
       m_mouseHandlers;
   std::map<KODI::JOYSTICK::IButtonMapper*, std::unique_ptr<CAddonButtonMapping>> m_buttonMappers;
+  KODI::GAME::ControllerPtr m_controllerProfile;
 };
 } // namespace PERIPHERALS

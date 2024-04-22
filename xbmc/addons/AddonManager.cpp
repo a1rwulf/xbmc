@@ -249,7 +249,6 @@ std::vector<std::shared_ptr<IAddon>> CAddonMgr::GetOutdatedAddons() const
 std::vector<std::shared_ptr<IAddon>> CAddonMgr::GetAvailableUpdatesOrOutdatedAddons(
     AddonCheckType addonCheckType) const
 {
-  std::unique_lock<CCriticalSection> lock(m_critSection);
   auto start = std::chrono::steady_clock::now();
 
   std::vector<std::shared_ptr<IAddon>> result;
@@ -319,7 +318,7 @@ bool CAddonMgr::HasAvailableUpdates()
 std::vector<std::shared_ptr<IAddon>> CAddonMgr::GetOrphanedDependencies() const
 {
   std::vector<std::shared_ptr<IAddon>> allAddons;
-  GetAddonsInternal(AddonType::UNKNOWN, allAddons, OnlyEnabled::CHOICE_YES,
+  GetAddonsInternal(AddonType::UNKNOWN, allAddons, OnlyEnabled::CHOICE_NO,
                     CheckIncompatible::CHOICE_YES);
 
   std::vector<std::shared_ptr<IAddon>> orphanedDependencies;
@@ -452,10 +451,10 @@ bool CAddonMgr::FindInstallableById(const std::string& addonId, AddonPtr& result
   // get the latest version from all repos if the
   // addon is up-to-date or not installed yet
 
-  CLog::Log(LOGDEBUG,
-            "CAddonMgr::{}: addon {} is up-to-date or not installed. falling back to get latest "
-            "version from all repos",
-            __FUNCTION__, addonId);
+  CLog::LogFC(
+      LOGDEBUG, LOGADDONS,
+      "addon {} is up-to-date or not installed. falling back to get latest version from all repos",
+      addonId);
 
   return addonRepos.GetLatestAddonVersionFromAllRepos(addonId, result);
 }
@@ -901,7 +900,7 @@ bool CAddonMgr::EnableSingle(const std::string& id)
 
   auto eventLog = CServiceBroker::GetEventLog();
 
-  if (!IsCompatible(*addon))
+  if (!IsCompatible(addon))
   {
     CLog::Log(LOGERROR, "Add-on '{}' is not compatible with Kodi", addon->ID());
     if (eventLog)
@@ -1111,9 +1110,9 @@ void CAddonMgr::PublishInstanceRemoved(const std::string& addonId, AddonInstance
   m_events.Publish(AddonEvents::InstanceRemoved(addonId, instanceId));
 }
 
-bool CAddonMgr::IsCompatible(const IAddon& addon) const
+bool CAddonMgr::IsCompatible(const std::shared_ptr<const IAddon>& addon) const
 {
-  for (const auto& dependency : addon.GetDependencies())
+  for (const auto& dependency : addon->GetDependencies())
   {
     if (!dependency.optional)
     {
@@ -1122,10 +1121,10 @@ bool CAddonMgr::IsCompatible(const IAddon& addon) const
       if (StringUtils::StartsWith(dependency.id, "xbmc.") ||
           StringUtils::StartsWith(dependency.id, "kodi."))
       {
-        AddonPtr addon;
-        bool haveAddon =
-            GetAddon(dependency.id, addon, AddonType::UNKNOWN, OnlyEnabled::CHOICE_YES);
-        if (!haveAddon || !addon->MeetsVersion(dependency.versionMin, dependency.version))
+        std::shared_ptr<IAddon> dep;
+        const bool haveDependency =
+            GetAddon(dependency.id, dep, AddonType::UNKNOWN, OnlyEnabled::CHOICE_YES);
+        if (!haveDependency || !dep->MeetsVersion(dependency.versionMin, dependency.version))
           return false;
       }
     }

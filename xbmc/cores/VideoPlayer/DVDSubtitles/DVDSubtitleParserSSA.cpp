@@ -24,11 +24,6 @@ CDVDSubtitleParserSSA::CDVDSubtitleParserSSA(std::unique_ptr<CDVDSubtitleStream>
   m_libass->Configure();
 }
 
-CDVDSubtitleParserSSA::~CDVDSubtitleParserSSA()
-{
-  Dispose();
-}
-
 bool CDVDSubtitleParserSSA::Open(CDVDStreamInfo& hints)
 {
 
@@ -39,7 +34,7 @@ bool CDVDSubtitleParserSSA::Open(CDVDStreamInfo& hints)
   if (!m_libass->CreateTrack(const_cast<char*>(data.c_str()), data.length()))
     return false;
 
-  CDVDOverlaySSA* overlay = new CDVDOverlaySSA(m_libass);
+  auto overlay = std::make_shared<CDVDOverlaySSA>(m_libass);
   overlay->iPTSStartTime = 0.0;
   overlay->iPTSStopTime = DVD_NOPTS_VALUE;
   auto overrideStyles{
@@ -49,9 +44,4 @@ bool CDVDSubtitleParserSSA::Open(CDVDStreamInfo& hints)
   m_collection.Add(overlay);
 
   return true;
-}
-
-void CDVDSubtitleParserSSA::Dispose()
-{
-  CDVDSubtitleParserCollection::Dispose();
 }

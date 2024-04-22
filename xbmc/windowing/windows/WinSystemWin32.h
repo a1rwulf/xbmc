@@ -68,6 +68,7 @@ struct MONITOR_DETAILS
   std::wstring MonitorNameW;
   std::wstring CardNameW;
   std::wstring DeviceNameW;
+  std::wstring DeviceStringW; // GDI device, for migration of the monitor setting from Kodi < 21
 };
 
 class CIRServerSuite;
@@ -83,6 +84,7 @@ public:
   bool DestroyWindowSystem() override;
   bool ResizeWindow(int newWidth, int newHeight, int newLeft, int newTop) override;
   void FinishWindowResize(int newWidth, int newHeight) override;
+  void ForceFullScreen(const RESOLUTION_INFO& resInfo) override;
   void UpdateResolutions() override;
   bool CenterWindow() override;
   virtual void NotifyAppFocusChange(bool bGaining) override;
@@ -94,11 +96,12 @@ public:
   bool Show(bool raise = true) override;
   std::string GetClipboardText() override;
   bool UseLimitedColor() override;
+  float GetGuiSdrPeakLuminance() const override;
+  bool HasSystemSdrPeakLuminance() override;
 
   // videosync
-  std::unique_ptr<CVideoSync> GetVideoSync(void *clock) override;
+  std::unique_ptr<CVideoSync> GetVideoSync(CVideoReferenceClock* clock) override;
 
-  bool WindowedMode() const { return m_state != WINDOW_STATE_FULLSCREEN; }
   bool SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool blankOtherDisplays) override;
 
   std::vector<std::string> GetConnectedOutputs() override;
@@ -112,17 +115,7 @@ public:
   virtual bool DPIChanged(WORD dpi, RECT windowRect) const;
   bool IsMinimized() const { return m_bMinimized; }
   void SetMinimized(bool minimized);
-  int GetGuiSdrPeakLuminance() const;
-
-  // touchscreen support
-  typedef BOOL(WINAPI *pGetGestureInfo)(HGESTUREINFO, PGESTUREINFO);
-  typedef BOOL(WINAPI *pSetGestureConfig)(HWND, DWORD, UINT, PGESTURECONFIG, UINT);
-  typedef BOOL(WINAPI *pCloseGestureInfoHandle)(HGESTUREINFO);
-  typedef BOOL(WINAPI *pEnableNonClientDpiScaling)(HWND);
-  pGetGestureInfo         PtrGetGestureInfo;
-  pSetGestureConfig       PtrSetGestureConfig;
-  pCloseGestureInfoHandle PtrCloseGestureInfoHandle;
-  pEnableNonClientDpiScaling PtrEnableNonClientDpiScaling;
+  void CacheSystemSdrPeakLuminance();
 
   void SetSizeMoveMode(bool mode) { m_bSizeMoveEnabled = mode; }
   bool IsInSizeMoveMode() const { return m_bSizeMoveEnabled; }
@@ -168,6 +161,16 @@ protected:
   void ResolutionChanged();
   static void SetForegroundWindowInternal(HWND hWnd);
   static RECT GetVirtualScreenRect();
+  /*!
+   * Retrieve the work area of the screen (exclude task bar and other occlusions)
+   */
+  RECT GetScreenWorkArea(HMONITOR handle) const;
+  /*!
+   * Retrieve size of the title bar and borders
+   * Add to coordinates to convert client coordinates to window coordinates
+   * Substract from coordinates to convert from window coordinates to client coordinates
+   */
+  RECT GetNcAreaOffsets(DWORD dwStyle, BOOL bMenu, DWORD dwExStyle) const;
 
   HWND m_hWnd;
   HMONITOR m_hMonitor;
@@ -200,6 +203,9 @@ protected:
 
   static const char* SETTING_WINDOW_TOP;
   static const char* SETTING_WINDOW_LEFT;
+
+  bool m_validSystemSdrPeakLuminance{false};
+  float m_systemSdrPeakLuminance{.0f};
 };
 
 extern HWND g_hWnd;

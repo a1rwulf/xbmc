@@ -10,6 +10,7 @@
 
 #include "DVDCodecs/DVDCodecUtils.h"
 #include "DVDCodecs/DVDFactoryCodec.h"
+#include "DVDCodecs/Overlay/DVDOverlay.h"
 #include "DVDCodecs/Video/DVDVideoCodecFFmpeg.h"
 #include "ServiceBroker.h"
 #include "cores/VideoPlayer/Interface/DemuxPacket.h"
@@ -23,6 +24,7 @@
 
 #include <iomanip>
 #include <iterator>
+#include <memory>
 #include <mutex>
 #include <numeric>
 #include <sstream>
@@ -64,7 +66,9 @@ CVideoPlayerVideo::CVideoPlayerVideo(CDVDClock* pClock
   m_iLateFrames = 0;
   m_iDroppedRequest = 0;
   m_fForcedAspectRatio = 0;
-  m_messageQueue.SetMaxDataSize(40 * 1024 * 1024);
+
+  // 128 MB allows max bitrate of 128 Mbit/s (e.g. UHD Blu-Ray) during 8 seconds
+  m_messageQueue.SetMaxDataSize(128 * 1024 * 1024);
   m_messageQueue.SetMaxTimeSize(8.0);
 
   m_iDroppedFrames = 0;
@@ -101,21 +105,24 @@ bool CVideoPlayerVideo::OpenStream(CDVDStreamInfo hint)
 {
   if (hint.flags & AV_DISPOSITION_ATTACHED_PIC)
     return false;
-  if (hint.extrasize == 0)
+  if (!hint.extradata)
   {
     // codecs which require extradata
     // clang-format off
     if (hint.codec == AV_CODEC_ID_NONE ||
         hint.codec == AV_CODEC_ID_MPEG1VIDEO ||
         hint.codec == AV_CODEC_ID_MPEG2VIDEO ||
-        hint.codec == AV_CODEC_ID_H264 ||
+        (hint.codec == AV_CODEC_ID_H264 && (hint.codec_tag == 0 || hint.codec_tag == MKTAG('a','v','c','1') || hint.codec_tag == MKTAG('a','v','c','2'))) ||
         hint.codec == AV_CODEC_ID_HEVC ||
         hint.codec == AV_CODEC_ID_MPEG4 ||
         hint.codec == AV_CODEC_ID_WMV3 ||
         hint.codec == AV_CODEC_ID_VC1 ||
         hint.codec == AV_CODEC_ID_AV1)
-      // clang-format on
+    {
+      CLog::LogF(LOGERROR, "Codec id {} require extradata.", hint.codec);
       return false;
+    }
+    // clang-format on
   }
 
   CLog::Log(LOGINFO, "Creating video codec with codec id: {}", hint.codec);
@@ -165,7 +172,9 @@ void CVideoPlayerVideo::OpenStream(CDVDStreamInfo& hint, std::unique_ptr<CDVDVid
   //reported fps is usually not completely correct
   if (hint.fpsrate && hint.fpsscale)
   {
-    m_fFrameRate = DVD_TIME_BASE / CDVDCodecUtils::NormalizeFrameduration((double)DVD_TIME_BASE * hint.fpsscale / hint.fpsrate);
+    m_fFrameRate = DVD_TIME_BASE / CDVDCodecUtils::NormalizeFrameduration(
+                                       (double)DVD_TIME_BASE * hint.fpsscale / hint.fpsrate);
+
     m_bFpsInvalid = false;
     m_processInfo.SetVideoFps(static_cast<float>(m_fFrameRate));
   }
@@ -291,10 +300,10 @@ inline void CVideoPlayerVideo::FlushMessages()
 }
 
 inline MsgQueueReturnCode CVideoPlayerVideo::GetMessage(std::shared_ptr<CDVDMsg>& pMsg,
-                                                        unsigned int iTimeoutInMilliSeconds,
+                                                        std::chrono::milliseconds timeout,
                                                         int& priority)
 {
-  MsgQueueReturnCode ret = m_messageQueue.Get(pMsg, iTimeoutInMilliSeconds, priority);
+  MsgQueueReturnCode ret = m_messageQueue.Get(pMsg, timeout, priority);
   m_processInfo.SetLevelVQ(m_messageQueue.GetLevel());
   return ret;
 }
@@ -318,7 +327,8 @@ void CVideoPlayerVideo::Process()
 
   while (!m_bStop)
   {
-    int iQueueTimeOut = (int)(m_stalled ? frametime : frametime * 10) / 1000;
+    auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::duration<double, std::micro>(m_stalled ? frametime : frametime * 10));
     int iPriority = 0;
 
     if (m_syncState == IDVDStreamPlayer::SYNC_WAITSYNC)
@@ -330,11 +340,11 @@ void CVideoPlayerVideo::Process()
     if (onlyPrioMsgs)
     {
       iPriority = 1;
-      iQueueTimeOut = 1;
+      timeout = 1ms;
     }
 
     std::shared_ptr<CDVDMsg> pMsg;
-    MsgQueueReturnCode ret = GetMessage(pMsg, iQueueTimeOut, iPriority);
+    MsgQueueReturnCode ret = GetMessage(pMsg, timeout, iPriority);
 
     onlyPrioMsgs = false;
 
@@ -802,13 +812,13 @@ void CVideoPlayerVideo::ProcessOverlays(const VideoPicture* pSource, double pts)
     std::unique_lock<CCriticalSection> lock(*m_pOverlayContainer);
 
     VecOverlays* pVecOverlays = m_pOverlayContainer->GetOverlays();
-    VecOverlaysIter it = pVecOverlays->begin();
+    auto it = pVecOverlays->begin();
 
     //Check all overlays and render those that should be rendered, based on time and forced
     //Both forced and subs should check timing
     while (it != pVecOverlays->end())
     {
-      CDVDOverlay* pOverlay = *it++;
+      std::shared_ptr<CDVDOverlay>& pOverlay = *it++;
       if(!pOverlay->bForced && !m_bRenderSubs)
         continue;
 
@@ -817,8 +827,9 @@ void CVideoPlayerVideo::ProcessOverlays(const VideoPicture* pSource, double pts)
       if((pOverlay->iPTSStartTime <= pts2 && (pOverlay->iPTSStopTime > pts2 || pOverlay->iPTSStopTime == 0LL)))
       {
         if(pOverlay->IsOverlayType(DVDOVERLAY_TYPE_GROUP))
-          overlays.insert(overlays.end(), static_cast<CDVDOverlayGroup*>(pOverlay)->m_overlays.begin()
-                                        , static_cast<CDVDOverlayGroup*>(pOverlay)->m_overlays.end());
+          overlays.insert(overlays.end(),
+                          static_cast<CDVDOverlayGroup&>(*pOverlay).m_overlays.begin(),
+                          static_cast<CDVDOverlayGroup&>(*pOverlay).m_overlays.end());
         else
           overlays.push_back(pOverlay);
       }

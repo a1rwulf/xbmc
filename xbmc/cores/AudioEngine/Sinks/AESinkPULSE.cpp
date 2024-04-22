@@ -16,6 +16,7 @@
 #include "utils/log.h"
 
 #include <array>
+#include <memory>
 #include <mutex>
 
 //-----------------------------------------------------------------------------
@@ -706,7 +707,7 @@ bool CAESinkPULSE::Register()
     pa_simple_free(s);
   }
 
-  m_pMonitor.reset(new CDriverMonitor());
+  m_pMonitor = std::make_unique<CDriverMonitor>();
   m_pMonitor->Start();
 
   AE::AESinkRegEntry entry;
@@ -718,14 +719,13 @@ bool CAESinkPULSE::Register()
   return true;
 }
 
-IAESink* CAESinkPULSE::Create(std::string &device, AEAudioFormat& desiredFormat)
+std::unique_ptr<IAESink> CAESinkPULSE::Create(std::string& device, AEAudioFormat& desiredFormat)
 {
-  IAESink* sink = new CAESinkPULSE();
+  auto sink = std::make_unique<CAESinkPULSE>();
   if (sink->Initialize(desiredFormat, device))
     return sink;
 
-  delete sink;
-  return nullptr;
+  return {};
 }
 CAESinkPULSE::CAESinkPULSE()
 {

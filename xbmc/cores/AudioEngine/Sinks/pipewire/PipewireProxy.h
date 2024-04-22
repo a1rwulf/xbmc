@@ -12,12 +12,12 @@
 
 #include <pipewire/core.h>
 
-namespace AE
-{
-namespace SINK
+namespace KODI
 {
 namespace PIPEWIRE
 {
+
+class CPipewireRegistry;
 
 class CPipewireProxy
 {
@@ -25,10 +25,13 @@ public:
   CPipewireProxy() = delete;
   virtual ~CPipewireProxy();
 
-  virtual void AddListener(void* userdata);
+  CPipewireRegistry& GetRegistry() const { return m_registry; }
 
 protected:
-  explicit CPipewireProxy(pw_registry* registry, uint32_t id, const char* type, uint32_t version);
+  explicit CPipewireProxy(CPipewireRegistry& registry,
+                          uint32_t id,
+                          const char* type,
+                          uint32_t version);
 
   struct PipewireProxyDeleter
   {
@@ -43,11 +46,12 @@ private:
 
   static pw_proxy_events CreateProxyEvents();
 
+  CPipewireRegistry& m_registry;
+
   const pw_proxy_events m_proxyEvents;
 
   spa_hook m_proxyListener;
 };
 
 } // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE
+} // namespace KODI

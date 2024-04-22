@@ -79,7 +79,7 @@ class CLog;
 class CPlatform;
 class CTextureCache;
 class CJobManager;
-class CKeyboardLayoutManager;
+class CSlideShowDelegator;
 
 namespace WSDiscovery
 {
@@ -98,6 +98,11 @@ namespace GAME
 class CControllerManager;
 class CGameServices;
 } // namespace GAME
+
+namespace KEYBOARD
+{
+class CKeyboardLayoutManager;
+} // namespace KEYBOARD
 
 namespace RETRO
 {
@@ -127,6 +132,7 @@ public:
 
   static CLog& GetLogging();
   static void CreateLogging();
+  static bool IsLoggingUp();
   static void DestroyLogging();
 
   static std::shared_ptr<ANNOUNCEMENT::CAnnouncementManager> GetAnnouncementManager();
@@ -147,6 +153,7 @@ public:
   static CDataCacheCore& GetDataCacheCore();
   static CPlatform& GetPlatform();
   static PLAYLIST::CPlayListPlayer& GetPlaylistPlayer();
+  static CSlideShowDelegator& GetSlideShowDelegator();
   static KODI::GAME::CControllerManager& GetGameControllerManager();
   static KODI::GAME::CGameServices& GetGameServices();
   static KODI::RETRO::CGUIGameRenderManager& GetGameRenderManager();
@@ -209,9 +216,9 @@ public:
   static std::shared_ptr<KODI::MESSAGING::CApplicationMessenger> GetAppMessenger();
 
   static void RegisterKeyboardLayoutManager(
-      const std::shared_ptr<CKeyboardLayoutManager>& keyboardLayoutManager);
+      const std::shared_ptr<KODI::KEYBOARD::CKeyboardLayoutManager>& keyboardLayoutManager);
   static void UnregisterKeyboardLayoutManager();
-  static std::shared_ptr<CKeyboardLayoutManager> GetKeyboardLayoutManager();
+  static std::shared_ptr<KODI::KEYBOARD::CKeyboardLayoutManager> GetKeyboardLayoutManager();
 
   static void RegisterSpeechRecognition(
       const std::shared_ptr<speech::ISpeechRecognition>& speechRecognition);
@@ -222,18 +229,19 @@ private:
   std::shared_ptr<CAppParams> m_appParams;
   std::unique_ptr<CLog> m_logging;
   std::shared_ptr<ANNOUNCEMENT::CAnnouncementManager> m_pAnnouncementManager;
-  CGUIComponent* m_pGUI;
-  CWinSystemBase* m_pWinSystem;
-  IAE* m_pActiveAE;
+  CGUIComponent* m_pGUI = nullptr;
+  CWinSystemBase* m_pWinSystem = nullptr;
+  IAE* m_pActiveAE = nullptr;
   std::shared_ptr<CAppInboundProtocol> m_pAppPort;
   std::shared_ptr<CSettingsComponent> m_pSettingsComponent;
-  CDecoderFilterManager* m_decoderFilterManager;
+  CDecoderFilterManager* m_decoderFilterManager = nullptr;
   std::shared_ptr<CCPUInfo> m_cpuInfo;
   std::shared_ptr<CTextureCache> m_textureCache;
   std::shared_ptr<CJobManager> m_jobManager;
   std::shared_ptr<KODI::MESSAGING::CApplicationMessenger> m_appMessenger;
-  std::shared_ptr<CKeyboardLayoutManager> m_keyboardLayoutManager;
+  std::shared_ptr<KODI::KEYBOARD::CKeyboardLayoutManager> m_keyboardLayoutManager;
   std::shared_ptr<speech::ISpeechRecognition> m_speechRecognition;
+  std::shared_ptr<CSlideShowDelegator> m_slideshowDelegator;
 };
 
 XBMC_GLOBAL_REF(CServiceBroker, g_serviceBroker);

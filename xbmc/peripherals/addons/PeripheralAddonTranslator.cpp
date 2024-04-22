@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2015-2018 Team Kodi
+ *  Copyright (C) 2015-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,8 +8,8 @@
 
 #include "PeripheralAddonTranslator.h"
 
-#include "games/controllers/ControllerTranslator.h"
 #include "input/joysticks/JoystickUtils.h"
+#include "input/keyboard/KeyboardTranslator.h"
 
 #include <algorithm>
 #include <iterator>
@@ -55,6 +55,10 @@ PeripheralType CPeripheralAddonTranslator::TranslateType(PERIPHERAL_TYPE type)
   {
     case PERIPHERAL_TYPE_JOYSTICK:
       return PERIPHERAL_JOYSTICK;
+    case PERIPHERAL_TYPE_KEYBOARD:
+      return PERIPHERAL_KEYBOARD;
+    case PERIPHERAL_TYPE_MOUSE:
+      return PERIPHERAL_MOUSE;
     default:
       break;
   }
@@ -67,6 +71,10 @@ PERIPHERAL_TYPE CPeripheralAddonTranslator::TranslateType(PeripheralType type)
   {
     case PERIPHERAL_JOYSTICK:
       return PERIPHERAL_TYPE_JOYSTICK;
+    case PERIPHERAL_KEYBOARD:
+      return PERIPHERAL_TYPE_KEYBOARD;
+    case PERIPHERAL_MOUSE:
+      return PERIPHERAL_TYPE_MOUSE;
     default:
       break;
   }
@@ -105,8 +113,8 @@ CDriverPrimitive CPeripheralAddonTranslator::TranslatePrimitive(
     }
     case JOYSTICK_DRIVER_PRIMITIVE_TYPE_KEY:
     {
-      KEYBOARD::KeySymbol keycode =
-          GAME::CControllerTranslator::TranslateKeysym(primitive.Keycode());
+      KEYBOARD::XBMCKey keycode =
+          KEYBOARD::CKeyboardTranslator::TranslateKeysym(primitive.Keycode());
       retVal = CDriverPrimitive(keycode);
       break;
     }
@@ -159,7 +167,7 @@ kodi::addon::DriverPrimitive CPeripheralAddonTranslator::TranslatePrimitive(
     }
     case PRIMITIVE_TYPE::KEY:
     {
-      std::string keysym = GAME::CControllerTranslator::TranslateKeycode(primitive.Keycode());
+      std::string keysym = KEYBOARD::CKeyboardTranslator::TranslateKeycode(primitive.Keycode());
       retVal = kodi::addon::DriverPrimitive(keysym);
       break;
     }
@@ -187,9 +195,8 @@ std::vector<JOYSTICK::CDriverPrimitive> CPeripheralAddonTranslator::TranslatePri
 {
   std::vector<JOYSTICK::CDriverPrimitive> ret;
   std::transform(primitives.begin(), primitives.end(), std::back_inserter(ret),
-                 [](const kodi::addon::DriverPrimitive& primitive) {
-                   return CPeripheralAddonTranslator::TranslatePrimitive(primitive);
-                 });
+                 [](const kodi::addon::DriverPrimitive& primitive)
+                 { return CPeripheralAddonTranslator::TranslatePrimitive(primitive); });
   return ret;
 }
 
@@ -198,9 +205,8 @@ std::vector<kodi::addon::DriverPrimitive> CPeripheralAddonTranslator::TranslateP
 {
   std::vector<kodi::addon::DriverPrimitive> ret;
   std::transform(primitives.begin(), primitives.end(), std::back_inserter(ret),
-                 [](const JOYSTICK::CDriverPrimitive& primitive) {
-                   return CPeripheralAddonTranslator::TranslatePrimitive(primitive);
-                 });
+                 [](const JOYSTICK::CDriverPrimitive& primitive)
+                 { return CPeripheralAddonTranslator::TranslatePrimitive(primitive); });
   return ret;
 }
 

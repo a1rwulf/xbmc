@@ -102,12 +102,36 @@ bool HasPowerOffFeature(const std::string& condition,
   return CServiceBroker::GetPeripherals().SupportsFeature(PERIPHERALS::FEATURE_POWER_OFF);
 }
 
-bool IsFullscreen(const std::string& condition,
-                  const std::string& value,
-                  const SettingConstPtr& setting,
-                  void* data)
+bool HasSystemSdrPeakLuminance(const std::string& condition,
+                               const std::string& value,
+                               const SettingConstPtr& setting,
+                               void* data)
 {
-  return CServiceBroker::GetWinSystem()->IsFullScreen();
+  return CServiceBroker::GetWinSystem()->HasSystemSdrPeakLuminance();
+}
+
+bool SupportsVideoSuperResolution(const std::string& condition,
+                                  const std::string& value,
+                                  const SettingConstPtr& setting,
+                                  void* data)
+{
+  return CServiceBroker::GetWinSystem()->SupportsVideoSuperResolution();
+}
+
+bool SupportsDolbyVision(const std::string& condition,
+                         const std::string& value,
+                         const SettingConstPtr& setting,
+                         void* data)
+{
+  return CServiceBroker::GetWinSystem()->GetDisplayHDRCapabilities().SupportsDolbyVision();
+}
+
+bool SupportsScreenMove(const std::string& condition,
+                        const std::string& value,
+                        const SettingConstPtr& setting,
+                        void* data)
+{
+  return CServiceBroker::GetWinSystem()->SupportsScreenMove();
 }
 
 bool IsHDRDisplay(const std::string& condition,
@@ -409,6 +433,10 @@ void CSettingConditions::Initialize()
   m_simpleConditions.emplace("has_dx");
   m_simpleConditions.emplace("hasdxva2");
 #endif
+#if defined(TARGET_WEBOS)
+  m_simpleConditions.emplace("have_webos");
+#endif
+
 #ifdef HAVE_LCMS2
   m_simpleConditions.emplace("have_lcms2");
 #endif
@@ -435,8 +463,12 @@ void CSettingConditions::Initialize()
   m_simpleConditions.emplace("has_cdda_ripper");
 #endif
 
-#ifdef HAS_DVD_DRIVE
-  m_simpleConditions.emplace("has_dvd_drive");
+#ifdef HAS_OPTICAL_DRIVE
+  m_simpleConditions.emplace("has_optical_drive");
+#endif
+
+#ifdef HAS_XBMCHELPER
+  m_simpleConditions.emplace("has_xbmchelper");
 #endif
 
   // add complex conditions
@@ -447,7 +479,10 @@ void CSettingConditions::Initialize()
   m_complexConditions.emplace("hasrumblefeature", HasRumbleFeature);
   m_complexConditions.emplace("hasrumblecontroller", HasRumbleController);
   m_complexConditions.emplace("haspowerofffeature", HasPowerOffFeature);
-  m_complexConditions.emplace("isfullscreen", IsFullscreen);
+  m_complexConditions.emplace("hassystemsdrpeakluminance", HasSystemSdrPeakLuminance);
+  m_complexConditions.emplace("supportsscreenmove", SupportsScreenMove);
+  m_complexConditions.emplace("supportsvideosuperresolution", SupportsVideoSuperResolution);
+  m_complexConditions.emplace("supportsdolbyvision", SupportsDolbyVision);
   m_complexConditions.emplace("ishdrdisplay", IsHDRDisplay);
   m_complexConditions.emplace("ismasteruser", IsMasterUser);
   m_complexConditions.emplace("hassubtitlesfontextensions", HasSubtitlesFontExtensions);

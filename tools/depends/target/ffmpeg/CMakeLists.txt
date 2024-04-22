@@ -1,6 +1,6 @@
 project(ffmpeg)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.12)
 
 if(ENABLE_CCACHE AND CCACHE_PROGRAM)
   set(ffmpeg_conf "--cc=${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}"
@@ -32,10 +32,12 @@ list(APPEND ffmpeg_conf --disable-doc
                         --disable-devices
                         --disable-programs
                         --disable-sdl2
+                        --disable-vulkan
                         --enable-gpl
                         --enable-postproc
                         --enable-runtime-cpudetect
                         --enable-pthreads
+                        --extra-version="Kodi"
             )
 
 if(CMAKE_C_FLAGS)
@@ -86,12 +88,13 @@ elseif(CORE_SYSTEM_NAME STREQUAL android)
     list(APPEND ffmpeg_conf --cpu=x86_64)
     list(APPEND ffmpeg_conf --extra-cflags=-mno-stackrealign)
   else()
-    list(APPEND ffmpeg_conf --cpu=i686 --disable-mmx)
+    list(APPEND ffmpeg_conf --cpu=i686 --disable-mmx --disable-asm)
     list(APPEND ffmpeg_conf --extra-cflags=-mno-stackrealign)
   endif()
 elseif(CORE_SYSTEM_NAME STREQUAL darwin_embedded)
   list(APPEND ffmpeg_conf --disable-crystalhd
                           --enable-videotoolbox
+                          --disable-filter=yadif_videotoolbox
                           --target-os=darwin
               )
 elseif(CORE_SYSTEM_NAME STREQUAL osx)
@@ -116,6 +119,10 @@ endif()
 if(CPU MATCHES x86 OR CPU MATCHES x86_64)
   find_package(NASM REQUIRED)
   list(APPEND ffmpeg_conf --x86asmexe=${NASM_EXECUTABLE})
+endif()
+
+if(USE_LTO)
+   list(APPEND ffmpeg_conf --enable-lto)
 endif()
 
 if(ENABLE_DAV1D)

@@ -12,7 +12,9 @@
 #include "filesystem/IFile.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
+#include "video/VideoFileItemClassify.h"
 
+using namespace KODI;
 using namespace XFILE;
 
 CDVDInputStreamFile::CDVDInputStreamFile(const CFileItem& fileitem, unsigned int flags)
@@ -44,7 +46,7 @@ bool CDVDInputStreamFile::Open()
   unsigned int flags = m_flags;
 
   // If this file is audio and/or video (= not a subtitle) flag to caller
-  if (!m_item.IsSubtitle())
+  if (!VIDEO::IsSubtitle(m_item))
     flags |= READ_AUDIO_VIDEO;
 
   std::string content = m_item.GetMimeType();
@@ -142,12 +144,15 @@ BitstreamStats CDVDInputStreamFile::GetBitstreamStats() const
     return m_stats;
 }
 
+// Use value returned by filesystem if is > 1
+// otherwise defaults to 64K
 int CDVDInputStreamFile::GetBlockSize()
 {
-  if(m_pFile)
-    return m_pFile->GetChunkSize();
-  else
-    return 0;
+  int chunk = 0;
+  if (m_pFile)
+    chunk = m_pFile->GetChunkSize();
+
+  return ((chunk > 1) ? chunk : 64 * 1024);
 }
 
 void CDVDInputStreamFile::SetReadRate(uint32_t rate)

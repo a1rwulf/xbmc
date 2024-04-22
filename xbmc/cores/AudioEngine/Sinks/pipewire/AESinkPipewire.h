@@ -11,6 +11,16 @@
 #include "cores/AudioEngine/Interfaces/AESink.h"
 #include "cores/AudioEngine/Utils/AEDeviceInfo.h"
 
+#include <chrono>
+
+namespace KODI
+{
+namespace PIPEWIRE
+{
+class CPipewireStream;
+}
+} // namespace KODI
+
 namespace AE
 {
 namespace SINK
@@ -23,7 +33,7 @@ public:
   ~CAESinkPipewire() override = default;
 
   static bool Register();
-  static IAESink* Create(std::string& device, AEAudioFormat& desiredFormat);
+  static std::unique_ptr<IAESink> Create(std::string& device, AEAudioFormat& desiredFormat);
   static void EnumerateDevicesEx(AEDeviceInfoList& list, bool force = false);
   static void Destroy();
 
@@ -41,7 +51,9 @@ public:
 
 private:
   AEAudioFormat m_format;
-  double m_latency;
+  std::chrono::duration<double, std::ratio<1>> m_latency;
+
+  std::unique_ptr<KODI::PIPEWIRE::CPipewireStream> m_stream;
 };
 
 } // namespace SINK

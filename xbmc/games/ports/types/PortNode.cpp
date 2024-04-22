@@ -45,6 +45,7 @@ CPortNode& CPortNode::operator=(CPortNode&& rhs) noexcept
     m_portType = rhs.m_portType;
     m_portId = std::move(rhs.m_portId);
     m_address = std::move(rhs.m_address);
+    m_forceConnected = rhs.m_forceConnected;
     m_controllers = std::move(rhs.m_controllers);
   }
 
@@ -110,9 +111,8 @@ bool CPortNode::IsControllerAccepted(const std::string& controllerId) const
 
   // Visit nodes
   return std::any_of(m_controllers.begin(), m_controllers.end(),
-                     [controllerId](const CControllerNode& node) {
-                       return node.IsControllerAccepted(controllerId);
-                     });
+                     [controllerId](const CControllerNode& node)
+                     { return node.IsControllerAccepted(controllerId); });
 }
 
 bool CPortNode::IsControllerAccepted(const std::string& portAddress,
@@ -132,15 +132,23 @@ bool CPortNode::IsControllerAccepted(const std::string& portAddress,
   {
     // Visit nodes
     if (std::any_of(m_controllers.begin(), m_controllers.end(),
-                    [portAddress, controllerId](const CControllerNode& node) {
-                      return node.IsControllerAccepted(portAddress, controllerId);
-                    }))
+                    [portAddress, controllerId](const CControllerNode& node)
+                    { return node.IsControllerAccepted(portAddress, controllerId); }))
     {
       bAccepted = true;
     }
   }
 
   return bAccepted;
+}
+
+void CPortNode::GetInputPorts(std::vector<std::string>& inputPorts) const
+{
+  if (IsConnected())
+  {
+    const CControllerNode& controller = GetActiveController();
+    controller.GetInputPorts(inputPorts);
+  }
 }
 
 void CPortNode::GetPort(CPhysicalPort& port) const

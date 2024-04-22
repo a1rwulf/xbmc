@@ -1,48 +1,30 @@
 /*
- *  HotKeyController.h
+ *  Copyright (C) 2024 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  Modified by Gaurav Khanna on 8/17/10.
- *  SOURCE: http://github.com/sweetfm/SweetFM/blob/master/Source/HMediaKeys.h
- *
- *  SPDX-License-Identifier: MIT
+ *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSES/README.md for more information.
  */
 
-#import <Cocoa/Cocoa.h>
+#pragma once
 
-extern NSString* const MediaKeyPower;
-extern NSString* const MediaKeySoundMute;
-extern NSString* const MediaKeySoundUp;
-extern NSString* const MediaKeySoundDown;
-extern NSString* const MediaKeyPlayPauseNotification;
-extern NSString* const MediaKeyFastNotification;
-extern NSString* const MediaKeyRewindNotification;
-extern NSString* const MediaKeyNextNotification;
-extern NSString* const MediaKeyPreviousNotification;
+#include "interfaces/IAnnouncer.h"
 
-@interface HotKeyController : NSObject
+@class CMediaKeyTap;
+
+class CHotKeyController : public ANNOUNCEMENT::IAnnouncer
 {
-  CFMachPortRef m_eventPort;
-  CFRunLoopSourceRef m_runLoopSource;
-  BOOL          m_active;
-  BOOL          m_controlSysVolume;
-  BOOL          m_controlSysPower;
-}
+public:
+  CHotKeyController();
+  ~CHotKeyController() override;
 
-+ (HotKeyController*)sharedController;
+  void Announce(ANNOUNCEMENT::AnnouncementFlag flag,
+                const std::string& sender,
+                const std::string& message,
+                const CVariant& data) override;
 
-- (void)enableTap;
-- (void)disableTap;
-
-- (CFMachPortRef)eventPort;
-
-- (void)sysPower:  (BOOL)enable;
-- (BOOL)controlPower;
-
-- (void)sysVolume: (BOOL)enable;
-- (BOOL)controlVolume;
-
-- (void)setActive: (BOOL)active;
-- (BOOL)getActive;
-
-@end
+private:
+  CMediaKeyTap* m_mediaKeytap;
+  bool m_appHasFocus{false};
+  bool m_appIsPlaying{false};
+};

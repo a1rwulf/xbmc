@@ -55,6 +55,8 @@ public:
   void FlushRenderer();
   void SetRenderViewMode(int mode, float zoom, float par, float shift, bool stretch);
   float GetRenderAspectRatio() const;
+  bool GetRects(CRect& source, CRect& dest, CRect& view) const;
+  unsigned int GetOrientation() const;
   void TriggerUpdateResolution();
   bool IsRenderingVideo() const;
   bool IsRenderingGuiLayer() const;
@@ -70,11 +72,16 @@ public:
   bool IsExternalPlaying() const;
   bool IsRemotePlaying() const;
 
+  /*!
+   * \brief Get the name of the player in use
+   * \return the player name if a player is active, otherwise it returns an empty string
+   */
+  std::string GetName() const;
+
   // proxy calls
   void AddSubtitle(const std::string& strSubPath);
   bool CanPause() const;
   bool CanSeek() const;
-  void DoAudioWork();
   int GetAudioDelay() const;
   void GetAudioCapabilities(std::vector<int>& audioCaps) const;
   int GetAudioStream();

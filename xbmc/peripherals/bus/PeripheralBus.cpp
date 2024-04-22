@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -31,7 +31,6 @@ CPeripheralBus::CPeripheralBus(const std::string& threadname,
                                PeripheralBusType type)
   : CThread(threadname.c_str()),
     m_iRescanTime(PERIPHERAL_DEFAULT_RESCAN_INTERVAL),
-    m_bNeedsPolling(true),
     m_manager(manager),
     m_type(type),
     m_triggerEvent(true)
@@ -322,7 +321,8 @@ void CPeripheralBus::GetDirectory(const std::string& strPath, CFileItemList& ite
 
     peripheralFile->SetProperty("version", strVersion);
     peripheralFile->SetLabel2(strDetails);
-    peripheralFile->SetArt("icon", "DefaultAddon.png");
+    peripheralFile->SetArt("icon", peripheral->GetIcon());
+
     items.Add(peripheralFile);
   }
 }

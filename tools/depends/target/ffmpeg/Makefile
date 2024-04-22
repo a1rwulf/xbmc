@@ -1,6 +1,6 @@
-include ../../Makefile.include
-include FFMPEG-VERSION ../../download-files.include
-DEPS = ../../Makefile.include FFMPEG-VERSION Makefile ../../download-files.include
+-include ../../Makefile.include
+include FFMPEG-VERSION
+DEPS = FFMPEG-VERSION Makefile ../../download-files.include
 
 BUILD_TYPE = Release
 ifeq ($(DEBUG_BUILD),yes)
@@ -21,25 +21,24 @@ ifeq ($(USE_CCACHE), yes)
 endif
 
 ifeq ($(CROSS_COMPILING), yes)
+  DEPS += ../../Makefile.include
   CMAKE_ARGS+= -DPKG_CONFIG_EXECUTABLE=$(NATIVEPREFIX)/bin/pkg-config \
                -DCROSSCOMPILING=$(CROSS_COMPILING)
                -DCMAKE_AR=$(AR) \
                -DCMAKE_RANLIB=$(RANLIB) \
                -DCMAKE_STRIP=$(STRIP)
+else
+  TARBALLS_LOCATION := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+  RETRIEVE_TOOL = curl
+  RETRIEVE_TOOL_FLAGS = -LsS --create-dirs --retry 10 --retry-connrefused -o
+  ARCHIVE_TOOL_FLAGS = --strip-components=1 -xf
+  BASE_URL := http://mirrors.kodi.tv/build-deps/sources
 endif
 
-ifeq ($(OS), android)
-  ifeq ($(findstring arm64, $(CPU)), arm64)
-  CMAKE_ARGS+= -DENABLE_NEON=YES
-  endif
-endif
-
+include ../../download-files.include
 all: .installed-$(PLATFORM)
 
-$(TARBALLS_LOCATION)/$(ARCHIVE):
-	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) -Ls --create-dirs -f -o $(TARBALLS_LOCATION)/$(ARCHIVE) $(BASE_URL)/archive/$(VERSION).tar.gz
-
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)/build
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)

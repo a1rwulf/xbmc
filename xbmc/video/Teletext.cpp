@@ -18,9 +18,13 @@
 #include "application/ApplicationComponents.h"
 #include "application/ApplicationPlayer.h"
 #include "filesystem/SpecialProtocol.h"
-#include "input/Key.h"
+#include "input/actions/Action.h"
+#include "input/actions/ActionIDs.h"
+#include "input/keyboard/KeyIDs.h"
 #include "utils/log.h"
 #include "windowing/GraphicContext.h"
+
+#include <harfbuzz/hb-ft.h>
 
 using namespace std::chrono_literals;
 
@@ -445,6 +449,25 @@ CTeletextDecoder::CTeletextDecoder()
 
 CTeletextDecoder::~CTeletextDecoder() = default;
 
+bool CTeletextDecoder::Changed()
+{
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+  if (IsSubtitlePage(m_txtCache->Page))
+  {
+    m_updateTexture = true;
+    return true;
+  }
+
+  /* Update on every changed second */
+  if (m_txtCache->TimeString[7] != prevTimeSec)
+  {
+    prevTimeSec = m_txtCache->TimeString[7];
+    m_updateTexture = true;
+    return true;
+  }
+  return false;
+}
+
 bool CTeletextDecoder::HandleAction(const CAction &action)
 {
   if (m_txtCache == NULL)
@@ -452,6 +475,8 @@ bool CTeletextDecoder::HandleAction(const CAction &action)
     CLog::Log(LOGERROR, "CTeletextDecoder::HandleAction called without teletext cache");
     return false;
   }
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   if (action.GetID() == ACTION_MOVE_UP)
   {
@@ -480,7 +505,7 @@ bool CTeletextDecoder::HandleAction(const CAction &action)
       m_RenderInfo.PosY = 0;
       char ns[10];
       SetPosX(1);
-      sprintf(ns,"+%d    ", m_RenderInfo.SubtitleDelay);
+      snprintf(ns, sizeof(ns), "+%d    ", m_RenderInfo.SubtitleDelay);
       RenderCharFB(ns[0], &Text_AtrTable[ATR_WB]);
       RenderCharFB(ns[1], &Text_AtrTable[ATR_WB]);
       RenderCharFB(ns[2], &Text_AtrTable[ATR_WB]);
@@ -504,7 +529,7 @@ bool CTeletextDecoder::HandleAction(const CAction &action)
         m_RenderInfo.PosY = 0;
         char ns[10];
         SetPosX(1);
-        sprintf(ns,"+%d    ", m_RenderInfo.SubtitleDelay);
+        snprintf(ns, sizeof(ns), "+%d    ", m_RenderInfo.SubtitleDelay);
         RenderCharFB(ns[0], &Text_AtrTable[ATR_WB]);
         RenderCharFB(ns[1], &Text_AtrTable[ATR_WB]);
         RenderCharFB(ns[2], &Text_AtrTable[ATR_WB]);
@@ -722,6 +747,7 @@ void CTeletextDecoder::EndDecoder()
   }
   else
   {
+    std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
     m_txtCache->PageUpdate = true;
     CLog::Log(LOGDEBUG, "Teletext: Rendering ended");
   }
@@ -729,6 +755,8 @@ void CTeletextDecoder::EndDecoder()
 
 void CTeletextDecoder::PageInput(int Number)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   m_updateTexture = true;
 
   /* clear m_TempPage */
@@ -812,6 +840,8 @@ void CTeletextDecoder::PageInput(int Number)
 
 void CTeletextDecoder::GetNextPageOne(bool up)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* disable subpage zapping */
   m_txtCache->ZapSubpageManual = false;
 
@@ -844,6 +874,8 @@ void CTeletextDecoder::GetNextPageOne(bool up)
 
 void CTeletextDecoder::GetNextSubPage(int offset)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* abort pageinput */
   m_RenderInfo.InputCounter = 2;
 
@@ -876,6 +908,8 @@ void CTeletextDecoder::GetNextSubPage(int offset)
 
 void CTeletextDecoder::SwitchZoomMode()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   if (m_txtCache->SubPageTable[m_txtCache->Page] != 0xFF)
   {
     /* toggle mode */
@@ -891,6 +925,8 @@ void CTeletextDecoder::SwitchZoomMode()
 
 void CTeletextDecoder::SwitchTranspMode()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* toggle mode */
   if (!m_RenderInfo.TranspMode)
     m_RenderInfo.TranspMode = true;
@@ -912,6 +948,8 @@ void CTeletextDecoder::SwitchTranspMode()
 
 void CTeletextDecoder::SwitchHintMode()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* toggle mode */
   m_RenderInfo.HintMode ^= true;
 
@@ -925,6 +963,8 @@ void CTeletextDecoder::SwitchHintMode()
 
 void CTeletextDecoder::ColorKey(int target)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   if (!target)
     return;
 
@@ -961,6 +1001,8 @@ void CTeletextDecoder::StartPageCatching()
 
   if (!m_CatchedPage)
   {
+    std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
     m_RenderInfo.PageCatching = false;
     m_txtCache->PageUpdate    = true;
     return;
@@ -969,6 +1011,8 @@ void CTeletextDecoder::StartPageCatching()
 
 void CTeletextDecoder::StopPageCatching()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* set new page */
   if (m_RenderInfo.ZoomMode == 2)
     m_RenderInfo.ZoomMode = 1;
@@ -1134,6 +1178,8 @@ void CTeletextDecoder::RenderCatchedPage()
 
 void CTeletextDecoder::RenderPage()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   int StartRow = 0;
   int national_subset_bak = m_txtCache->NationalSubset;
 
@@ -1235,8 +1281,10 @@ void CTeletextDecoder::RenderPage()
         m_RenderInfo.PageAtrb[32].fg = TXT_ColorYellow;
         m_RenderInfo.PageAtrb[32].bg = TXT_ColorMenu1;
         int showpage    = m_txtCache->PageReceiving;
-        int showsubpage = m_txtCache->SubPageTable[showpage];
-        if (showsubpage!=0xff)
+        int showsubpage;
+
+        // Verify that showpage is positive before any access to the array
+        if (showpage >= 0 && (showsubpage = m_txtCache->SubPageTable[showpage]) != 0xff)
         {
           TextCachedPage_t *pCachedPage;
           pCachedPage = m_txtCache->astCachetable[showpage][showsubpage];
@@ -1294,20 +1342,6 @@ void CTeletextDecoder::RenderPage()
           SetPosX(33+i);
         }
       }
-
-      if (!IsSubtitlePage(m_txtCache->Page))
-      {
-        /* Update on every changed second */
-        if (m_txtCache->TimeString[7] != prevTimeSec)
-        {
-          prevTimeSec = m_txtCache->TimeString[7];
-          m_updateTexture = true;
-        }
-      }
-      else
-      {
-        m_updateTexture = true;
-      }
     }
     DoFlashing(StartRow);
     m_txtCache->NationalSubset = national_subset_bak;
@@ -1318,6 +1352,8 @@ bool CTeletextDecoder::IsSubtitlePage(int pageNumber) const
 {
   if (!m_txtCache)
     return false;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   for (const auto subPage : m_txtCache->SubtitlePages)
   {
@@ -1330,6 +1366,15 @@ bool CTeletextDecoder::IsSubtitlePage(int pageNumber) const
 
 void CTeletextDecoder::DoFlashing(int startrow)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
+  TextCachedPage_t* textCachepage =
+      m_txtCache->astCachetable[m_txtCache->Page][m_txtCache->SubPage];
+
+  // Verify that the page is not deleted by the other thread: CDVDTeletextData::ResetTeletextCache()
+  if (!textCachepage || m_RenderInfo.PageInfo != &textCachepage->pageinfo)
+    m_RenderInfo.PageInfo = nullptr;
+
   /* get national subset */
   if (m_txtCache->NationalSubset <= NAT_MAX_FROM_HEADER && /* not for GR/RU as long as line28 is not evaluated */
      m_RenderInfo.PageInfo && m_RenderInfo.PageInfo->nationalvalid) /* individual subset according to page header */
@@ -1462,6 +1507,8 @@ void CTeletextDecoder::DoFlashing(int startrow)
 
 void CTeletextDecoder::DoRenderPage(int startrow, int national_subset_bak)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* display first column?  */
   m_RenderInfo.nofirst = m_RenderInfo.Show39;
   for (int row = 1; row < 24; row++)
@@ -1577,6 +1624,8 @@ void CTeletextDecoder::Decode_BTT()
   int current, b1, b2, b3, b4;
   unsigned char btt[23*40];
 
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   if (m_txtCache->SubPageTable[0x1f0] == 0xff || 0 == m_txtCache->astCachetable[0x1f0][m_txtCache->SubPageTable[0x1f0]]) /* not yet received */
     return;
 
@@ -1642,6 +1691,8 @@ void CTeletextDecoder::Decode_ADIP() /* additional information table */
 {
   int i, p, j, b1, b2, b3, charfound;
   unsigned char padip[23*40];
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   auto& components = CServiceBroker::GetAppComponents();
   const auto appPlayer = components.GetComponent<CApplicationPlayer>();
@@ -1712,6 +1763,8 @@ int CTeletextDecoder::TopText_GetNext(int startpage, int up, int findgroup)
   int stoppage =  (IsDec(startpage) ? startpage : startpage & 0xF00); // avoid endless loop in hexmode
   nextgrp = nextblk = 0;
   current = startpage;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   do {
     if (up)
@@ -1802,6 +1855,8 @@ void CTeletextDecoder::Showlink(int column, int linkpage)
 
 void CTeletextDecoder::CreateLine25()
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   /* btt completely received and not yet decoded */
   if (!m_txtCache->BTTok)
     Decode_BTT();
@@ -1862,6 +1917,8 @@ void CTeletextDecoder::CopyBB2FB()
   UTILS::COLOR::Color *src, *dst, *topsrc;
   int screenwidth;
   UTILS::COLOR::Color fillcolor;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   /* line 25 */
   if (!m_RenderInfo.PageCatching)
@@ -2259,6 +2316,8 @@ void CTeletextDecoder::RenderCharIntern(TextRenderInfo_t* RenderInfo, int Char, 
   int factor, xfactor;
   unsigned char *sbitbuffer;
 
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   int national_subset_local = m_txtCache->NationalSubset;
   int curfontwidth          = GetCurFontWidth();
   int t                     = curfontwidth;
@@ -2293,7 +2352,36 @@ void CTeletextDecoder::RenderCharIntern(TextRenderInfo_t* RenderInfo, int Char, 
   else
     xfactor = 1;
 
-  if (!(glyph = FT_Get_Char_Index(m_Face, alphachar)))
+  // Check if the alphanumeric char has diacritical marks (or results from composing chars) or
+  // on the other hand it is just a simple alphanumeric char
+  if (!Attribute->diacrit)
+  {
+    Char = alphachar;
+  }
+  else
+  {
+    if ((national_subset_local == NAT_SC) || (national_subset_local == NAT_RB) ||
+        (national_subset_local == NAT_UA))
+      Char = G2table[1][0x20 + Attribute->diacrit];
+    else if (national_subset_local == NAT_GR)
+      Char = G2table[2][0x20 + Attribute->diacrit];
+    else if (national_subset_local == NAT_HB)
+      Char = G2table[3][0x20 + Attribute->diacrit];
+    else if (national_subset_local == NAT_AR)
+      Char = G2table[4][0x20 + Attribute->diacrit];
+    else
+      Char = G2table[0][0x20 + Attribute->diacrit];
+
+    // use harfbuzz to combine the diacritical mark with the alphanumeric char
+    // fallback to the alphanumeric char if composition fails
+    hb_unicode_funcs_t* ufuncs = hb_unicode_funcs_get_default();
+    hb_codepoint_t composedChar;
+    const hb_bool_t isComposed = hb_unicode_compose(ufuncs, alphachar, Char, &composedChar);
+    Char = isComposed ? composedChar : alphachar;
+  }
+
+  /* render char */
+  if (!(glyph = FT_Get_Char_Index(m_Face, Char)))
   {
     CLog::Log(LOGERROR, "{}:  <FT_Get_Char_Index for Char {:x} \"{}\" failed", __FUNCTION__,
               alphachar, alphachar);
@@ -2310,42 +2398,7 @@ void CTeletextDecoder::RenderCharIntern(TextRenderInfo_t* RenderInfo, int Char, 
     return;
   }
 
-  /* render char */
   sbitbuffer = m_sBit->buffer;
-  unsigned char localbuffer[1000]; // should be enough to store one character-bitmap...
-  // add diacritical marks
-  if (Attribute->diacrit)
-  {
-    FTC_SBit sbit_diacrit;
-
-    if ((national_subset_local == NAT_SC) || (national_subset_local == NAT_RB) || (national_subset_local == NAT_UA))
-      Char = G2table[1][0x20+ Attribute->diacrit];
-    else if (national_subset_local == NAT_GR)
-      Char = G2table[2][0x20+ Attribute->diacrit];
-    else if (national_subset_local == NAT_HB)
-      Char = G2table[3][0x20+ Attribute->diacrit];
-    else if (national_subset_local == NAT_AR)
-      Char = G2table[4][0x20+ Attribute->diacrit];
-    else
-      Char = G2table[0][0x20+ Attribute->diacrit];
-    if ((glyph = FT_Get_Char_Index(m_Face, Char)))
-    {
-      if (FTC_SBitCache_Lookup(m_Cache, &m_TypeTTF, glyph, &sbit_diacrit, &m_anode) == 0)
-      {
-        sbitbuffer = localbuffer;
-        memcpy(sbitbuffer,m_sBit->buffer,m_sBit->pitch*m_sBit->height);
-
-        for (Row = 0; Row < m_sBit->height; Row++)
-        {
-          for (Pitch = 0; Pitch < m_sBit->pitch; Pitch++)
-          {
-            if (sbit_diacrit->pitch > Pitch && sbit_diacrit->height > Row)
-              sbitbuffer[Row*m_sBit->pitch+Pitch] |= sbit_diacrit->buffer[Row*m_sBit->pitch+Pitch];
-          }
-        }
-      }
-    }
-  }
 
   int backupTTFshiftY = m_RenderInfo.TTFShiftY;
   if (national_subset_local == NAT_AR)
@@ -2461,6 +2514,9 @@ int CTeletextDecoder::RenderChar(
 {
   UTILS::COLOR::Color bgcolor, fgcolor;
   int factor, xfactor;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   int national_subset_local = m_txtCache->NationalSubset;
   int ymosaic[4];
   ymosaic[0] = 0; /* y-offsets for 2*3 mosaic */
@@ -2820,6 +2876,8 @@ TextPageinfo_t* CTeletextDecoder::DecodePage(bool showl25,             // 1=deco
   int foreground, background, doubleheight, doublewidth, charset, previous_charset, mosaictype, IgnoreAtBlackBgSubst, concealed, flashmode, boxwin;
   unsigned char held_mosaic, *p;
   TextCachedPage_t *pCachedPage;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   /* copy page to decode buffer */
   if (m_txtCache->SubPageTable[m_txtCache->Page] == 0xff) /* not cached: do nothing */
@@ -3265,6 +3323,8 @@ TextPageinfo_t* CTeletextDecoder::DecodePage(bool showl25,             // 1=deco
 
 void CTeletextDecoder::Eval_l25(unsigned char* PageChar, TextPageAttr_t *PageAtrb, bool HintMode)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   memset(m_txtCache->FullRowColor, 0, sizeof(m_txtCache->FullRowColor));
   m_txtCache->FullScrColor = TXT_ColorBlack;
   m_txtCache->ColorTable   = NULL;
@@ -3546,6 +3606,8 @@ void CTeletextDecoder::Eval_NumberedObject(int p, int s, int packet, int triplet
                  unsigned char *pAPx, unsigned char *pAPy,
                  unsigned char *pAPx0, unsigned char *pAPy0, unsigned char* PageChar, TextPageAttr_t* PageAtrb)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   if (!packet || 0 == m_txtCache->astCachetable[p][s])
     return;
 
@@ -3578,6 +3640,8 @@ int CTeletextDecoder::Eval_Triplet(int iOData, TextCachedPage_t *pstCachedPage,
   int iAddress = (iOData      ) & 0x3f;
   int iMode    = (iOData >>  6) & 0x1f;
   int iData    = (iOData >> 11) & 0x7f;
+
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
 
   if (iAddress < 40) /* column addresses */
   {
@@ -3755,7 +3819,6 @@ int CTeletextDecoder::Eval_Triplet(int iOData, TextCachedPage_t *pstCachedPage,
       {
 
         int c = *pAPx0 + (*endcol == 40 ? *pAPx : 0);  /* current column */
-        int c1 = offset;
         TextPageAttr_t *p = &PageAtrb[offset];
         do
         {
@@ -3785,7 +3848,6 @@ int CTeletextDecoder::Eval_Triplet(int iOData, TextCachedPage_t *pstCachedPage,
           if (bw) p->IgnoreAtBlackBgSubst = 0;
           p++;
           c++;
-          c1++;
         } while (c < *endcol);
       }
       break;
@@ -4006,6 +4068,8 @@ int CTeletextDecoder::iTripletNumber2Data(int iONr, TextCachedPage_t *pstCachedP
 
 int CTeletextDecoder::SetNational(unsigned char sec)
 {
+  std::unique_lock<CCriticalSection> lock(m_txtCache->m_critSection);
+
   switch (sec)
   {
     case 0x08:

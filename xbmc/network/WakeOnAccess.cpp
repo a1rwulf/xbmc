@@ -29,6 +29,7 @@
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
+#include "utils/XBMCTinyXML2.h"
 #include "utils/XMLUtils.h"
 #include "utils/XTimeUtils.h"
 #include "utils/log.h"
@@ -175,14 +176,13 @@ static std::string LookupUPnPHost(const std::string& uuid)
   return "";
 }
 
-CWakeOnAccess::WakeUpEntry::WakeUpEntry (bool isAwake)
-  : timeout (0, 0, 0, DEFAULT_TIMEOUT_SEC)
-  , wait_online1_sec(DEFAULT_WAIT_FOR_ONLINE_SEC_1)
-  , wait_online2_sec(DEFAULT_WAIT_FOR_ONLINE_SEC_2)
-  , wait_services_sec(DEFAULT_WAIT_FOR_SERVICES_SEC)
+CWakeOnAccess::WakeUpEntry::WakeUpEntry(bool isAwake)
+  : timeout(0, 0, 0, DEFAULT_TIMEOUT_SEC),
+    wait_online1_sec(DEFAULT_WAIT_FOR_ONLINE_SEC_1),
+    wait_online2_sec(DEFAULT_WAIT_FOR_ONLINE_SEC_2),
+    wait_services_sec(DEFAULT_WAIT_FOR_SERVICES_SEC),
+    nextWake(CDateTime::GetCurrentDateTime())
 {
-  nextWake = CDateTime::GetCurrentDateTime();
-
   if (isAwake)
     nextWake += timeout;
 }
@@ -268,7 +268,7 @@ int NestDetect::m_nest = 0;
 class ProgressDialogHelper
 {
 public:
-  explicit ProgressDialogHelper (const std::string& heading) : m_dialog(0)
+  explicit ProgressDialogHelper(const std::string& heading)
   {
     if (CServiceBroker::GetAppMessenger()->IsProcessThread())
     {
@@ -336,7 +336,7 @@ public:
   }
 
 private:
-  CGUIDialogProgress* m_dialog;
+  CGUIDialogProgress* m_dialog = 0;
 };
 
 class NetworkStartWaiter : public WaitCondition
@@ -364,8 +364,7 @@ private:
 class PingResponseWaiter : public WaitCondition, private IJobCallback
 {
 public:
-  PingResponseWaiter (bool async, const CWakeOnAccess::WakeUpEntry& server)
-    : m_server(server), m_jobId(0), m_hostOnline(false)
+  PingResponseWaiter(bool async, const CWakeOnAccess::WakeUpEntry& server) : m_server(server)
   {
     if (async)
     {
@@ -428,8 +427,8 @@ private:
   };
 
   const CWakeOnAccess::WakeUpEntry& m_server;
-  unsigned int m_jobId;
-  bool m_hostOnline;
+  unsigned int m_jobId = 0;
+  bool m_hostOnline = false;
 };
 
 //
@@ -641,7 +640,7 @@ void CWakeOnAccess::QueueMACDiscoveryForHost(const std::string& host)
 {
   if (IsEnabled())
   {
-    if (URIUtils::IsHostOnLAN(host, true))
+    if (URIUtils::IsHostOnLAN(host, LanCheckMode::ANY_PRIVATE_SUBNET))
       CServiceBroker::GetJobManager()->AddJob(new CMACDiscoveryJob(host), this);
     else
       CLog::Log(LOGINFO, "{} - skip Mac discovery for non-local host '{}'", __FUNCTION__, host);
@@ -801,19 +800,18 @@ void CWakeOnAccess::LoadFromXML()
 {
   bool enabled = CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_POWERMANAGEMENT_WAKEONACCESS);
 
-  CXBMCTinyXML xmlDoc;
+  CXBMCTinyXML2 xmlDoc;
   if (!xmlDoc.LoadFile(GetSettingFile()))
   {
     if (enabled)
-      CLog::Log(LOGINFO, "{} - unable to load:{}", __FUNCTION__, GetSettingFile());
+      CLog::LogF(LOGINFO, "unable to load:{}", GetSettingFile());
     return;
   }
 
-  TiXmlElement* pRootElement = xmlDoc.RootElement();
-  if (StringUtils::CompareNoCase(pRootElement->Value(), "onaccesswakeup"))
+  auto* rootElement = xmlDoc.RootElement();
+  if (StringUtils::CompareNoCase(rootElement->Value(), "onaccesswakeup"))
   {
-    CLog::Log(LOGERROR, "{} - XML file {} doesn't contain <onaccesswakeup>", __FUNCTION__,
-              GetSettingFile());
+    CLog::LogF(LOGERROR, "XML file {} doesn't contain <onaccesswakeup>", GetSettingFile());
     return;
   }
 
@@ -824,16 +822,16 @@ void CWakeOnAccess::LoadFromXML()
   SetEnabled(enabled);
 
   int tmp;
-  if (XMLUtils::GetInt(pRootElement, "netinittimeout", tmp, 0, 5 * 60))
+  if (XMLUtils::GetInt(rootElement, "netinittimeout", tmp, 0, 5 * 60))
     m_netinit_sec = tmp;
   CLog::Log(LOGINFO, "  -Network init timeout : [{}] sec", m_netinit_sec);
 
-  if (XMLUtils::GetInt(pRootElement, "netsettletime", tmp, 0, 5 * 1000))
+  if (XMLUtils::GetInt(rootElement, "netsettletime", tmp, 0, 5 * 1000))
     m_netsettle_ms = tmp;
   CLog::Log(LOGINFO, "  -Network settle time  : [{}] ms", m_netsettle_ms);
 
-  const TiXmlNode* pWakeUp = pRootElement->FirstChildElement("wakeup");
-  while (pWakeUp)
+  const auto* pWakeUp = rootElement->FirstChildElement("wakeup");
+  while (pWakeUp != nullptr)
   {
     WakeUpEntry entry;
 
@@ -845,9 +843,9 @@ void CWakeOnAccess::LoadFromXML()
       entry.mac = strtmp;
 
     if (entry.host.empty())
-      CLog::Log(LOGERROR, "{} - Missing <host> tag or it's empty", __FUNCTION__);
+      CLog::LogF(LOGERROR, "Missing <host> tag or it's empty");
     else if (entry.mac.empty())
-      CLog::Log(LOGERROR, "{} - Missing <mac> tag or it's empty", __FUNCTION__);
+      CLog::Log(LOGERROR, "Missing <mac> tag or it's empty");
     else
     {
       if (XMLUtils::GetInt(pWakeUp, "pingport", tmp, 0, USHRT_MAX))
@@ -887,8 +885,8 @@ void CWakeOnAccess::LoadFromXML()
   // load upnp server map
   m_UPnPServers.clear();
 
-  const TiXmlNode* pUPnPNode = pRootElement->FirstChildElement("upnp_map");
-  while (pUPnPNode)
+  const auto* pUPnPNode = rootElement->FirstChildElement("upnp_map");
+  while (pUPnPNode != nullptr)
   {
     UPnPServer server;
 
@@ -900,7 +898,7 @@ void CWakeOnAccess::LoadFromXML()
       server.m_name = server.m_uuid;
 
     if (server.m_uuid.empty() || server.m_mac.empty())
-      CLog::Log(LOGERROR, "{} - Missing or empty <upnp_map> entry", __FUNCTION__);
+      CLog::LogF(LOGERROR, "Missing or empty <upnp_map> entry");
     else
     {
       CLog::Log(LOGINFO, "  Registering upnp_map entry [{} : {}] -> [{}]", server.m_name,
@@ -915,19 +913,25 @@ void CWakeOnAccess::LoadFromXML()
 
 void CWakeOnAccess::SaveToXML()
 {
-  CXBMCTinyXML xmlDoc;
-  TiXmlElement xmlRootElement("onaccesswakeup");
-  TiXmlNode *pRoot = xmlDoc.InsertEndChild(xmlRootElement);
-  if (!pRoot) return;
+  CXBMCTinyXML2 xmlDoc;
+  auto xmlRootElement = xmlDoc.NewElement("onaccesswakeup");
+  if (xmlRootElement == nullptr)
+    return;
 
-  XMLUtils::SetInt(pRoot, "netinittimeout", m_netinit_sec);
-  XMLUtils::SetInt(pRoot, "netsettletime", m_netsettle_ms);
+  auto* root = xmlDoc.InsertEndChild(xmlRootElement);
+  if (root == nullptr)
+    return;
+
+  XMLUtils::SetInt(root, "netinittimeout", m_netinit_sec);
+  XMLUtils::SetInt(root, "netsettletime", m_netsettle_ms);
 
   for (const auto& i : m_entries)
   {
-    TiXmlElement xmlSetting("wakeup");
-    TiXmlNode* pWakeUpNode = pRoot->InsertEndChild(xmlSetting);
-    if (pWakeUpNode)
+    auto* xmlSetting = xmlDoc.NewElement("wakeup");
+    if (xmlSetting == nullptr)
+      continue;
+    auto* pWakeUpNode = root->InsertEndChild(xmlSetting);
+    if (pWakeUpNode != nullptr)
     {
       XMLUtils::SetString(pWakeUpNode, "host", i.host);
       XMLUtils::SetString(pWakeUpNode, "mac", i.mac);
@@ -942,9 +946,11 @@ void CWakeOnAccess::SaveToXML()
 
   for (const auto& upnp : m_UPnPServers)
   {
-    TiXmlElement xmlSetting("upnp_map");
-    TiXmlNode* pUPnPNode = pRoot->InsertEndChild(xmlSetting);
-    if (pUPnPNode)
+    auto* xmlSetting = xmlDoc.NewElement("upnp_map");
+    if (xmlSetting == nullptr)
+      continue;
+    auto* pUPnPNode = root->InsertEndChild(xmlSetting);
+    if (pUPnPNode != nullptr)
     {
       XMLUtils::SetString(pUPnPNode, "name", upnp.m_name);
       XMLUtils::SetString(pUPnPNode, "uuid", upnp.m_uuid);

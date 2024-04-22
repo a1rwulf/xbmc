@@ -18,6 +18,7 @@
 #include <set>
 #include <stdint.h>
 #include <string>
+#include <utility>
 
 class CFileItem;
 
@@ -39,6 +40,7 @@ class IGameInputCallback;
 
 /*!
  * \ingroup games
+ *
  * \brief Helper class to have "C" struct created before other parts becomes his pointer.
  */
 class CGameClientStruct
@@ -141,6 +143,8 @@ public:
   const std::set<std::string>& GetExtensions() const { return m_extensions; }
   bool SupportsAllExtensions() const { return m_bSupportsAllExtensions; }
   bool IsExtensionValid(const std::string& strExtension) const;
+  const std::string& GetEmulatorName() const { return m_emulatorName; }
+  const std::string& GetPlatforms() const { return m_platforms; }
 
   // Start/stop gameplay
   bool Initialize(void);
@@ -212,6 +216,24 @@ private:
   static bool cb_input_event(KODI_HANDLE kodiInstance, const game_input_event* event);
   //@}
 
+  /*!
+   * \brief Parse the name of a libretro game add-on into its emulator name
+   * and platforms
+   *
+   * \param addonName The name of the add-on, e.g. "Nintendo - SNES / SFC (Snes9x 2002)"
+   *
+   * \return A tuple of two strings:
+   *   - first:  the emulator name, e.g. "Snes9x 2002"
+   *   - second: the platforms, e.g. "Nintendo - SNES / SFC"
+   *
+   * For cores that don't emulate a platform, such as 2048 with the add-on name
+   * "2048", then the emulator name will be the add-on name and platforms
+   * will be empty, e.g.:
+   *   - first:  "2048"
+   *   - second: ""
+   */
+  static std::pair<std::string, std::string> ParseLibretroName(const std::string& addonName);
+
   // Game subsystems
   GameClientSubsystems m_subsystems;
 
@@ -219,18 +241,19 @@ private:
   bool m_bSupportsVFS;
   bool m_bSupportsStandalone;
   std::set<std::string> m_extensions;
-  bool m_bSupportsAllExtensions;
-  // GamePlatforms         m_platforms;
+  bool m_bSupportsAllExtensions = false;
+  std::string m_emulatorName;
+  std::string m_platforms;
 
   // Properties of the current playing file
   std::atomic_bool m_bIsPlaying; // True between OpenFile() and CloseFile()
   std::string m_gamePath;
   bool m_bRequiresGameLoop = false;
-  size_t m_serializeSize;
+  size_t m_serializeSize = 0;
   IGameInputCallback* m_input = nullptr; // The input callback passed to OpenFile()
   double m_framerate = 0.0; // Video frame rate (fps)
   double m_samplerate = 0.0; // Audio sample rate (Hz)
-  GAME_REGION m_region; // Region of the loaded game
+  GAME_REGION m_region = GAME_REGION_UNKNOWN; // Region of the loaded game
 
   // In-game saves
   std::unique_ptr<CGameClientInGameSaves> m_inGameSaves;

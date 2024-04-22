@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2013-2018 Team Kodi
+ *  Copyright (C) 2013-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -20,7 +20,7 @@
 class IGenericTouchGestureDetector : public ITouchInputHandling
 {
 public:
-  IGenericTouchGestureDetector(ITouchActionHandler* handler, float dpi) : m_done(false), m_dpi(dpi)
+  IGenericTouchGestureDetector(ITouchActionHandler* handler, float dpi) : m_dpi(dpi)
   {
     RegisterHandler(handler);
   }
@@ -79,7 +79,7 @@ protected:
   /*!
    * \brief Whether the gesture recognition is finished or not
    */
-  bool m_done;
+  bool m_done = false;
   /*!
    * \brief DPI value of the touch screen
    */

@@ -10,10 +10,11 @@
 #pragma once
 
 #include "cores/IPlayer.h"
-#include "guilib/DispResource.h"
 #include "threads/SystemClock.h"
+#include "threads/Thread.h"
 #include "utils/logtypes.h"
 
+#include <memory>
 #include <string>
 
 class PLT_MediaController;
@@ -23,8 +24,7 @@ namespace UPNP
 
 class CUPnPPlayerController;
 
-class CUPnPPlayer
-  : public IPlayer, public IRenderLoop
+class CUPnPPlayer : public IPlayer, public CThread
 {
 public:
   CUPnPPlayer(IPlayerCallback& callback, const char* uuid);
@@ -35,8 +35,8 @@ public:
   bool CloseFile(bool reopen = false) override;
   bool IsPlaying() const override;
   void Pause() override;
-  bool HasVideo() const override { return false; }
-  bool HasAudio() const override { return false; }
+  bool HasVideo() const override { return m_hasVideo; }
+  bool HasAudio() const override { return m_hasAudio; }
   void Seek(bool bPlus, bool bLargeStep, bool bChapterOverride) override;
   void SeekPercentage(float fPercent = 0) override;
   void SetVolume(float volume) override;
@@ -48,10 +48,7 @@ public:
 
   bool IsCaching() const override { return false; }
   int GetCacheLevel() const override { return -1; }
-  void DoAudioWork() override;
   bool OnAction(const CAction &action) override;
-
-  void FrameMove() override;
 
   int PlayFile(const CFileItem& file,
                const CPlayerOptions& options,
@@ -63,12 +60,18 @@ private:
   int64_t GetTotalTime();
   float GetPercentage();
 
-  PLT_MediaController* m_control;
-  CUPnPPlayerController* m_delegate;
+  // implementation of CThread
+  void Process() override;
+  void OnExit() override;
+
+  PLT_MediaController* m_control = nullptr;
+  std::unique_ptr<CUPnPPlayerController> m_delegate;
   std::string m_current_uri;
   std::string m_current_meta;
-  bool m_started;
-  bool m_stopremote;
+  bool m_started = false;
+  bool m_stopremote = false;
+  bool m_hasVideo{false};
+  bool m_hasAudio{false};
   XbmcThreads::EndTime<> m_updateTimer;
 
   Logger m_logger;

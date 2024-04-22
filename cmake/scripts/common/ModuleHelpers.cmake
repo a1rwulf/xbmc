@@ -10,12 +10,12 @@
 function(get_versionfile_data)
 
   # Dependency path
-  set(MODULE_PATH "${PROJECTSOURCE}/tools/depends/${LIB_TYPE}/${MODULE_LC}")
+  set(MODULE_PATH "${PROJECTSOURCE}/tools/depends/${${MODULE_LC}_LIB_TYPE}/${${MODULE_LC}_MODULE_LOCATION}")
 
-  if(NOT EXISTS "${MODULE_PATH}/${MODULE}-VERSION")
-    MESSAGE(FATAL_ERROR "${MODULE}-VERSION does not exist at ${MODULE_PATH}.")
+  if(NOT EXISTS "${MODULE_PATH}/${${MODULE_LC}_MODULE_VERSION}-VERSION")
+    MESSAGE(FATAL_ERROR "${${MODULE_LC}_MODULE_VERSION}-VERSION does not exist at ${MODULE_PATH}.")
   else()
-    set(${MODULE}_FILE "${MODULE_PATH}/${MODULE}-VERSION")
+    set(${MODULE}_FILE "${MODULE_PATH}/${${MODULE_LC}_MODULE_VERSION}-VERSION")
   endif()
 
   file(STRINGS ${${MODULE}_FILE} ${MODULE}_LNAME REGEX "^[ \t]*LIBNAME=")
@@ -52,7 +52,7 @@ function(get_versionfile_data)
   if (${MODULE}_BASE_URL)
     set(${MODULE}_BASE_URL ${${MODULE}_BASE_URL} PARENT_SCOPE)
   else()
-    set(${MODULE}_BASE_URL "http://mirrors.kodi.tv/build-deps/sources" PARENT_SCOPE)
+    set(${MODULE}_BASE_URL "${KODI_MIRROR}/build-deps/sources" PARENT_SCOPE)
   endif()
   set(${MODULE}_BYPRODUCT ${${MODULE}_BYPRODUCT} PARENT_SCOPE)
 
@@ -123,13 +123,22 @@ endfunction()
 macro(SETUP_BUILD_VARS)
   string(TOUPPER ${MODULE_LC} MODULE)
 
+  if(DEFINED ${MODULE_LC}_MODULE_LOCATION)
+    string(TOUPPER ${${MODULE_LC}_MODULE_LOCATION} _MODULE_UPPER)
+    set(${MODULE_LC}_MODULE_VERSION ${_MODULE_UPPER})
+    unset(_MODULE_UPPER)
+  else()
+    set(${MODULE_LC}_MODULE_LOCATION ${MODULE_LC})
+    set(${MODULE_LC}_MODULE_VERSION ${MODULE})
+  endif()
+
   # Fall through to target build module dir if not explicitly set
-  if(NOT DEFINED LIB_TYPE)
-    set(LIB_TYPE "target")
+  if(NOT DEFINED ${MODULE_LC}_LIB_TYPE)
+    set(${MODULE_LC}_LIB_TYPE "target")
   endif()
 
   # Location for build type, native or target
-  if(LIB_TYPE STREQUAL "target")
+  if(${MODULE_LC}_LIB_TYPE STREQUAL "target")
     set(DEP_LOCATION "${DEPENDS_PATH}")
   else()
     set(DEP_LOCATION "${NATIVEPREFIX}")
@@ -141,8 +150,10 @@ macro(SETUP_BUILD_VARS)
     set(PROJECTSOURCE ${CMAKE_SOURCE_DIR})
   endif()
 
-  # populate variables of data from VERSION file for MODULE
-  get_versionfile_data()
+  if(NOT ${MODULE}_DISABLE_VERSION)
+    # populate variables of data from VERSION file for MODULE
+    get_versionfile_data()
+  endif()
 
   # allow user to override the download URL with a local tarball
   # needed for offline build envs
@@ -153,7 +164,7 @@ macro(SETUP_BUILD_VARS)
   endif()
   if(VERBOSE)
     message(STATUS "MODULE: ${MODULE}")
-    message(STATUS "LIB_TYPE: ${LIB_TYPE}")
+    message(STATUS "${MODULE_LC}_LIB_TYPE: ${${MODULE_LC}_LIB_TYPE}")
     message(STATUS "DEP_LOCATION: ${DEP_LOCATION}")
     message(STATUS "PROJECTSOURCE: ${PROJECTSOURCE}")
     message(STATUS "${MODULE}_URL: ${${MODULE}_URL}")
@@ -164,7 +175,6 @@ macro(CLEAR_BUILD_VARS)
   # unset all generic variables to insure clean state between macro calls
   # Potentially an issue with scope when a macro is used inside a dep that uses a macro
   unset(PROJECTSOURCE)
-  unset(LIB_TYPE)
   unset(BUILD_NAME)
   unset(INSTALL_DIR)
   unset(CMAKE_ARGS)
@@ -174,6 +184,7 @@ macro(CLEAR_BUILD_VARS)
   unset(INSTALL_COMMAND)
   unset(BUILD_IN_SOURCE)
   unset(BUILD_BYPRODUCTS)
+  unset(WIN_DISABLE_PROJECT_FLAGS)
 
   # unset all module specific variables to insure clean state between macro calls
   # potentially an issue when a native and a target of the same module exists
@@ -182,6 +193,7 @@ macro(CLEAR_BUILD_VARS)
   unset(${MODULE}_GENERATOR_PLATFORM)
   unset(${MODULE}_INSTALL_PREFIX)
   unset(${MODULE}_TOOLCHAIN_FILE)
+  unset(${MODULE_LC}_LIB_TYPE)
 endmacro()
 
 # Macro to create externalproject_add target
@@ -195,6 +207,13 @@ endmacro()
 # INSTALL_COMMAND: autoconf(required), meson(required), cmake(optional)
 # BUILD_IN_SOURCE: ALL(optional)
 # BUILD_BYPRODUCTS: ALL(optional)
+#
+# Windows Specific
+# WIN_DISABLE_PROJECT_FLAGS - Set to not use core compiler flags for externalproject_add target
+#                             This removes CMAKE_C_FLAGS CMAKE_CXX_FLAGS CMAKE_EXE_LINKER_FLAGS
+#                             from the externalproject_add target. Primarily used for HOST build
+#                             tools that may have different arch/build requirements to the core app
+#                             target (eg flatc)
 #
 macro(BUILD_DEP_TARGET)
   include(ExternalProject)
@@ -212,9 +231,27 @@ macro(BUILD_DEP_TARGET)
 
   if(CMAKE_ARGS)
     set(CMAKE_ARGS CMAKE_ARGS ${CMAKE_ARGS}
-                             -DCMAKE_INSTALL_LIBDIR=lib
                              -DPROJECTSOURCE=${PROJECTSOURCE}
                              "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
+
+    # We dont have a toolchain for windows, so manually add all the cmake
+    # build arguments we may want
+    # We can disable adding them with WIN_DISABLE_PROJECT_FLAGS. This is potentially required
+    # for host build tools (eg flatc) that may be a different arch to the core app
+    if(WIN32 OR WINDOWS_STORE)
+      if(NOT (DEFINED WIN_DISABLE_PROJECT_FLAGS OR
+         ${MODULE_LC}_LIB_TYPE STREQUAL "native"))
+        list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} $<$<CONFIG:Debug>:${CMAKE_C_FLAGS_DEBUG}> $<$<CONFIG:Release>:${CMAKE_C_FLAGS_RELEASE}> ${${MODULE}_C_FLAGS}"
+                               "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} $<$<CONFIG:Debug>:${CMAKE_CXX_FLAGS_DEBUG}> $<$<CONFIG:Release>:${CMAKE_CXX_FLAGS_RELEASE}> ${${MODULE}_CXX_FLAGS}"
+                               "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS} $<$<CONFIG:Debug>:${CMAKE_EXE_LINKER_FLAGS_DEBUG}> $<$<CONFIG:Release>:${CMAKE_EXE_LINKER_FLAGS_RELEASE}> ${${MODULE}_EXE_LINKER_FLAGS}")
+      endif()
+    endif()
+
+    if(DEFINED ${MODULE}_INSTALL_LIBDIR)
+      list(APPEND CMAKE_ARGS -DCMAKE_INSTALL_LIBDIR=${${MODULE}_INSTALL_LIBDIR})
+    else()
+      list(APPEND CMAKE_ARGS -DCMAKE_INSTALL_LIBDIR=lib)
+    endif()
 
     if(${MODULE}_INSTALL_PREFIX)
       list(APPEND CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${${MODULE}_INSTALL_PREFIX})
@@ -259,6 +296,16 @@ macro(BUILD_DEP_TARGET)
         set(${MODULE}_GENERATOR CMAKE_GENERATOR "Unix Makefiles")
       endif()
     elseif(MSVC)
+      # Only apply SYSTEM variables for target build libs
+      if(${MODULE_LC}_LIB_TYPE STREQUAL "target")
+        if(DEFINED CMAKE_SYSTEM_VERSION)
+          list(APPEND CMAKE_ARGS -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION})
+        endif()
+        if(DEFINED CMAKE_SYSTEM_NAME)
+          list(APPEND CMAKE_ARGS -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
+        endif()
+      endif()
+
       if(NOT ${MODULE}_GENERATOR)
         set(${MODULE}_GENERATOR CMAKE_GENERATOR "${CMAKE_GENERATOR}")
       endif()
@@ -301,6 +348,14 @@ macro(BUILD_DEP_TARGET)
 
   if(BUILD_IN_SOURCE)
     set(BUILD_IN_SOURCE BUILD_IN_SOURCE ${BUILD_IN_SOURCE})
+  endif()
+
+  # Change extension of BYPRODUCT
+  # eg, Macos uses dylib for shared libs, but all other unix platforms use .so
+  if(${MODULE}_BYPRODUCT_EXTENSION)
+    string(REGEX REPLACE "\\.[^.]*$" "" _LIBNAME ${${MODULE}_BYPRODUCT})
+    set(${MODULE}_BYPRODUCT "${_LIBNAME}.${${MODULE}_BYPRODUCT_EXTENSION}")
+    unset(_LIBNAME)
   endif()
 
   # Set Library names.
@@ -402,3 +457,10 @@ macro(PATCH_LF_CHECK patch)
   endif()
   unset(patch_content_hex)
 endmacro()
+
+# Custom property that we can track to allow us to notify to dependency find modules
+# that a dependency of that find module is being built, and therefore that higher level
+# dependency should also be built regardless of success in lib searches
+define_property(TARGET PROPERTY LIB_BUILD
+                       BRIEF_DOCS "This target will be compiling the library"
+                       FULL_DOCS "This target will be compiling the library")

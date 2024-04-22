@@ -46,6 +46,13 @@ public:
   }
   int GetHeight() { return m_RenderInfo.Height; }
   int GetWidth() { return m_RenderInfo.Width; }
+
+  /*!
+   \brief Checks if the data in the decoder has changed
+   \return true if the data in the decoder has changed, false otherwise
+   */
+  bool Changed();
+
   bool InitDecoder();
   void EndDecoder();
   void RenderPage();
@@ -186,7 +193,7 @@ private:
   FTC_SBit            m_sBit;             /*  "       "   "  */
   FT_Face             m_Face;             /*  "       "   "  */
   /*! An opaque handle to a cache node object. Each cache node is reference-counted. */
-  FTC_Node m_anode;
+  FTC_Node m_anode{nullptr};
   FTC_ImageTypeRec    m_TypeTTF;          /*  "       "   "  */
   int                 m_Ascender;         /*  "       "   "  */
 

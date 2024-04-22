@@ -10,10 +10,10 @@
 
 #include "ServiceBroker.h"
 #include "games/controllers/ControllerIDs.h"
-#include "input/IKeymap.h"
 #include "input/actions/ActionIDs.h"
 #include "input/joysticks/JoystickUtils.h"
 #include "input/joysticks/interfaces/IButtonMap.h"
+#include "input/keymaps/interfaces/IKeymap.h"
 #include "messaging/helpers/DialogOKHelper.h"
 #include "peripherals/Peripherals.h"
 #include "utils/Variant.h"
@@ -23,7 +23,6 @@
 
 using namespace KODI;
 using namespace GAME;
-using namespace KODI::MESSAGING;
 
 CGUIDialogButtonCapture::CGUIDialogButtonCapture() : CThread("ButtonCaptureDlg")
 {
@@ -42,8 +41,8 @@ void CGUIDialogButtonCapture::Show()
 
     Create();
 
-    bool bAccepted =
-        HELPERS::ShowOKDialogText(CVariant{GetDialogHeader()}, CVariant{GetDialogText()});
+    bool bAccepted = MESSAGING::HELPERS::ShowOKDialogText(CVariant{GetDialogHeader()},
+                                                          CVariant{GetDialogText()});
 
     StopThread(false);
 
@@ -65,12 +64,12 @@ void CGUIDialogButtonCapture::Process()
       break;
 
     //! @todo Move to rendering thread when there is a rendering thread
-    HELPERS::UpdateOKDialogText(CVariant{35013}, CVariant{GetDialogText()});
+    MESSAGING::HELPERS::UpdateOKDialogText(CVariant{35013}, CVariant{GetDialogText()});
   }
 }
 
 bool CGUIDialogButtonCapture::MapPrimitive(JOYSTICK::IButtonMap* buttonMap,
-                                           IKeymap* keymap,
+                                           KEYMAP::IKeymap* keymap,
                                            const JOYSTICK::CDriverPrimitive& primitive)
 {
   if (m_bStop)

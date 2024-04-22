@@ -42,11 +42,11 @@ constexpr char signatureLastChars[] = {'\x0A', '\x0D', '\x20', '\x09'};
 
 constexpr char tagPattern[] = "<(\\/)?([^a-zA-Z >]+)?([^\\d:. >]+)?(\\.[^ >]+)?(?> ([^>]+))?>";
 
-constexpr char cueTimePattern[] = "^(?>(\\d{2}):)?(\\d{2}):(\\d{2}\\.\\d{3})"
+constexpr char cueTimePattern[] = "^(?>(\\d{2,}):)?(\\d{2}):(\\d{2}\\.\\d{3})"
                                   "[ \\t]*-->[ \\t]*"
-                                  "(?>(\\d{2}):)?(\\d{2}):(\\d{2}\\.\\d{3})";
+                                  "(?>(\\d{2,}):)?(\\d{2}):(\\d{2}\\.\\d{3})";
 
-constexpr char timePattern[] = "<(?>(\\d{2}):)?(\\d{2}):(\\d{2}\\.\\d{3})>";
+constexpr char timePattern[] = "<(?>(\\d{2,}):)?(\\d{2}):(\\d{2}\\.\\d{3})>";
 
 // Regex patterns for cue properties
 const std::map<std::string, std::string> cuePropsPatterns = {
@@ -95,7 +95,8 @@ bool ValidateSignature(const std::string& data, const char* signature)
     if (data.compare(0, signatureLen, signature) == 0)
     {
       // Check if last char is valid
-      if (std::strchr(signatureLastChars, data[signatureLen]) != nullptr)
+      if (std::memchr(signatureLastChars, data[signatureLen], sizeof(signatureLastChars)) !=
+          nullptr)
         return true;
     }
   }
@@ -177,8 +178,12 @@ void TranslateEscapeChars(std::string& text)
 {
   if (text.find('&') != std::string::npos)
   {
-    StringUtils::Replace(text, "&lrm;", u8"\u200e");
-    StringUtils::Replace(text, "&rlm;", u8"\u200f");
+    // The specs says to use unicode
+    // U+200E for "&lrm;" and U+200F for "&rlm;"
+    // but libass rendering assume the text as left-to-right,
+    // to display text in the right order we have to use embedded codes
+    StringUtils::Replace(text, "&lrm;", u8"\u202a");
+    StringUtils::Replace(text, "&rlm;", u8"\u202b");
     StringUtils::Replace(text, "&#x2068;", u8"\u2068");
     StringUtils::Replace(text, "&#x2069;", u8"\u2069");
     StringUtils::Replace(text, "&amp;", "&");
@@ -821,7 +826,7 @@ void CWebVTTHandler::CalculateTextPosition(std::string& subtitleText)
 
 std::string CWebVTTHandler::GetCueSettingValue(const std::string& propName,
                                                std::string& text,
-                                               std::string defaultValue)
+                                               const std::string& defaultValue)
 {
   if (m_cuePropsMapRegex[propName].RegFind(text) >= 0)
     return m_cuePropsMapRegex[propName].GetMatch(1);
@@ -1113,21 +1118,33 @@ void CWebVTTHandler::ConvertAddSubtitle(std::vector<subtitleData>* subList)
   // Convert tags and apply the CSS Styles converted
   ConvertSubtitle(m_subtitleData.text);
 
-  if (!subList->empty())
+  if (m_lastSubtitleData)
   {
-    // Youtube WebVTT can have multiple cues with same time, text and position
-    // sometimes with different css color but only last cue will be visible
-    // this cause unexpected results on screen so we keep only the last one
-    const subtitleData& prevSub = subList->back();
-    if (prevSub.startTime == m_subtitleData.startTime &&
-        prevSub.stopTime == m_subtitleData.stopTime && prevSub.textRaw == m_subtitleData.textRaw &&
-        prevSub.cueSettings == m_subtitleData.cueSettings)
+    // Check for same subtitle data
+    if (m_lastSubtitleData->startTime == m_subtitleData.startTime &&
+        m_lastSubtitleData->stopTime == m_subtitleData.stopTime &&
+        m_lastSubtitleData->textRaw == m_subtitleData.textRaw &&
+        m_lastSubtitleData->cueSettings == m_subtitleData.cueSettings)
     {
-      subList->pop_back();
+      if (subList->empty())
+      {
+        // On segmented WebVTT, it can happen that the last subtitle entry is sent
+        // on consecutive demux packet. Hence we avoid showing overlapping subs.
+        return;
+      }
+      else
+      {
+        // Youtube WebVTT can have multiple cues with same time, text and position
+        // sometimes with different css color but only last cue will be visible
+        // this cause unexpected results on screen, so we keep only the current one
+        // and delete the previous one.
+        subList->pop_back();
+      }
     }
   }
 
   subList->emplace_back(m_subtitleData);
+  m_lastSubtitleData = std::make_unique<subtitleData>(m_subtitleData);
 }
 
 void CWebVTTHandler::LoadColors()

@@ -17,9 +17,11 @@
 #include "guilib/GUIWindowManager.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "video/VideoFileItemClassify.h"
 
 #include <mutex>
 
+using namespace KODI;
 using namespace std::chrono_literals;
 
 std::shared_ptr<const IPlayer> CApplicationPlayer::GetInternal() const
@@ -99,13 +101,13 @@ bool CApplicationPlayer::OpenFile(const CFileItem& item, const CPlayerOptions& o
   {
     bool needToClose = false;
 
-    if (item.IsDiscImage() || item.IsDVDFile())
+    if (item.IsDiscImage() || VIDEO::IsDVDFile(item))
       needToClose = true;
 
     if (player->m_name != newPlayer)
       needToClose = true;
 
-    if (player->m_type != "video")
+    if (player->m_type != "video" && player->m_type != "remote")
       needToClose = true;
 
     if (needToClose)
@@ -544,13 +546,6 @@ void CApplicationPlayer::FrameAdvance(int frames)
     player->FrameAdvance(frames);
 }
 
-void CApplicationPlayer::DoAudioWork()
-{
-  std::shared_ptr<IPlayer> player = GetInternal();
-  if (player)
-    player->DoAudioWork();
-}
-
 std::string CApplicationPlayer::GetPlayerState()
 {
   std::shared_ptr<IPlayer> player = GetInternal();
@@ -872,6 +867,27 @@ float CApplicationPlayer::GetRenderAspectRatio() const
     return 1.0;
 }
 
+bool CApplicationPlayer::GetRects(CRect& source, CRect& dest, CRect& view) const
+{
+  const std::shared_ptr<const IPlayer> player{GetInternal()};
+  if (player)
+  {
+    player->GetRects(source, dest, view);
+    return true;
+  }
+  else
+    return false;
+}
+
+unsigned int CApplicationPlayer::GetOrientation() const
+{
+  const std::shared_ptr<const IPlayer> player{GetInternal()};
+  if (player)
+    return player->GetOrientation();
+  else
+    return 0;
+}
+
 void CApplicationPlayer::TriggerUpdateResolution()
 {
   std::shared_ptr<IPlayer> player = GetInternal();
@@ -994,6 +1010,16 @@ bool CApplicationPlayer::IsRemotePlaying() const
       return true;
   }
   return false;
+}
+
+std::string CApplicationPlayer::GetName() const
+{
+  const std::shared_ptr<const IPlayer> player = GetInternal();
+  if (player)
+  {
+    return player->m_name;
+  }
+  return {};
 }
 
 CVideoSettings CApplicationPlayer::GetVideoSettings() const

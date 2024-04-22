@@ -41,9 +41,7 @@ static enum AEChannel CAChannelMap[CA_MAX_CHANNELS + 1] = {
 };
 
 AEDeviceEnumerationOSX::AEDeviceEnumerationOSX(AudioDeviceID deviceID)
-: m_deviceID(deviceID)
-, m_isPlanar(false)
-, m_caDevice(deviceID)
+  : m_deviceID(deviceID), m_caDevice(deviceID)
 {
   Enumerate();
 }
@@ -222,11 +220,11 @@ CADeviceList AEDeviceEnumerationOSX::GetDeviceInfoList() const
         deviceInfo.m_deviceName = getDeviceNameForStream(streamIdx) + ":source" + sourceIdxStr.str();
         deviceInfo.m_displayNameExtra = m_caDevice.GetDataSourceName(sourceList[sourceIdx]);
         devInstance.sourceId = sourceList[sourceIdx];
-        list.push_back(std::make_pair(devInstance, deviceInfo));
+        list.emplace_back(devInstance, deviceInfo);
       }
     }
     else
-      list.push_back(std::make_pair(devInstance, deviceInfo));
+      list.emplace_back(devInstance, deviceInfo);
   }
   return list;
 }

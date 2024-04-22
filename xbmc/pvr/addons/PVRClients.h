@@ -29,7 +29,6 @@ namespace ADDON
 namespace PVR
 {
 class CPVRChannel;
-class CPVRChannelGroupInternal;
 class CPVRChannelGroup;
 class CPVRChannelGroupMember;
 class CPVRChannelGroups;
@@ -151,7 +150,7 @@ struct SBackend
      * @brief Get the ID of the first created client.
      * @return the ID or -1 if no clients are created;
      */
-    int GetFirstCreatedClientID();
+    int GetFirstCreatedClientID() const;
 
     /*!
      * @brief Check whether there are any created, but not (yet) connected clients.
@@ -209,14 +208,22 @@ struct SBackend
      */
     bool GetTimers(const std::vector<std::shared_ptr<CPVRClient>>& clients,
                    CPVRTimersContainer* timers,
-                   std::vector<int>& failedClients);
+                   std::vector<int>& failedClients) const;
 
     /*!
-     * @brief Get all supported timer types.
-     * @param results The container to store the result in.
+     * @brief Update all timer types from the given clients
+     * @param clients The clients to fetch data from. Leave empty to fetch data from all created clients.
+     * @param failedClients in case of errors will contain the ids of the clients for which the timer types could not be obtained.
      * @return PVR_ERROR_NO_ERROR if the operation succeeded, the respective PVR_ERROR value otherwise.
      */
-    PVR_ERROR GetTimerTypes(std::vector<std::shared_ptr<CPVRTimerType>>& results) const;
+    PVR_ERROR UpdateTimerTypes(const std::vector<std::shared_ptr<CPVRClient>>& clients,
+                               std::vector<int>& failedClients);
+
+    /*!
+     * @brief Get all timer types supported by the backends, without updating them from the backends.
+     * @return the types.
+     */
+    const std::vector<std::shared_ptr<CPVRTimerType>> GetTimerTypes() const;
 
     //@}
 
@@ -234,7 +241,7 @@ struct SBackend
     PVR_ERROR GetRecordings(const std::vector<std::shared_ptr<CPVRClient>>& clients,
                             CPVRRecordings* recordings,
                             bool deleted,
-                            std::vector<int>& failedClients);
+                            std::vector<int>& failedClients) const;
 
     /*!
      * @brief Delete all "soft" deleted recordings permanently on the backend.
@@ -293,7 +300,7 @@ struct SBackend
     PVR_ERROR GetChannels(const std::vector<std::shared_ptr<CPVRClient>>& clients,
                           bool bRadio,
                           std::vector<std::shared_ptr<CPVRChannel>>& channels,
-                          std::vector<int>& failedClients);
+                          std::vector<int>& failedClients) const;
 
     /*!
      * @brief Get all providers from backends.
@@ -304,7 +311,7 @@ struct SBackend
      */
     PVR_ERROR GetProviders(const std::vector<std::shared_ptr<CPVRClient>>& clients,
                            CPVRProvidersContainer* providers,
-                           std::vector<int>& failedClients);
+                           std::vector<int>& failedClients) const;
 
     /*!
      * @brief Get all channel groups from the given clients.
@@ -315,7 +322,7 @@ struct SBackend
      */
     PVR_ERROR GetChannelGroups(const std::vector<std::shared_ptr<CPVRClient>>& clients,
                                CPVRChannelGroups* groups,
-                               std::vector<int>& failedClients);
+                               std::vector<int>& failedClients) const;
 
     /*!
      * @brief Get all group members of a channel group from the given clients.
@@ -329,7 +336,7 @@ struct SBackend
         const std::vector<std::shared_ptr<CPVRClient>>& clients,
         CPVRChannelGroup* group,
         std::vector<std::shared_ptr<CPVRChannelGroupMember>>& groupMembers,
-        std::vector<int>& failedClients);
+        std::vector<int>& failedClients) const;
 
     /*!
      * @brief Get a list of clients providing a channel scan dialog.
@@ -397,9 +404,9 @@ struct SBackend
     /*!
      * @brief Notify a change of an addon connection state.
      * @param client The changed client.
-     * @param strConnectionString A human-readable string identifiying the addon.
+     * @param strConnectionString A human-readable string providing additional information.
      * @param newState The new connection state.
-     * @param strMessage A human readable message providing additional information.
+     * @param strMessage A human readable string replacing default state message.
      */
     void ConnectionStateChange(CPVRClient* client,
                                const std::string& strConnectionString,

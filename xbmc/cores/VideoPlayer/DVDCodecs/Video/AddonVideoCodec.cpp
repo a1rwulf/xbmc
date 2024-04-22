@@ -16,14 +16,77 @@
 #include "cores/VideoPlayer/Interface/TimingConstants.h"
 #include "utils/log.h"
 
+namespace
+{
+AVPixelFormat ConvertToPixelFormat(const VIDEOCODEC_FORMAT videoFormat)
+{
+  switch (videoFormat)
+  {
+    case VIDEOCODEC_FORMAT_YV12:
+      return AV_PIX_FMT_YUV420P;
+    case VIDEOCODEC_FORMAT_I420:
+      return AV_PIX_FMT_YUV420P;
+    case VIDEOCODEC_FORMAT_YUV420P9:
+      return AV_PIX_FMT_YUV420P9;
+    case VIDEOCODEC_FORMAT_YUV420P10:
+      return AV_PIX_FMT_YUV420P10;
+    case VIDEOCODEC_FORMAT_YUV420P12:
+      return AV_PIX_FMT_YUV420P12;
+    case VIDEOCODEC_FORMAT_YUV422P9:
+      return AV_PIX_FMT_YUV422P9;
+    case VIDEOCODEC_FORMAT_YUV422P10:
+      return AV_PIX_FMT_YUV422P10;
+    case VIDEOCODEC_FORMAT_YUV422P12:
+      return AV_PIX_FMT_YUV422P12;
+    case VIDEOCODEC_FORMAT_YUV444P9:
+      return AV_PIX_FMT_YUV444P9;
+    case VIDEOCODEC_FORMAT_YUV444P10:
+      return AV_PIX_FMT_YUV444P10;
+    case VIDEOCODEC_FORMAT_YUV444P12:
+      return AV_PIX_FMT_YUV444P12;
+    default:
+      CLog::LogF(LOGWARNING,
+                 "CAddonVideoCodec: Video pixel format '{}' not valid, fallback to YUV420P.",
+                 videoFormat);
+      return AV_PIX_FMT_YUV420P;
+  }
+}
+
+unsigned int GetColorBitsFromVideoFormat(const VIDEOCODEC_FORMAT videoFormat)
+{
+  switch (videoFormat)
+  {
+    case VIDEOCODEC_FORMAT_YV12:
+    case VIDEOCODEC_FORMAT_I420:
+      return 8;
+    case VIDEOCODEC_FORMAT_YUV420P9:
+    case VIDEOCODEC_FORMAT_YUV422P9:
+    case VIDEOCODEC_FORMAT_YUV444P9:
+      return 9;
+    case VIDEOCODEC_FORMAT_YUV420P10:
+    case VIDEOCODEC_FORMAT_YUV422P10:
+    case VIDEOCODEC_FORMAT_YUV444P10:
+      return 10;
+    case VIDEOCODEC_FORMAT_YUV420P12:
+    case VIDEOCODEC_FORMAT_YUV422P12:
+    case VIDEOCODEC_FORMAT_YUV444P12:
+      return 12;
+    default:
+      CLog::LogF(LOGWARNING,
+                 "CAddonVideoCodec: Video pixel format '{}' not valid, fallback to 8 bits color.",
+                 videoFormat);
+      return 8;
+  }
+}
+
+} // unnamed namespace
+
 CAddonVideoCodec::CAddonVideoCodec(CProcessInfo& processInfo,
                                    ADDON::AddonInfoPtr& addonInfo,
                                    KODI_HANDLE parentInstance)
   : CDVDVideoCodec(processInfo),
     IAddonInstanceHandler(
-        ADDON_INSTANCE_VIDEOCODEC, addonInfo, ADDON::ADDON_INSTANCE_ID_UNUSED, parentInstance),
-    m_codecFlags(0),
-    m_displayAspect(0.0f)
+        ADDON_INSTANCE_VIDEOCODEC, addonInfo, ADDON::ADDON_INSTANCE_ID_UNUSED, parentInstance)
 {
   m_ifc.videocodec = new AddonInstance_VideoCodec;
   m_ifc.videocodec->props = new AddonProps_VideoCodec();
@@ -158,6 +221,9 @@ bool CAddonVideoCodec::CopyToInitData(VIDEOCODEC_INITDATA &initData, CDVDStreamI
     case CRYPTO_SESSION_SYSTEM_WISEPLAY:
       initData.cryptoSession.keySystem = STREAM_CRYPTO_KEY_SYSTEM_WISEPLAY;
       break;
+    case CRYPTO_SESSION_SYSTEM_CLEARKEY:
+      initData.cryptoSession.keySystem = STREAM_CRYPTO_KEY_SYSTEM_CLEARKEY;
+      break;
     default:
       return false;
     }
@@ -166,8 +232,8 @@ bool CAddonVideoCodec::CopyToInitData(VIDEOCODEC_INITDATA &initData, CDVDStreamI
             sizeof(initData.cryptoSession.sessionId) - 1);
   }
 
-  initData.extraData = reinterpret_cast<const uint8_t*>(hints.extradata);
-  initData.extraDataSize = hints.extrasize;
+  initData.extraData = hints.extradata.GetData();
+  initData.extraDataSize = hints.extradata.GetSize();
   initData.width = hints.width;
   initData.height = hints.height;
   initData.videoFormats = m_formats;
@@ -246,12 +312,12 @@ CDVDVideoCodec::VCReturn CAddonVideoCodec::GetPicture(VideoPicture* pVideoPictur
     pVideoPicture->pts = static_cast<double>(picture.pts);
     pVideoPicture->dts = DVD_NOPTS_VALUE;
     pVideoPicture->iFlags = 0;
-    pVideoPicture->chroma_position = 0;
-    pVideoPicture->colorBits = 8;
+    pVideoPicture->chroma_position = AVCHROMA_LOC_UNSPECIFIED;
+    pVideoPicture->colorBits = GetColorBitsFromVideoFormat(picture.videoFormat);
     pVideoPicture->color_primaries = AVColorPrimaries::AVCOL_PRI_UNSPECIFIED;
     pVideoPicture->color_range = 0;
     pVideoPicture->color_space = AVCOL_SPC_UNSPECIFIED;
-    pVideoPicture->color_transfer = 0;
+    pVideoPicture->color_transfer = AVCOL_TRC_UNSPECIFIED;
     pVideoPicture->hasDisplayMetadata = false;
     pVideoPicture->hasLightMetadata = false;
     pVideoPicture->iDuration = 0;
@@ -277,6 +343,7 @@ CDVDVideoCodec::VCReturn CAddonVideoCodec::GetPicture(VideoPicture* pVideoPictur
     for (int i = 0; i<YuvImage::MAX_PLANES; ++i)
       planeOffsets[i] = picture.planeOffsets[i];
 
+    pVideoPicture->videoBuffer->SetPixelFormat(ConvertToPixelFormat(picture.videoFormat));
     pVideoPicture->videoBuffer->SetDimensions(picture.width, picture.height, strides, planeOffsets);
 
     pVideoPicture->iDisplayWidth = pVideoPicture->iWidth;

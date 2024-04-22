@@ -1,5 +1,5 @@
 /*
- *  SDLMain.mm - main entry point for our Cocoa-ized SDL app
+ *  XBMCApplication.mm - main entry point for our Cocoa-ized app
  *  Initial Version: Darrell Walisser <dwaliss1@purdue.edu>
  *  Non-NIB-Code & other changes: Max Horn <max@quendi.de>
  *
@@ -15,50 +15,55 @@
 #include "application/AppParamParser.h"
 #include "messaging/ApplicationMessenger.h"
 #include "platform/xbmc.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/SettingsComponent.h"
 #include "utils/log.h"
-#import "windowing/osx/WinSystemOSX.h"
 
 #import "platform/darwin/osx/storage/OSXStorageProvider.h"
 
-#import <Foundation/Foundation.h>
-#import <sys/param.h> /* for MAXPATHLEN */
-#import <unistd.h>
+#import <AppKit/AppKit.h> /* for NSApplicationMain() */
 
 static int gArgc;
-static char** gArgv;
+static const char** gArgv;
 static BOOL gCalledAppMainline = FALSE;
 
-// Create a window menu
-static NSMenu* setupWindowMenu()
-{
-  NSMenu* windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+//! @TODO We should use standard XIB files for better management of the menubar.
+static NSDictionary* _appMenu = @{
+  @"title" : @"Kodi",
+  @"items" : @[
+    @{@"title" : @"About", @"sel" : @"orderFrontStandardAboutPanel:"},
+    @{@"title" : @"-"},
+    @{@"title" : @"Hide", @"sel" : @"hide:", @"key" : @"h"},
+    @{
+      @"title" : @"Hide Others",
+      @"sel" : @"hideOtherApplications:",
+      @"mod" : @(NSEventModifierFlagOption),
+      @"key" : @"h"
+    },
+    @{@"title" : @"Show All", @"sel" : @"unhideAllApplications:"},
+    @{@"title" : @"-"},
+    @{@"title" : @"Quit", @"sel" : @"terminate:", @"key" : @"q"},
+  ]
+};
 
-  // "Full/Windowed Toggle" item
-  NSMenuItem* menuItem = [[NSMenuItem alloc] initWithTitle:@"Full/Windowed Toggle"
-                                                    action:@selector(fullScreenToggle:)
-                                             keyEquivalent:@"f"];
-  // this is just for display purposes, key handling is in CWinEventsOSX::ProcessOSXShortcuts()
-  menuItem.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagControl;
-  [windowMenu addItem:menuItem];
-
-  // "Full/Windowed Toggle" item
-  menuItem = [[NSMenuItem alloc] initWithTitle:@"Float on Top"
-                                        action:@selector(floatOnTopToggle:)
-                                 keyEquivalent:@"t"];
-  menuItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
-  [windowMenu addItem:menuItem];
-
-  // "Minimize" item
-  menuItem = [[NSMenuItem alloc] initWithTitle:@"Minimize"
-                                        action:@selector(performMiniaturize:)
-                                 keyEquivalent:@"m"];
-  menuItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
-  [windowMenu addItem:menuItem];
-
-  return windowMenu;
-}
+static NSDictionary* _windowMenu = @{
+  @"title" : @"Window",
+  @"items" : @[
+    @{@"title" : @"Minimize", @"sel" : @"performMiniaturize:", @"key" : @"m"},
+    @{@"title" : @"Zoom", @"sel" : @"performZoom:"},
+    @{
+      @"title" : @"Float on Top",
+      @"sel" : @"floatOnTopToggle:",
+      @"mod" : @(NSEventModifierFlagOption),
+      @"key" : @"t"
+    },
+    @{@"title" : @"-"},
+    @{
+      @"title" : @"Toggle Full Screen",
+      @"sel" : @"fullScreenToggle:",
+      @"mod" : @(NSEventModifierFlagControl),
+      @"key" : @"f"
+    },
+  ]
+};
 
 // The main class of the application, the application's delegate
 @implementation XBMCDelegate
@@ -72,108 +77,47 @@ static NSMenu* setupWindowMenu()
            @"SetupWorkingDirectory Failed to cwd");
 }
 
-- (void)stopRunLoop
+- (void)setupMenuBar
 {
-  // to get applicationShouldTerminate and
-  // applicationWillTerminate notifications.
-  [NSApplication.sharedApplication terminate:nil];
-  // to flag a stop on next event.
-  [NSApplication.sharedApplication stop:nil];
+  NSMenu* menubar = [NSMenu new];
+  NSMenu* windowsMenu = nil;
 
-  //post a NOP event, so the run loop actually stops
-  //see http://www.cocoabuilder.com/archive/cocoa/219842-nsapp-stop.html
-  NSEvent* event = [NSEvent otherEventWithType:NSEventTypeApplicationDefined
-                                      location:NSMakePoint(0, 0)
-                                 modifierFlags:0
-                                     timestamp:0.0
-                                  windowNumber:0
-                                       context:nil
-                                       subtype:0
-                                         data1:0
-                                         data2:0];
-
-  [NSApplication.sharedApplication postEvent:event atStart:true];
-}
-
-// To use Cocoa on secondary POSIX threads, your application must first detach
-// at least one NSThread object, which can immediately exit. Some info says this
-// is not required anymore, who knows ?
-- (void)kickstartMultiThreaded:(id)arg
-{
-  @autoreleasepool
+  for (NSDictionary* menuDict in @[ _appMenu, _windowMenu ])
   {
-    // empty
+    auto item = [menubar addItemWithTitle:@"" action:nil keyEquivalent:@""];
+    auto submenu = [self makeMenu:menuDict];
+    [menubar setSubmenu:submenu forItem:item];
   }
+  NSApp.mainMenu = menubar;
+  NSApp.windowsMenu = windowsMenu;
 }
 
-- (void)mainLoopThread:(id)arg
+- (NSMenu*)makeMenu:(NSDictionary*)menuDict
 {
-
-#if defined(DEBUG)
-  struct rlimit rlim;
-  rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
-  if (setrlimit(RLIMIT_CORE, &rlim) == -1)
-    CLog::Log(LOGDEBUG, "Failed to set core size limit ({})", strerror(errno));
-#endif
-
-  setlocale(LC_NUMERIC, "C");
-
-  CAppParamParser appParamParser;
-  appParamParser.Parse((const char**)gArgv, (int)gArgc);
-
-  CAppEnvironment::SetUp(appParamParser.GetAppParams());
-  XBMC_Run(true);
-  CAppEnvironment::TearDown();
-
-  std::shared_ptr<CAppInboundProtocol> appPort = CServiceBroker::GetAppPort();
-  if (appPort)
-    appPort->SetRenderGUI(false);
-
-  [self performSelectorOnMainThread:@selector(stopRunLoop) withObject:nil waitUntilDone:false];
-}
-
-- (void)applicationDidChangeOcclusionState:(NSNotification*)notification
-{
-  bool occluded = true;
-  if (NSApp.occlusionState & NSApplicationOcclusionStateVisible)
-    occluded = false;
-
-  CWinSystemOSX* winSystem = dynamic_cast<CWinSystemOSX*>(CServiceBroker::GetWinSystem());
-  if (winSystem)
-    winSystem->SetOcclusionState(occluded);
+  auto menu = [[NSMenu alloc] initWithTitle:menuDict[@"title"]];
+  for (NSDictionary* items in menuDict[@"items"])
+  {
+    NSString* title = items[@"title"];
+    if ([title isEqualToString:@"-"])
+    {
+      [menu addItem:[NSMenuItem separatorItem]];
+      continue;
+    }
+    auto item = [[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""];
+    if (NSString* sel = items[@"sel"])
+      item.action = NSSelectorFromString(sel);
+    if (NSString* key = items[@"key"])
+      item.keyEquivalent = key;
+    if (NSNumber* mask = items[@"mod"])
+      item.keyEquivalentModifierMask |= [mask intValue];
+    [menu addItem:item];
+  }
+  return menu;
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification
 {
-  NSMenu* menubar = [NSMenu new];
-  NSMenuItem* menuBarItem = [NSMenuItem new];
-  [menubar addItem:menuBarItem];
-  [NSApp setMainMenu:menubar];
-
-  // Main menu
-  NSMenu* appMenu = [NSMenu new];
-  NSMenuItem* quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit"
-                                                        action:@selector(terminate:)
-                                                 keyEquivalent:@"q"];
-  [appMenu addItem:quitMenuItem];
-  [menuBarItem setSubmenu:appMenu];
-
-  // Window Menu
-  NSMenuItem* windowMenuItem = [menubar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-  NSMenu* windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
-  [menubar setSubmenu:windowMenu forItem:windowMenuItem];
-  NSMenuItem* fullscreenMenuItem = [[NSMenuItem alloc] initWithTitle:@"Full/Windowed Toggle"
-                                                              action:@selector(fullScreenToggle:)
-                                                       keyEquivalent:@"f"];
-  fullscreenMenuItem.keyEquivalentModifierMask =
-      NSEventModifierFlagCommand | NSEventModifierFlagControl;
-  [windowMenu addItem:fullscreenMenuItem];
-  [windowMenu addItemWithTitle:@"Float on Top"
-                        action:@selector(floatOnTopToggle:)
-                 keyEquivalent:@"t"];
-  [windowMenu addItemWithTitle:@"Minimize"
-                        action:@selector(performMiniaturize:)
-                 keyEquivalent:@"m"];
+  [self setupMenuBar];
 }
 
 // Called after the internal event loop has started running.
@@ -204,13 +148,41 @@ static NSMenu* setupWindowMenu()
 
   //window.acceptsMouseMovedEvents = TRUE;
   [NSApp activateIgnoringOtherApps:YES];
-  // kick our mainloop into an extra thread
-  [NSThread detachNewThreadSelector:@selector(mainLoopThread:) toTarget:self withObject:nil];
+
+  // kick our mainloop into a separate thread
+
+  auto xbmcThread = [[NSThread alloc] initWithBlock:^{
+    CAppParamParser appParamParser;
+    appParamParser.Parse(gArgv, gArgc);
+    CAppEnvironment::SetUp(appParamParser.GetAppParams());
+    XBMC_Run(true);
+    CAppEnvironment::TearDown();
+  }];
+
+  auto __weak notifier = [NSNotificationCenter defaultCenter];
+  id __block obs = [notifier addObserverForName:NSThreadWillExitNotification
+                                         object:xbmcThread
+                                          queue:[NSOperationQueue mainQueue]
+                                     usingBlock:^(NSNotification* note) {
+                                       [NSApp replyToApplicationShouldTerminate:YES];
+                                       [NSApp terminate:nil];
+                                       [notifier removeObserver:obs];
+                                     }];
+
+  xbmcThread.name = @"XBMCMainThread";
+  [xbmcThread start];
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender
 {
-  return NSTerminateNow;
+  auto appPort = CServiceBroker::GetAppPort();
+  if (appPort == nullptr)
+    return NSTerminateNow;
+
+  XBMC_Event quitEvent{.type = XBMC_QUIT};
+  appPort->OnEvent(quitEvent);
+
+  return NSTerminateLater;
 }
 
 - (void)applicationWillTerminate:(NSNotification*)note
@@ -256,7 +228,7 @@ static NSMenu* setupWindowMenu()
   const char* temparg;
   size_t arglen;
   char* arg;
-  char** newargv;
+  const char** newargv;
 
   // app has started, ignore this document.
   if (gCalledAppMainline)
@@ -268,7 +240,7 @@ static NSMenu* setupWindowMenu()
   if (arg == nullptr)
     return FALSE;
 
-  newargv = (char**)realloc(gArgv, sizeof(char*) * (gArgc + 2));
+  newargv = static_cast<const char**>(realloc(gArgv, sizeof(char*) * (gArgc + 2)));
   if (newargv == nullptr)
   {
     free(arg);
@@ -311,50 +283,54 @@ static NSMenu* setupWindowMenu()
   }
 }
 
-// Invoked from the Quit menu item
-- (void)terminate:(id)sender
-{
-  // remove any notification handlers
-  [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self];
-  [NSNotificationCenter.defaultCenter removeObserver:self];
-}
-
 - (void)fullScreenToggle:(id)sender
 {
+  CServiceBroker::GetAppMessenger()->PostMsg(TMSG_TOGGLEFULLSCREEN);
 }
 
 - (void)floatOnTopToggle:(id)sender
 {
-  // ToDo!: non functional, test further
-  NSWindow* window = NSOpenGLContext.currentContext.view.window;
-  if (window.level == NSFloatingWindowLevel)
+  auto mainWindow = [NSApplication sharedApplication].mainWindow;
+  if (!mainWindow)
   {
-    [window setLevel:NSNormalWindowLevel];
-    [sender setState:NSControlStateValueOff];
+    return;
+  }
+
+  if (mainWindow.level == NSNormalWindowLevel)
+  {
+    [mainWindow setLevel:NSFloatingWindowLevel];
+    [sender setState:NSControlStateValueOn];
   }
   else
   {
-    [window setLevel:NSFloatingWindowLevel];
-    [sender setState:NSControlStateValueOn];
+    [mainWindow setLevel:NSNormalWindowLevel];
+    [sender setState:NSControlStateValueOff];
   }
 }
 
 - (NSMenu*)applicationDockMenu:(NSApplication*)sender
 {
-  return setupWindowMenu();
+  return [self makeMenu:_windowMenu];
 }
 
 @end
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
+#if defined(_DEBUG) && 0 // SHH enable as needed
+  struct rlimit rlim;
+  rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
+  if (setrlimit(RLIMIT_CORE, &rlim) == -1)
+    CLog::Log(LOGDEBUG, "Failed to set core size limit ({})", strerror(errno));
+#endif
+
   @autoreleasepool
   {
     /* Copy the arguments into a global variable */
     /* This is passed if we are launched by double-clicking */
     if (argc >= 2 && strncmp(argv[1], "-psn", 4) == 0)
     {
-      gArgv = (char**)malloc(sizeof(char*) * 2);
+      gArgv = static_cast<const char**>(malloc(sizeof(char*) * 2));
       gArgv[0] = argv[0];
       gArgv[1] = nullptr;
       gArgc = 1;
@@ -362,26 +338,17 @@ int main(int argc, char* argv[])
     else
     {
       gArgc = argc;
-      gArgv = (char**)malloc(sizeof(char*) * (argc + 1));
+      gArgv = static_cast<const char**>(malloc(sizeof(char*) * (argc + 1)));
       for (int i = 0; i <= argc; i++)
         gArgv[i] = argv[i];
     }
 
-    // Ensure the application object is initialised
-    [NSApplication sharedApplication];
-
     // Make sure we call applicationWillTerminate on SIGTERM
     [NSProcessInfo.processInfo disableSuddenTermination];
 
-    // Set App Delegate
     auto appDelegate = [XBMCDelegate new];
-    NSApp.delegate = appDelegate;
+    [NSApplication sharedApplication].delegate = appDelegate;
 
-    // Set NSApp to show in dock
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    // Start the main event loop
-    [NSApp run];
-
-    return 1;
+    return NSApplicationMain(argc, argv);
   }
 }

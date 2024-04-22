@@ -171,19 +171,53 @@ if command_exists gdb; then
   fi
 fi
 
+if [ -n "${KODI_AE_SINK}" ]; then
+
+  echo "KODI_AE_SINK env variable is deprecated and will be removed in the future."
+  echo "Use the --audio-backend command line switch instead."
+
+  if [ "${KODI_AE_SINK}" = "PIPEWIRE" ]; then
+    ENV_ARGS="--audio-backend=pipewire"
+  elif [ "${KODI_AE_SINK}" = "PULSE" ]; then
+    ENV_ARGS="--audio-backend=pulseaudio"
+  elif [ "${KODI_AE_SINK}" = "ALSA" ]; then
+    ENV_ARGS="--audio-backend=alsa"
+  elif [ "${KODI_AE_SINK}" = "OSS" ]; then
+    ENV_ARGS="--audio-backend=oss"
+  elif [ "${KODI_AE_SINK}" = "SNDIO" ]; then
+    ENV_ARGS="--audio-backend=sndio"
+  elif [ "${KODI_AE_SINK}" = "ALSA+PULSE" ]; then
+    ENV_ARGS="--audio-backend=alsa+pulseaudio"
+  fi
+fi
+
+if [ -n "${KODI_GL_INTERFACE}" ]; then
+
+  echo "KODI_GL_INTERFACE env variable is deprecated and will be removed in the future."
+  echo "Use the --gl-interface command line switch instead."
+
+  if [ "${KODI_GL_INTERFACE}" = "GLX" ]; then
+    ENV_ARGS="--gl-interface=glx"
+  elif [ "${KODI_GL_INTERFACE}" = "EGL" ]; then
+    ENV_ARGS="--gl-interface=egl"
+  elif [ "${KODI_GL_INTERFACE}" = "EGL_PB" ]; then
+    ENV_ARGS="--gl-interface=egl-pb"
+  fi
+fi
+
 LOOP=1
 while [ $(( $LOOP )) = "1" ]
 do
   [ -f "${APPORT_CORE}" ] && rm -f "${APPORT_CORE}"
   LOOP=0
-  ${KODI_BINARY} $SAVED_ARGS &
+  ${KODI_BINARY} ${ENV_ARGS} $SAVED_ARGS &
   CHILD=$!
   wait "${CHILD}"
   RET=$?
-  if [ $(( $RET == 65 )) = "1" ]
+  if [ $RET -eq 65 ]
   then # User requested to restart app
     LOOP=1
-  elif [ $(( ($RET >= 131 && $RET <= 136) || $RET == 139 )) = "1" ]
+  elif [ $RET -ge 131 ] && [ $RET -le 136 ] || [ $RET -eq 139 ]
   then # Crashed with core dump
     print_crash_report
   fi

@@ -22,7 +22,7 @@ namespace XFILE
 
     typedef enum _NODE_TYPE
     {
-      NODE_TYPE_NONE=0,
+      NODE_TYPE_NONE = 0,
       NODE_TYPE_MOVIES_OVERVIEW,
       NODE_TYPE_TVSHOWS_OVERVIEW,
       NODE_TYPE_GENRE,
@@ -45,7 +45,8 @@ namespace XFILE
       NODE_TYPE_SETS,
       NODE_TYPE_COUNTRY,
       NODE_TYPE_TAGS,
-      NODE_TYPE_INPROGRESS_TVSHOWS
+      NODE_TYPE_INPROGRESS_TVSHOWS,
+      NODE_TYPE_VIDEOVERSIONS
     } NODE_TYPE;
 
     typedef struct {
@@ -66,6 +67,7 @@ namespace XFILE
       bool GetChilds(CFileItemList& items);
       virtual NODE_TYPE GetChildType() const;
       virtual std::string GetLocalizedName() const;
+      void CollectQueryParams(CQueryParams& params) const;
 
       CDirectoryNode* GetParent() const;
 
@@ -76,8 +78,7 @@ namespace XFILE
       CDirectoryNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent);
       static CDirectoryNode* CreateNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent);
 
-      void AddOptions(const std::string &options);
-      void CollectQueryParams(CQueryParams& params) const;
+      void AddOptions(const std::string& options);
 
       const std::string& GetName() const;
       int GetID() const;

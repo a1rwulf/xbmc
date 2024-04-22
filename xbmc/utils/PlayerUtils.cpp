@@ -9,9 +9,10 @@
 #include "PlayerUtils.h"
 
 #include "FileItem.h"
+#include "application/ApplicationPlayer.h"
 #include "music/MusicUtils.h"
 #include "utils/Variant.h"
-#include "video/VideoUtils.h"
+#include "video/guilib/VideoGUIUtils.h"
 
 bool CPlayerUtils::IsItemPlayable(const CFileItem& itemIn)
 {
@@ -36,4 +37,20 @@ bool CPlayerUtils::IsItemPlayable(const CFileItem& itemIn)
   //! @todo add more types on demand.
 
   return false;
+}
+
+void CPlayerUtils::AdvanceTempoStep(std::shared_ptr<CApplicationPlayer> appPlayer,
+                                    TempoStepChange change)
+{
+  const auto step = 0.1f;
+  const auto currentTempo = appPlayer->GetPlayTempo();
+  switch (change)
+  {
+    case TempoStepChange::INCREASE:
+      appPlayer->SetTempo(currentTempo + step);
+      break;
+    case TempoStepChange::DECREASE:
+      appPlayer->SetTempo(currentTempo - step);
+      break;
+  }
 }

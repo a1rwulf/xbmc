@@ -55,7 +55,6 @@ struct SPlayerState
     caching = false;
     cache_bytes = 0;
     cache_level = 0.0;
-    cache_delay = 0.0;
     cache_offset = 0.0;
     lastSeek = 0;
     streamsReady = false;
@@ -84,10 +83,10 @@ struct SPlayerState
   bool cantempo;
   bool caching;
 
-  int64_t cache_bytes;   // number of bytes current's cached
-  double cache_level;   // current estimated required cache level
-  double cache_delay;   // time until cache is expected to reach estimated level
-  double cache_offset;  // percentage of file ahead of current position
+  int64_t cache_bytes; // number of bytes current's cached
+  double cache_level; // current cache level
+  double cache_offset; // percentage of file ahead of current position
+  double cache_time; // estimated playback time of current cached bytes
 };
 
 class CDVDInputStream;
@@ -237,6 +236,14 @@ protected:
 // main class
 //------------------------------------------------------------------------------
 
+struct CacheInfo
+{
+  double level; // current cache level
+  double offset; // percentage of file ahead of current position
+  double time; // estimated playback time of current cached bytes
+  bool valid;
+};
+
 class CProcessInfo;
 class CJobQueue;
 
@@ -333,6 +340,8 @@ public:
   void FlushRenderer() override;
   void SetRenderViewMode(int mode, float zoom, float par, float shift, bool stretch) override;
   float GetRenderAspectRatio() const override;
+  void GetRects(CRect& source, CRect& dest, CRect& view) const override;
+  unsigned int GetOrientation() const override;
   void TriggerUpdateResolution() override;
   bool IsRenderingVideo() const override;
   bool Supports(EINTERLACEMETHOD method) const override;
@@ -402,6 +411,14 @@ protected:
   void ProcessAudioID3Data(CDemuxStream* pStream, DemuxPacket* pPacket);
 
   int  AddSubtitleFile(const std::string& filename, const std::string& subfilename = "");
+
+  /*!
+   * \brief Propagate enable stream callbacks to demuxers.
+   * \param current The current stream
+   * \param isEnabled Set to true to enable the stream, otherwise false
+   */
+  void SetEnableStream(CCurrentStream& current, bool isEnabled);
+
   void SetSubtitleVisibleInternal(bool bVisible);
 
   /**
@@ -421,7 +438,7 @@ protected:
   void SetCaching(ECacheState state);
 
   double GetQueueTime();
-  bool GetCachingTimes(double& play_left, double& cache_left, double& file_offset);
+  CacheInfo GetCachingTimes();
 
   void FlushBuffers(double pts, bool accurate, bool sync);
 
@@ -459,6 +476,7 @@ protected:
   void UpdateContentState();
 
   void UpdateFileItemStreamDetails(CFileItem& item);
+  int GetPreviousChapter();
 
   bool m_players_created;
 
@@ -488,10 +506,9 @@ protected:
     mutable CCriticalSection m_section;
     CSelectionStreams m_selectionStreams;
     std::vector<ProgramInfo> m_programs;
-    int m_program;
-    int m_videoIndex;
-    int m_audioIndex;
-    int m_subtitleIndex;
+    int m_videoIndex{-1};
+    int m_audioIndex{-1};
+    int m_subtitleIndex{-1};
   } m_content;
 
   int m_playSpeed;
@@ -499,10 +516,19 @@ protected:
   int m_demuxerSpeed = DVD_PLAYSPEED_NORMAL;
   struct SSpeedState
   {
-    double lastpts;  // holds last display pts during ff/rw operations
-    int64_t lasttime;
-    double lastseekpts;
-    double lastabstime;
+    double lastpts{0.0}; // holds last display pts during ff/rw operations
+    int64_t lasttime{0};
+    double lastseekpts{0.0};
+    double lastabstime{0.0};
+
+    void Reset(double pts)
+    {
+      *this = {};
+      if (pts != DVD_NOPTS_VALUE)
+      {
+        lastseekpts = pts;
+      }
+    }
   } m_SpeedState;
 
   double m_offset_pts;

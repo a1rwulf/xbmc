@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,7 +15,8 @@ namespace KEYBOARD
 class IKeyboardInputHandler;
 
 /*!
- * \ingroup mouse
+ * \ingroup keyboard
+ *
  * \brief Interface for classes that can provide keyboard input
  */
 class IKeyboardInputProvider
@@ -29,8 +30,12 @@ public:
    * \param handler The handler to receive keyboard input provided by this class
    * \param bPromiscuous True to observe all events without affecting the
    *        input's destination
+   * \param forceDefaultMap Always use the default keyboard buttonmap, avoiding
+   *        buttonmaps provided by add-ons
    */
-  virtual void RegisterKeyboardHandler(IKeyboardInputHandler* handler, bool bPromiscuous) = 0;
+  virtual void RegisterKeyboardHandler(IKeyboardInputHandler* handler,
+                                       bool bPromiscuous,
+                                       bool forceDefaultMap) = 0;
 
   /*!
    * \brief Unregisters handler from keyboard input

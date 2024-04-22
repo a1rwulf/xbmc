@@ -49,10 +49,11 @@ public:
   void SetBlack(float black) { m_black = black; }
   void SetContrast(float contrast) { m_contrast = contrast; }
   void SetNonLinStretch(float stretch) { m_stretch = stretch; }
-  void SetDisplayMetadata(bool hasDisplayMetadata, AVMasteringDisplayMetadata displayMetadata,
-                          bool hasLightMetadata, AVContentLightMetadata lightMetadata);
+  void SetDisplayMetadata(bool hasDisplayMetadata,
+                          const AVMasteringDisplayMetadata& displayMetadata,
+                          bool hasLightMetadata,
+                          AVContentLightMetadata lightMetadata);
   void SetToneMapParam(ETONEMAPMETHOD method, float param);
-  float GetLuminanceValue() const;
 
   void SetConvertFullColorRange(bool convertFullRange) { m_convertFullRange = convertFullRange; }
 
@@ -81,7 +82,7 @@ protected:
   bool m_hasLightMetadata = false;
   AVContentLightMetadata m_lightMetadata;
   bool m_toneMapping = false;
-  ETONEMAPMETHOD m_toneMappingMethod = VS_TONEMAPMETHOD_REINHARD;
+  ETONEMAPMETHOD m_toneMappingMethod = VS_TONEMAPMETHOD_OFF;
   float m_toneMappingParam = 1.0;
 
   bool m_colorConversion{false};

@@ -38,6 +38,8 @@
 #include "utils/log.h"
 
 #include <algorithm>
+#include <cassert>
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -151,14 +153,13 @@ SettingPtr AddSettingWithoutDefinition(ADDON::CAddonSettings& settings,
 namespace ADDON
 {
 
-CAddonSettings::CAddonSettings(const std::shared_ptr<const IAddon>& addon,
-                               AddonInstanceId instanceId)
+CAddonSettings::CAddonSettings(const std::shared_ptr<IAddon>& addon, AddonInstanceId instanceId)
   : CSettingsBase(),
     m_addonId(addon->ID()),
     m_addonPath(addon->Path()),
     m_addonProfile(addon->Profile()),
     m_instanceId(instanceId),
-    m_unidentifiedSettingId(0),
+    m_addon{addon},
     m_unknownSettingLabelId(UnknownSettingLabelIdStart),
     m_logger(CServiceBroker::GetLogging().GetLogger(
         StringUtils::Format("CAddonSettings[{}@{}]", m_instanceId, m_addonId)))
@@ -349,7 +350,7 @@ bool CAddonSettings::Load(const CXBMCTinyXML& doc)
         settingValue = setting->FirstChild()->ValueStr();
 
       // add the setting to the map
-      settingValues.emplace(std::make_pair(settingId, settingValue));
+      settingValues.emplace(settingId, settingValue);
     };
 
     // check if there were any setting values without a definition
@@ -432,6 +433,16 @@ bool CAddonSettings::Save(CXBMCTinyXML& doc) const
 bool CAddonSettings::HasSettings() const
 {
   return IsInitialized() && GetSettingsManager()->HasSettings();
+}
+
+bool CAddonSettings::Save()
+{
+  std::shared_ptr<IAddon> addon = m_addon.lock();
+  assert(addon);
+  if (addon)
+    return addon->SaveSettings();
+  else
+    return false;
 }
 
 std::string CAddonSettings::GetSettingLabel(int label) const
@@ -580,7 +591,7 @@ std::shared_ptr<CSettingGroup> CAddonSettings::ParseOldSettingElement(
         category->AddGroup(group);
 
         // and create a new one
-        group.reset(new CSettingGroup(std::to_string(groupId), GetSettingsManager()));
+        group = std::make_shared<CSettingGroup>(std::to_string(groupId), GetSettingsManager());
         groupId += 1;
       }
 
@@ -1095,7 +1106,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingSelect(
 
       StringSettingOptions options;
       for (const auto& value : values)
-        options.push_back(StringSettingOption(value, value));
+        options.emplace_back(value, value);
       settingString->SetOptions(options);
 
       setting = settingString;
@@ -1108,8 +1119,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingSelect(
 
       TranslatableIntegerSettingOptions options;
       for (uint32_t i = 0; i < values.size(); ++i)
-        options.push_back(TranslatableIntegerSettingOption(
-            static_cast<int>(strtol(values[i].c_str(), nullptr, 0)), i));
+        options.emplace_back(static_cast<int>(strtol(values[i].c_str(), nullptr, 0)), i);
       settingInt->SetTranslatableOptions(options);
 
       setting = settingInt;
@@ -1252,7 +1262,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingEnums(
         if (settingEntries.size() > i)
           value = static_cast<int>(strtol(settingEntries[i].c_str(), nullptr, 0));
 
-        options.push_back(IntegerSettingOption(label, value));
+        options.emplace_back(label, value);
       }
 
       settingInt->SetOptions(options);
@@ -1267,7 +1277,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingEnums(
         if (settingEntries.size() > i)
           value = static_cast<int>(strtol(settingEntries[i].c_str(), nullptr, 0));
 
-        options.push_back(TranslatableIntegerSettingOption(label, value));
+        options.emplace_back(label, value);
       }
 
       settingInt->SetTranslatableOptions(options);
@@ -1295,7 +1305,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingEnums(
         if (settingEntries.size() > i)
           value = settingEntries[i];
 
-        options.push_back(StringSettingOption(value, value));
+        options.emplace_back(value, value);
       }
 
       settingString->SetOptions(options);
@@ -1310,7 +1320,7 @@ SettingPtr CAddonSettings::InitializeFromOldSettingEnums(
         if (settingEntries.size() > i)
           value = settingEntries[i];
 
-        options.push_back(std::make_pair(label, value));
+        options.emplace_back(label, value);
       }
 
       settingString->SetTranslatableOptions(options);

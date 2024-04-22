@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Team Kodi
+ *  Copyright (C) 2014-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -20,6 +20,7 @@ namespace JOYSTICK
 {
 /*!
  * \ingroup joystick
+ *
  * \brief Button map interface to translate between the driver's raw
  *        button/hat/axis elements and physical joystick features.
  *
@@ -65,6 +66,24 @@ public:
    * \return True if the button map is empty, false if it has features
    */
   virtual bool IsEmpty(void) const = 0;
+
+  /*!
+   * \brief Get the ID of the controller profile that best represents the
+   * appearance of the peripheral
+   *
+   * \return The controller ID, or empty if the appearance is unknown
+   */
+  virtual std::string GetAppearance() const = 0;
+
+  /*!
+  * \brief Set the ID of the controller that best represents the appearance
+  * of the peripheral
+  *
+  * \param controllerId The controller ID, or empty to unset the appearance
+  *
+  * \return True if the appearance was set, false on error
+  */
+  virtual bool SetAppearance(const std::string& controllerId) const = 0;
 
   /*!
    * \brief Get the feature associated with a driver primitive

@@ -29,29 +29,31 @@ if(CORE_SYSTEM_NAME STREQUAL windows OR CORE_SYSTEM_NAME STREQUAL windowsstore)
                       RenderCapture.h)
 endif()
 
-if (OPENGL_FOUND OR OPENGLES_FOUND)
-  list(APPEND SOURCES OverlayRendererGL.cpp
-                      FrameBufferObject.cpp)
-  list(APPEND HEADERS OverlayRendererGL.h
-                      FrameBufferObject.h)
+if(TARGET OpenGL::GL OR TARGET OpenGL::GLES)
+  list(APPEND SOURCES FrameBufferObject.cpp)
+  list(APPEND HEADERS FrameBufferObject.h)
 endif()
 
-if(OPENGL_FOUND)
+if(TARGET OpenGL::GL)
   list(APPEND SOURCES LinuxRendererGL.cpp
+                      OverlayRendererGL.cpp
                       RenderCaptureGL.cpp)
   list(APPEND HEADERS LinuxRendererGL.h
+                      OverlayRendererGL.h
                       RenderCaptureGL.h)
 endif()
 
-if(OPENGLES_FOUND AND ("android" IN_LIST CORE_PLATFORM_NAME_LC OR
-                       "ios" IN_LIST CORE_PLATFORM_NAME_LC OR
-                       "tvos" IN_LIST CORE_PLATFORM_NAME_LC OR
-                       "gbm" IN_LIST CORE_PLATFORM_NAME_LC OR
-                       "x11" IN_LIST CORE_PLATFORM_NAME_LC OR
-                       "wayland" IN_LIST CORE_PLATFORM_NAME_LC))
+if(TARGET OpenGL::GLES AND ("android" IN_LIST CORE_PLATFORM_NAME_LC OR
+                            "ios" IN_LIST CORE_PLATFORM_NAME_LC OR
+                            "tvos" IN_LIST CORE_PLATFORM_NAME_LC OR
+                            "gbm" IN_LIST CORE_PLATFORM_NAME_LC OR
+                            "x11" IN_LIST CORE_PLATFORM_NAME_LC OR
+                            "wayland" IN_LIST CORE_PLATFORM_NAME_LC))
   list(APPEND SOURCES LinuxRendererGLES.cpp
+                      OverlayRendererGLES.cpp
                       RenderCaptureGLES.cpp)
   list(APPEND HEADERS LinuxRendererGLES.h
+                      OverlayRendererGLES.cpp
                       RenderCaptureGLES.h)
 endif()
 

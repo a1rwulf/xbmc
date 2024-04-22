@@ -24,11 +24,6 @@ CSubtitleParserWebVTT::CSubtitleParserWebVTT(std::unique_ptr<CDVDSubtitleStream>
 {
 }
 
-CSubtitleParserWebVTT::~CSubtitleParserWebVTT()
-{
-  Dispose();
-}
-
 bool CSubtitleParserWebVTT::Open(CDVDStreamInfo& hints)
 {
   if (!CDVDSubtitleParserText::Open())
@@ -71,14 +66,9 @@ bool CSubtitleParserWebVTT::Open(CDVDStreamInfo& hints)
     AddSubtitle(subData.text, subData.startTime, subData.stopTime, &opts);
   }
 
-  CDVDOverlay* overlay = CreateOverlay();
+  std::shared_ptr<CDVDOverlay> overlay = CreateOverlay();
   overlay->SetForcedMargins(m_webvttHandler.IsForcedMargins());
   m_collection.Add(overlay);
 
   return true;
-}
-
-void CSubtitleParserWebVTT::Dispose()
-{
-  CDVDSubtitleParserCollection::Dispose();
 }

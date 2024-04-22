@@ -18,20 +18,16 @@ CONFIGURE=./configure --prefix=$(PREFIX)
 export PERL_MB_OPT=
 export PERL_MM_OPT=
 
-LIBDYLIB=$(PLATFORM)/bin/autoconf
-
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	-rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 
-$(LIBDYLIB): $(PLATFORM)
+.installed-$(PLATFORM): $(PLATFORM)
 	cd $(PLATFORM); perl Makefile.PL PREFIX=$(NATIVEPREFIX)
 	cd $(PLATFORM); $(MAKE)
-
-.installed-$(PLATFORM): $(LIBDYLIB)
 	cd $(PLATFORM); $(MAKE) install
 	touch $@
 

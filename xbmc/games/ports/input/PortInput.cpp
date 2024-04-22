@@ -9,16 +9,21 @@
 #include "PortInput.h"
 
 #include "games/addons/GameClient.h"
+#include "games/controllers/input/ControllerActivity.h"
 #include "games/controllers/input/InputSink.h"
 #include "guilib/WindowIDs.h"
-#include "input/joysticks/keymaps/KeymapHandling.h"
+#include "input/keymaps/joysticks/KeymapHandling.h"
 #include "peripherals/devices/Peripheral.h"
+
+#include <memory>
 
 using namespace KODI;
 using namespace GAME;
 
 CPortInput::CPortInput(JOYSTICK::IInputHandler* gameInput)
-  : m_gameInput(gameInput), m_inputSink(new CInputSink(gameInput))
+  : m_gameInput(gameInput),
+    m_inputSink(new CInputSink(gameInput)),
+    m_controllerActivity(std::make_unique<CControllerActivity>())
 {
 }
 
@@ -34,7 +39,7 @@ void CPortInput::RegisterInput(JOYSTICK::IInputProvider* provider)
   provider->RegisterInputHandler(this, false);
 
   // Register GUI input
-  m_appInput.reset(new JOYSTICK::CKeymapHandling(provider, false, this));
+  m_appInput = std::make_unique<KEYMAP::CKeymapHandling>(provider, false, this);
 }
 
 void CPortInput::UnregisterInput(JOYSTICK::IInputProvider* provider)
@@ -51,6 +56,11 @@ void CPortInput::UnregisterInput(JOYSTICK::IInputProvider* provider)
   }
 }
 
+float CPortInput::GetActivation() const
+{
+  return m_controllerActivity->GetActivation();
+}
+
 std::string CPortInput::ControllerID() const
 {
   return m_gameInput->ControllerID();
@@ -63,6 +73,8 @@ bool CPortInput::AcceptsInput(const std::string& feature) const
 
 bool CPortInput::OnButtonPress(const std::string& feature, bool bPressed)
 {
+  m_controllerActivity->OnButtonPress(bPressed);
+
   if (bPressed && !m_gameInput->AcceptsInput(feature))
     return false;
 
@@ -71,6 +83,8 @@ bool CPortInput::OnButtonPress(const std::string& feature, bool bPressed)
 
 void CPortInput::OnButtonHold(const std::string& feature, unsigned int holdTimeMs)
 {
+  m_controllerActivity->OnButtonPress(true);
+
   m_gameInput->OnButtonHold(feature, holdTimeMs);
 }
 
@@ -78,6 +92,8 @@ bool CPortInput::OnButtonMotion(const std::string& feature,
                                 float magnitude,
                                 unsigned int motionTimeMs)
 {
+  m_controllerActivity->OnButtonMotion(magnitude);
+
   if (magnitude > 0.0f && !m_gameInput->AcceptsInput(feature))
     return false;
 
@@ -89,6 +105,8 @@ bool CPortInput::OnAnalogStickMotion(const std::string& feature,
                                      float y,
                                      unsigned int motionTimeMs)
 {
+  m_controllerActivity->OnAnalogStickMotion(x, y);
+
   if ((x != 0.0f || y != 0.0f) && !m_gameInput->AcceptsInput(feature))
     return false;
 
@@ -107,6 +125,8 @@ bool CPortInput::OnWheelMotion(const std::string& feature,
                                float position,
                                unsigned int motionTimeMs)
 {
+  m_controllerActivity->OnWheelMotion(position);
+
   if ((position != 0.0f) && !m_gameInput->AcceptsInput(feature))
     return false;
 
@@ -117,10 +137,17 @@ bool CPortInput::OnThrottleMotion(const std::string& feature,
                                   float position,
                                   unsigned int motionTimeMs)
 {
+  m_controllerActivity->OnThrottleMotion(position);
+
   if ((position != 0.0f) && !m_gameInput->AcceptsInput(feature))
     return false;
 
   return m_gameInput->OnThrottleMotion(feature, position, motionTimeMs);
+}
+
+void CPortInput::OnInputFrame()
+{
+  m_controllerActivity->OnInputFrame();
 }
 
 int CPortInput::GetWindowID() const

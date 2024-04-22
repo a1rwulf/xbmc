@@ -13,7 +13,7 @@
 #include "Tuple.h"
 #include "guilib/GUIControl.h"
 #include "guilib/GUIFont.h"
-#include "input/Key.h"
+#include "input/actions/ActionIDs.h"
 #include "swighelper.h"
 #include "utils/ColorUtils.h"
 
@@ -746,6 +746,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     /// @param hasPath              [opt] bool - True=stores a
     ///                                 path / False=no path
     /// @param angle                [opt] integer - angle of control.
@@ -887,6 +888,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     /// @param focusTexture         [opt] string - filename for focus texture.
     /// @param noFocusTexture       [opt] string - filename for no focus texture.
     ///
@@ -1126,6 +1128,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     /// @param shadowColor              [opt] hexstring - color of items
     ///                                     label's shadow. (e.g. '0xFF000000')
     ///
@@ -1660,6 +1663,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     ///
     /// @note You can use the above as keywords for arguments and skip certain
     ///       optional arguments.\n
@@ -2264,6 +2268,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     /// @param font                 [opt] string - font used for label text.
     ///                                 (e.g. 'font13')
     /// @param textColor            [opt] hexstring - color of enabled
@@ -2545,6 +2550,7 @@ namespace XBMCAddon
     /// | XBFONT_CENTER_Y   | 0x00000004 | Align Y center
     /// | XBFONT_TRUNCATED  | 0x00000008 | Truncated text
     /// | XBFONT_JUSTIFIED  | 0x00000010 | Justify text
+    /// | XBFONT_TRUNCATED_LEFT | 0x00000020 | Truncated text from left
     /// @param font                 [opt] string - font used for label text.
     ///                             (e.g. 'font13')
     /// @param textColor            [opt] hexstring - color of label when control
@@ -2753,7 +2759,7 @@ namespace XBMCAddon
     /// @{
     /// @brief **Used for a volume slider.**
     ///
-    /// \python_class{ ControlSlider(x, y, width, height[, textureback, texture, texturefocus, orientation]) }
+    /// \python_class{ ControlSlider(x, y, width, height[, textureback, texture, texturefocus, orientation, texturebackdisabled, texturedisabled]) }
     ///
     /// The slider control is used for things where a sliding bar best represents
     /// the operation at hand (such as a volume control or seek control). You can
@@ -2769,6 +2775,8 @@ namespace XBMCAddon
     /// @param texture              [opt] string - image filename
     /// @param texturefocus         [opt] string - image filename
     /// @param orientation          [opt] integer - orientation of slider (xbmcgui.HORIZONTAL / xbmcgui.VERTICAL (default))
+    /// @param texturebackdisabled  [opt] string - image filename
+    /// @param texturedisabled      [opt] string - image filename
     ///
     ///
     /// @note You can use the above as keywords for arguments and skip certain
@@ -2791,10 +2799,16 @@ namespace XBMCAddon
     class ControlSlider : public Control
     {
     public:
-      ControlSlider(long x, long y, long width, long height,
+      ControlSlider(long x,
+                    long y,
+                    long width,
+                    long height,
                     const char* textureback = NULL,
                     const char* texture = NULL,
-                    const char* texturefocus = NULL, int orientation = 1);
+                    const char* texturefocus = NULL,
+                    int orientation = 1,
+                    const char* texturebackdisabled = NULL,
+                    const char* texturedisabled = NULL);
 
 #ifdef DOXYGEN_SHOULD_USE_THIS
       ///
@@ -2946,8 +2960,10 @@ namespace XBMCAddon
 
 #ifndef SWIG
       std::string strTextureBack;
+      std::string strTextureBackDisabled;
       std::string strTexture;
       std::string strTextureFoc;
+      std::string strTextureDisabled;
       int iOrientation;
 
       CGUIControl* Create() override;

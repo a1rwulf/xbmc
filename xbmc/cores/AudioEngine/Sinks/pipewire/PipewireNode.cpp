@@ -8,38 +8,28 @@
 
 #include "PipewireNode.h"
 
-#include "cores/AudioEngine/Sinks/pipewire/Pipewire.h"
-#include "cores/AudioEngine/Sinks/pipewire/PipewireThreadLoop.h"
+#include "PipewireContext.h"
+#include "PipewireCore.h"
+#include "PipewireRegistry.h"
+#include "PipewireThreadLoop.h"
 #include "utils/StringUtils.h"
 #include "utils/log.h"
 
 #include <spa/param/format.h>
 #include <spa/pod/iter.h>
 
-namespace AE
-{
-namespace SINK
-{
-namespace PIPEWIRE
-{
+using namespace KODI;
+using namespace PIPEWIRE;
 
-CPipewireNode::CPipewireNode(pw_registry* registry, uint32_t id, const char* type)
+CPipewireNode::CPipewireNode(CPipewireRegistry& registry, uint32_t id, const char* type)
   : CPipewireProxy(registry, id, type, PW_VERSION_NODE), m_nodeEvents(CreateNodeEvents())
 {
+  pw_proxy_add_object_listener(m_proxy.get(), &m_objectListener, &m_nodeEvents, this);
 }
 
 CPipewireNode::~CPipewireNode()
 {
   spa_hook_remove(&m_objectListener);
-}
-
-void CPipewireNode::AddListener(void* userdata)
-{
-  m_pipewire = reinterpret_cast<CPipewire*>(userdata);
-
-  pw_proxy_add_object_listener(m_proxy.get(), &m_objectListener, &m_nodeEvents, this);
-
-  CPipewireProxy::AddListener(userdata);
 }
 
 void CPipewireNode::EnumerateFormats()
@@ -56,17 +46,17 @@ void CPipewireNode::EnumerateFormats()
 
 void CPipewireNode::Info(void* userdata, const struct pw_node_info* info)
 {
-  auto node = reinterpret_cast<CPipewireNode*>(userdata);
+  auto& node = *reinterpret_cast<CPipewireNode*>(userdata);
 
-  if (node->m_info)
+  if (node.m_info)
   {
     CLog::Log(LOGDEBUG, "CPipewireNode::{} - node {} changed", __FUNCTION__, info->id);
-    pw_node_info* m_info = node->m_info.get();
+    pw_node_info* m_info = node.m_info.get();
     m_info = pw_node_info_update(m_info, info);
   }
   else
   {
-    node->m_info.reset(pw_node_info_update(node->m_info.get(), info));
+    node.m_info.reset(pw_node_info_update(node.m_info.get(), info));
   }
 }
 
@@ -159,6 +149,12 @@ void CPipewireNode::Parse(uint32_t type, void* body, uint32_t size)
                     prop->value.type, SPA_POD_CONTENTS(spa_pod_prop, prop), prop->value.size);
                 break;
               }
+              case SPA_FORMAT_AUDIO_iec958Codec:
+              {
+                m_iec958Codecs = ParseArray<spa_audio_iec958_codec>(
+                    prop->value.type, SPA_POD_CONTENTS(spa_pod_prop, prop), prop->value.size);
+                break;
+              }
               default:
                 break;
             }
@@ -184,13 +180,12 @@ void CPipewireNode::Param(void* userdata,
                           uint32_t next,
                           const struct spa_pod* param)
 {
-  auto node = reinterpret_cast<CPipewireNode*>(userdata);
-  auto pipewire = node->GetPipewire();
-  auto loop = pipewire->GetThreadLoop();
+  auto& node = *reinterpret_cast<CPipewireNode*>(userdata);
+  auto& loop = node.GetRegistry().GetCore().GetContext().GetThreadLoop();
 
-  node->Parse(SPA_POD_TYPE(param), SPA_POD_BODY(param), SPA_POD_BODY_SIZE(param));
+  node.Parse(SPA_POD_TYPE(param), SPA_POD_BODY(param), SPA_POD_BODY_SIZE(param));
 
-  loop->Signal(false);
+  loop.Signal(false);
 }
 
 pw_node_events CPipewireNode::CreateNodeEvents()
@@ -202,7 +197,3 @@ pw_node_events CPipewireNode::CreateNodeEvents()
 
   return nodeEvents;
 }
-
-} // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE

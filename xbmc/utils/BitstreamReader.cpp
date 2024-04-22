@@ -8,12 +8,8 @@
 
 #include "BitstreamReader.h"
 
-CBitstreamReader::CBitstreamReader(const uint8_t *buf, int len)
-  : buffer(buf)
-  , start(buf)
-  , offbits(0)
-  , length(len)
-  , oflow(0)
+CBitstreamReader::CBitstreamReader(const uint8_t* buf, int len)
+  : buffer(buf), start(buf), length(len)
 {
 }
 
@@ -25,6 +21,8 @@ uint32_t CBitstreamReader::ReadBits(int nbits)
   buffer += offbits / 8;
   offbits %= 8;
 
+  m_posBits += nbits;
+
   return ret;
 }
 
@@ -33,6 +31,8 @@ void CBitstreamReader::SkipBits(int nbits)
   offbits += nbits;
   buffer += offbits / 8;
   offbits %= 8;
+
+  m_posBits += nbits;
 
   if (buffer > (start + length))
     oflow = 1;

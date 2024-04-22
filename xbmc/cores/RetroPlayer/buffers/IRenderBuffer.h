@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "cores/RetroPlayer/RetroPlayerTypes.h"
+
 extern "C"
 {
 #include <libavutil/pixfmt.h>
@@ -32,6 +34,8 @@ public:
   virtual void Acquire(std::shared_ptr<IRenderBufferPool> pool) = 0;
   virtual void Release() = 0;
   virtual IRenderBufferPool* GetPool() = 0;
+  virtual DataAccess GetMemoryAccess() const = 0;
+  virtual DataAlignment GetMemoryAlignment() const = 0;
 
   // Buffer functions
   virtual bool Allocate(AVPixelFormat format, unsigned int width, unsigned int height) = 0;

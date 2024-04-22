@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Team Kodi
+ *  Copyright (C) 2014-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -51,10 +51,7 @@ using namespace XFILE;
 #endif
 
 CPeripheralAddon::CPeripheralAddon(const ADDON::AddonInfoPtr& addonInfo, CPeripherals& manager)
-  : IAddonInstanceHandler(ADDON_INSTANCE_PERIPHERAL, addonInfo),
-    m_manager(manager),
-    m_bSupportsJoystickRumble(false),
-    m_bSupportsJoystickPowerOff(false)
+  : IAddonInstanceHandler(ADDON_INSTANCE_PERIPHERAL, addonInfo), m_manager(manager)
 {
   m_bProvidesJoysticks =
       addonInfo->Type(ADDON::AddonType::PERIPHERALDLL)->GetValue("@provides_joysticks").asBoolean();
@@ -539,6 +536,68 @@ bool CPeripheralAddon::GetJoystickProperties(unsigned int index, CPeripheralJoys
   return false;
 }
 
+bool CPeripheralAddon::GetAppearance(const CPeripheral* device, std::string& controllerId)
+{
+  if (!m_bProvidesButtonMaps)
+    return false;
+
+  std::shared_lock<CSharedSection> lock(m_dllSection);
+
+  if (!m_ifc.peripheral->toAddon->get_appearance)
+    return false;
+
+  PERIPHERAL_ERROR retVal;
+
+  kodi::addon::Joystick joystickInfo;
+  GetJoystickInfo(device, joystickInfo);
+
+  JOYSTICK_INFO joystickStruct;
+  joystickInfo.ToStruct(joystickStruct);
+
+  char strControllerId[1024]{};
+
+  LogError(retVal = m_ifc.peripheral->toAddon->get_appearance(
+               m_ifc.peripheral, &joystickStruct, strControllerId, sizeof(strControllerId)),
+           "GetAppearance()");
+
+  kodi::addon::Joystick::FreeStruct(joystickStruct);
+
+  if (retVal == PERIPHERAL_NO_ERROR)
+  {
+    controllerId = strControllerId;
+    return true;
+  }
+
+  return false;
+}
+
+bool CPeripheralAddon::SetAppearance(const CPeripheral* device, const std::string& controllerId)
+{
+  if (!m_bProvidesButtonMaps)
+    return false;
+
+  std::shared_lock<CSharedSection> lock(m_dllSection);
+
+  if (!m_ifc.peripheral->toAddon->set_appearance)
+    return false;
+
+  PERIPHERAL_ERROR retVal;
+
+  kodi::addon::Joystick joystickInfo;
+  GetJoystickInfo(device, joystickInfo);
+
+  JOYSTICK_INFO joystickStruct;
+  joystickInfo.ToStruct(joystickStruct);
+
+  LogError(retVal = m_ifc.peripheral->toAddon->set_appearance(m_ifc.peripheral, &joystickStruct,
+                                                              controllerId.c_str()),
+           "SetAppearance()");
+
+  kodi::addon::Joystick::FreeStruct(joystickStruct);
+
+  return retVal == PERIPHERAL_NO_ERROR;
+}
+
 bool CPeripheralAddon::GetFeatures(const CPeripheral* device,
                                    const std::string& strControllerId,
                                    FeatureMap& features)
@@ -801,9 +860,8 @@ void CPeripheralAddon::UnregisterButtonMap(CPeripheral* device)
 
   m_buttonMaps.erase(
       std::remove_if(m_buttonMaps.begin(), m_buttonMaps.end(),
-                     [device](const std::pair<CPeripheral*, JOYSTICK::IButtonMap*>& buttonMap) {
-                       return buttonMap.first == device;
-                     }),
+                     [device](const std::pair<CPeripheral*, JOYSTICK::IButtonMap*>& buttonMap)
+                     { return buttonMap.first == device; }),
       m_buttonMaps.end());
 }
 

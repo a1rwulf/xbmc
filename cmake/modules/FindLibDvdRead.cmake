@@ -3,13 +3,7 @@
 # ----------
 # Finds the dvdread library
 #
-# This will define the following variables::
-#
-# LIBDVDREAD_FOUND - system has LibDvdRead
-# LIBDVDREAD_INCLUDE_DIRS - the LibDvdRead include directory
-# LIBDVDREAD_LIBRARIES - the LibDvdRead libraries
-#
-# and the following imported targets::
+# This will define the following target:
 #
 #   LibDvdRead::LibDvdRead   - The LibDvdRead library
 
@@ -76,11 +70,14 @@ if(NOT TARGET LibDvdRead::LibDvdRead)
   else()
 
     if(TARGET LibDvdCSS::LibDvdCSS)
-      string(APPEND LIBDVDREAD_CFLAGS " -I$<TARGET_PROPERTY:LibDvdCSS::LibDvdCSS,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:LibDvdCSS::LibDvdCSS,INTERFACE_COMPILE_DEFINITIONS>")
+      string(APPEND LIBDVDREAD_CFLAGS " -I$<TARGET_PROPERTY:LibDvdCSS::LibDvdCSS,INTERFACE_INCLUDE_DIRECTORIES> $<$<TARGET_EXISTS:LibDvdCSS::LibDvdCSS>:-D$<TARGET_PROPERTY:LibDvdCSS::LibDvdCSS,INTERFACE_COMPILE_DEFINITIONS>>")
       string(APPEND with-css "--with-libdvdcss")
     endif()
 
     find_program(AUTORECONF autoreconf REQUIRED)
+    if (CMAKE_HOST_SYSTEM_NAME MATCHES "(Free|Net|Open)BSD")
+      find_program(MAKE_EXECUTABLE gmake)
+    endif()
     find_program(MAKE_EXECUTABLE make REQUIRED)
 
     set(CONFIGURE_COMMAND ${AUTORECONF} -vif
@@ -119,20 +116,11 @@ find_package_handle_standard_args(LibDvdRead
                                   VERSION_VAR LIBDVDREAD_VERSION)
 
 if(LIBDVDREAD_FOUND)
-  set(LIBDVDREAD_INCLUDE_DIRS ${LIBDVDREAD_INCLUDE_DIR})
-  set(LIBDVDREAD_LIBRARIES ${LIBDVDREAD_LIBRARY})
-  set(LIBDVDREAD_DEFINITIONS -D_XBMC)
-
-  if(APPLE)
-    string(APPEND LIBDVDREAD_DEFINITIONS " -D__DARWIN__")
-  endif()
-
   if(NOT TARGET LibDvdRead::LibDvdRead)
     add_library(LibDvdRead::LibDvdRead UNKNOWN IMPORTED)
 
     set_target_properties(LibDvdRead::LibDvdRead PROPERTIES
                                                  IMPORTED_LOCATION "${LIBDVDREAD_LIBRARY}"
-                                                 INTERFACE_COMPILE_DEFINITIONS "${LIBDVDREAD_DEFINITIONS}"
                                                  INTERFACE_INCLUDE_DIRECTORIES "${LIBDVDREAD_INCLUDE_DIR}")
 
     if(TARGET libdvdread)
@@ -141,7 +129,7 @@ if(LIBDVDREAD_FOUND)
     if(TARGET LibDvdCSS::LibDvdCSS)
       add_dependencies(LibDvdRead::LibDvdRead LibDvdCSS::LibDvdCSS)
       set_target_properties(LibDvdRead::LibDvdRead PROPERTIES
-                                                   INTERFACE_LINK_LIBRARIES "-ldvdcss")
+                                                   INTERFACE_LINK_LIBRARIES "dvdcss")
     endif()
   endif()
 

@@ -1,9 +1,17 @@
-set(SOURCES InputSink.cpp
+set(SOURCES ControllerActivity.cpp
+            DefaultButtonMap.cpp
+            DefaultKeyboardTranslator.cpp
+            DefaultMouseTranslator.cpp
+            InputSink.cpp
             PhysicalFeature.cpp
             PhysicalTopology.cpp
 )
 
-set(HEADERS InputSink.h
+set(HEADERS ControllerActivity.h
+            DefaultButtonMap.h
+            DefaultKeyboardTranslator.h
+            DefaultMouseTranslator.h
+            InputSink.h
             PhysicalFeature.h
             PhysicalTopology.h
 )

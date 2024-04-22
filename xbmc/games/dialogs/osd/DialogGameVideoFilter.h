@@ -15,6 +15,9 @@ namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup games
+ */
 class CDialogGameVideoFilter : public CDialogGameVideoSelect
 {
 public:
@@ -29,6 +32,7 @@ protected:
   void OnItemFocus(unsigned int index) override;
   unsigned int GetFocusedItem() const override;
   void PostExit() override;
+  bool OnClickAction() override;
 
 private:
   void InitVideoFilters();

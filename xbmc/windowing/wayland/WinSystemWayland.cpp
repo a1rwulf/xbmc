@@ -24,6 +24,7 @@
 #include "application/Application.h"
 #include "cores/RetroPlayer/process/wayland/RPProcessInfoWayland.h"
 #include "cores/VideoPlayer/Process/wayland/ProcessInfoWayland.h"
+#include "cores/VideoPlayer/VideoReferenceClock.h"
 #include "guilib/DispResource.h"
 #include "guilib/LocalizeStrings.h"
 #include "input/InputManager.h"
@@ -46,12 +47,9 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <numeric>
-
-#if defined(HAS_DBUS)
-# include "windowing/linux/OSScreenSaverFreedesktop.h"
-#endif
 
 using namespace KODI::WINDOWING;
 using namespace KODI::WINDOWING::WAYLAND;
@@ -138,7 +136,7 @@ struct MsgBufferScale
 CWinSystemWayland::CWinSystemWayland()
 : CWinSystemBase{}, m_protocol{"WinSystemWaylandInternal"}
 {
-  m_winEvents.reset(new CWinEventsWayland());
+  m_winEvents = std::make_unique<CWinEventsWayland>();
 }
 
 CWinSystemWayland::~CWinSystemWayland() noexcept
@@ -158,12 +156,15 @@ bool CWinSystemWayland::InitWindowSystem()
   wayland::set_log_handler([](const std::string& message)
                            { CLog::Log(LOGWARNING, "wayland-client log message: {}", message); });
 
+  CLog::LogF(LOGINFO, "Connecting to Wayland server");
+  m_connection = std::make_unique<CConnection>();
+  if (!m_connection->HasDisplay())
+    return false;
+
   VIDEOPLAYER::CProcessInfoWayland::Register();
   RETRO::CRPProcessInfoWayland::Register();
 
-  CLog::LogF(LOGINFO, "Connecting to Wayland server");
-  m_connection.reset(new CConnection);
-  m_registry.reset(new CRegistry{*m_connection});
+  m_registry = std::make_unique<CRegistry>(*m_connection);
 
   m_registry->RequestSingleton(m_compositor, 1, 4);
   m_registry->RequestSingleton(m_shm, 1, 1);
@@ -275,10 +276,10 @@ bool CWinSystemWayland::CreateNewWindow(const std::string& name,
     }
   };
 
-  m_windowDecorator.reset(new CWindowDecorator(*this, *m_connection, m_surface));
+  m_windowDecorator = std::make_unique<CWindowDecorator>(*this, *m_connection, m_surface);
 
-  m_seatInputProcessing.reset(new CSeatInputProcessing(m_surface, *this));
-  m_seatRegistry.reset(new CRegistry{*m_connection});
+  m_seatInputProcessing = std::make_unique<CSeatInputProcessing>(m_surface, *this);
+  m_seatRegistry = std::make_unique<CRegistry>(*m_connection);
   // version 2 adds name event -> optional
   // version 4 adds wl_keyboard repeat_info -> optional
   // version 5 adds discrete axis events in wl_pointer -> unused
@@ -300,19 +301,7 @@ bool CWinSystemWayland::CreateNewWindow(const std::string& name,
   UpdateSizeVariables({res.iWidth, res.iHeight}, m_scale, m_shellSurfaceState, false);
 
   // Use AppName as the desktop file name. This is required to lookup the app icon of the same name.
-  m_shellSurface.reset(CShellSurfaceXdgShell::TryCreate(*this, *m_connection, m_surface, name,
-                                                        std::string(CCompileInfo::GetAppName())));
-  if (!m_shellSurface)
-  {
-    m_shellSurface.reset(CShellSurfaceXdgShellUnstableV6::TryCreate(
-        *this, *m_connection, m_surface, name, std::string(CCompileInfo::GetAppName())));
-  }
-  if (!m_shellSurface)
-  {
-    CLog::LogF(LOGWARNING, "Compositor does not support xdg_shell protocol (stable or unstable v6) - falling back to wl_shell, not all features might work");
-    m_shellSurface.reset(new CShellSurfaceWlShell(*this, *m_connection, m_surface, name,
-                                                  std::string(CCompileInfo::GetAppName())));
-  }
+  m_shellSurface.reset(CreateShellSurface(name));
 
   if (fullScreen)
   {
@@ -374,6 +363,26 @@ bool CWinSystemWayland::CreateNewWindow(const std::string& name,
   CWinEventsWayland::SetDisplay(&m_connection->GetDisplay());
 
   return true;
+}
+
+IShellSurface* CWinSystemWayland::CreateShellSurface(const std::string& name)
+{
+  IShellSurface* shell = CShellSurfaceXdgShell::TryCreate(*this, *m_connection, m_surface, name,
+                                                          std::string(CCompileInfo::GetAppName()));
+  if (!shell)
+  {
+    shell = CShellSurfaceXdgShellUnstableV6::TryCreate(*this, *m_connection, m_surface, name,
+                                                       std::string(CCompileInfo::GetAppName()));
+  }
+  if (!shell)
+  {
+    CLog::LogF(LOGWARNING, "Compositor does not support xdg_shell protocol (stable or unstable v6) "
+                           "- falling back to wl_shell, not all features might work");
+    shell = new CShellSurfaceWlShell(*this, *m_connection, m_surface, name,
+                                     std::string(CCompileInfo::GetAppName()));
+  }
+
+  return shell;
 }
 
 bool CWinSystemWayland::DestroyWindow()
@@ -1079,9 +1088,7 @@ bool CWinSystemWayland::HasCursor()
   std::unique_lock<CCriticalSection> lock(m_seatsMutex);
   return std::any_of(m_seats.cbegin(), m_seats.cend(),
                      [](decltype(m_seats)::value_type const& entry)
-                     {
-                       return entry.second.HasPointerCapability();
-                     });
+                     { return entry.second->HasPointerCapability(); });
 }
 
 void CWinSystemWayland::ShowOSMouse(bool show)
@@ -1135,13 +1142,17 @@ void CWinSystemWayland::OnSeatAdded(std::uint32_t name, wayland::proxy_t&& proxy
   std::unique_lock<CCriticalSection> lock(m_seatsMutex);
 
   wayland::seat_t seat(proxy);
-  auto newSeatEmplace = m_seats.emplace(std::piecewise_construct,
-                                           std::forward_as_tuple(name),
-                                                 std::forward_as_tuple(name, seat, *m_connection));
+  auto newSeatEmplace = m_seats.emplace(std::piecewise_construct, std::forward_as_tuple(name),
+                                        std::forward_as_tuple(CreateSeat(name, seat)));
 
   auto& seatInst = newSeatEmplace.first->second;
-  m_seatInputProcessing->AddSeat(&seatInst);
-  m_windowDecorator->AddSeat(&seatInst);
+  m_seatInputProcessing->AddSeat(seatInst.get());
+  m_windowDecorator->AddSeat(seatInst.get());
+}
+
+std::unique_ptr<CSeat> CWinSystemWayland::CreateSeat(std::uint32_t name, wayland::seat_t& seat)
+{
+  return std::make_unique<CSeat>(name, seat, *m_connection);
 }
 
 void CWinSystemWayland::OnSeatRemoved(std::uint32_t name)
@@ -1151,8 +1162,8 @@ void CWinSystemWayland::OnSeatRemoved(std::uint32_t name)
   auto seatI = m_seats.find(name);
   if (seatI != m_seats.end())
   {
-    m_seatInputProcessing->RemoveSeat(&seatI->second);
-    m_windowDecorator->RemoveSeat(&seatI->second);
+    m_seatInputProcessing->RemoveSeat(seatI->second.get());
+    m_windowDecorator->RemoveSeat(seatI->second.get());
     m_seats.erase(name);
   }
 }
@@ -1253,12 +1264,13 @@ void CWinSystemWayland::OnSetCursor(std::uint32_t seatGlobalName, std::uint32_t 
     LoadDefaultCursor();
     if (m_cursorSurface) // Cursor loading could have failed
     {
-      seatI->second.SetCursor(serial, m_cursorSurface, m_cursorImage.hotspot_x(), m_cursorImage.hotspot_y());
+      seatI->second->SetCursor(serial, m_cursorSurface, m_cursorImage.hotspot_x(),
+                               m_cursorImage.hotspot_y());
     }
   }
   else
   {
-    seatI->second.SetCursor(serial, wayland::surface_t{}, 0, 0);
+    seatI->second->SetCursor(serial, wayland::surface_t{}, 0, 0);
   }
 }
 
@@ -1460,7 +1472,7 @@ KODI::CSignalRegistration CWinSystemWayland::RegisterOnPresentationFeedback(
   return m_presentationFeedbackHandlers.Register(handler);
 }
 
-std::unique_ptr<CVideoSync> CWinSystemWayland::GetVideoSync(void* clock)
+std::unique_ptr<CVideoSync> CWinSystemWayland::GetVideoSync(CVideoReferenceClock* clock)
 {
   if (m_surface && m_presentation)
   {
@@ -1508,7 +1520,7 @@ std::string CWinSystemWayland::GetClipboardText()
   // probably just not that relevant in practice
   for (auto const& seat : m_seats)
   {
-    auto text = seat.second.GetSelectionText();
+    auto text = seat.second->GetSelectionText();
     if (text != "")
     {
       return text;

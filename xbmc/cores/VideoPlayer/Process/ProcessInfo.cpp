@@ -13,6 +13,7 @@
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
 
+#include <memory>
 #include <mutex>
 
 CCriticalSection createSection;
@@ -42,7 +43,8 @@ CProcessInfo* CProcessInfo::CreateInstance()
 
 CProcessInfo::CProcessInfo()
 {
-  m_videoSettingsLocked.reset(new CVideoSettingsLocked(m_videoSettings, m_settingsSection));
+  m_videoSettingsLocked =
+      std::make_unique<CVideoSettingsLocked>(m_videoSettings, m_settingsSection);
 }
 
 void CProcessInfo::SetDataCache(CDataCacheCore *cache)
@@ -595,6 +597,13 @@ bool CProcessInfo::IsTempoAllowed(float tempo)
     return true;
 
   return false;
+}
+
+unsigned int CProcessInfo::GetMaxPassthroughOffSyncDuration() const
+{
+  return CServiceBroker::GetSettingsComponent()
+      ->GetAdvancedSettings()
+      ->m_maxPassthroughOffSyncDuration;
 }
 
 void CProcessInfo::SetLevelVQ(int level)

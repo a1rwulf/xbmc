@@ -68,7 +68,14 @@ namespace DX
     CD3DTexture& GetBackBuffer() { return m_backBufferTex; }
 
     void GetOutput(IDXGIOutput** ppOutput) const;
-    void GetAdapterDesc(DXGI_ADAPTER_DESC *desc) const;
+    /*!
+     * \brief Retrieve current output and output description. Use cached data first to avoid delays due
+     * to dxgi internal multithreading synchronization.
+     * \param output The output
+     * \param outputDesc The output description
+    */
+    void GetCachedOutputAndDesc(IDXGIOutput** output, DXGI_OUTPUT_DESC* outputDesc) const;
+    DXGI_ADAPTER_DESC GetAdapterDesc() const;
     void GetDisplayMode(DXGI_MODE_DESC *mode) const;
 
     D3D11_VIEWPORT GetScreenViewport() const { return m_screenViewport; }
@@ -114,9 +121,14 @@ namespace DX
 #endif // TARGET_WINDOWS_STORE
     bool IsNV12SharedTexturesSupported() const { return m_NV12SharedTexturesSupport; }
     bool IsDXVA2SharedDecoderSurfaces() const { return m_DXVA2SharedDecoderSurfaces; }
+    bool IsSuperResolutionSupported() const { return m_DXVASuperResolutionSupport; }
+    bool UseFence() const { return m_DXVA2UseFence; }
 
     // Gets debug info from swapchain
     DEBUG_INFO_RENDER GetDebugInfo() const;
+    std::vector<DXGI_COLOR_SPACE_TYPE> GetSwapChainColorSpaces() const;
+    bool SetMultithreadProtected(bool enabled) const;
+    bool IsGCNOrOlder() const;
 
   private:
     class CBackBuffer : public CD3DTexture
@@ -148,6 +160,7 @@ namespace DX
     Microsoft::WRL::ComPtr<IDXGIFactory2> m_dxgiFactory;
     Microsoft::WRL::ComPtr<IDXGIAdapter1> m_adapter;
     Microsoft::WRL::ComPtr<IDXGIOutput1> m_output;
+    DXGI_OUTPUT_DESC m_outputDesc{};
 
     Microsoft::WRL::ComPtr<ID3D11Device1> m_d3dDevice;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext1> m_d3dContext;
@@ -183,5 +196,7 @@ namespace DX
     bool m_IsTransferPQ;
     bool m_NV12SharedTexturesSupport{false};
     bool m_DXVA2SharedDecoderSurfaces{false};
+    bool m_DXVASuperResolutionSupport{false};
+    bool m_DXVA2UseFence{false};
   };
 }

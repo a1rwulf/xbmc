@@ -12,10 +12,13 @@
 #include "games/controllers/ControllerDefinitions.h"
 #include "games/controllers/ControllerTranslator.h"
 #include "guilib/LocalizeStrings.h"
+#include "input/keyboard/KeyboardTranslator.h"
 #include "utils/XMLUtils.h"
 #include "utils/log.h"
 
 #include <sstream>
+
+#include <tinyxml2.h>
 
 using namespace KODI;
 using namespace GAME;
@@ -74,7 +77,7 @@ std::string CPhysicalFeature::Label() const
   return label;
 }
 
-bool CPhysicalFeature::Deserialize(const TiXmlElement* pElement,
+bool CPhysicalFeature::Deserialize(const tinyxml2::XMLElement* pElement,
                                    const CController* controller,
                                    FEATURE_CATEGORY category,
                                    int categoryLabelId)
@@ -94,7 +97,7 @@ bool CPhysicalFeature::Deserialize(const TiXmlElement* pElement,
     return false;
   }
 
-  // Cagegory was obtained from parent XML node
+  // Category was obtained from parent XML node
   m_category = category;
   m_categoryLabelId = categoryLabelId;
 
@@ -145,7 +148,7 @@ bool CPhysicalFeature::Deserialize(const TiXmlElement* pElement,
     }
     else
     {
-      m_keycode = CControllerTranslator::TranslateKeysym(strSymbol);
+      m_keycode = KEYBOARD::CKeyboardTranslator::TranslateKeysym(strSymbol);
       if (m_keycode == XBMCK_UNKNOWN)
       {
         CLog::Log(LOGERROR, "<{}> tag - attribute \"{}\" is invalid: \"{}\"", strType,

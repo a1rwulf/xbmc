@@ -68,12 +68,14 @@ static std::string Localize(std::uint32_t code,
 
 template<typename TValueType>
 static CFileItemPtr GetFileItem(const std::string& label,
+                                const std::string& label2,
                                 const TValueType& value,
                                 const std::vector<std::pair<std::string, CVariant>>& properties,
                                 const std::set<TValueType>& selectedValues)
 {
   CFileItemPtr item(new CFileItem(label));
   item->SetProperty("value", value);
+  item->SetLabel2(label2);
 
   for (const auto& prop : properties)
     item->SetProperty(prop.first, prop.second);
@@ -122,8 +124,7 @@ static bool GetIntegerOptions(const SettingConstPtr& setting,
       const TranslatableIntegerSettingOptions& settingOptions =
           pSettingInt->GetTranslatableOptions();
       for (const auto& option : settingOptions)
-        options.push_back(
-            IntegerSettingOption(Localize(option.label, localizer, option.addonId), option.value));
+        options.emplace_back(Localize(option.label, localizer, option.addonId), option.value);
       break;
     }
 
@@ -161,7 +162,7 @@ static bool GetIntegerOptions(const SettingConstPtr& setting,
         else
           strLabel = StringUtils::Format(control->GetFormatString(), i);
 
-        options.push_back(IntegerSettingOption(strLabel, i));
+        options.emplace_back(strLabel, i);
       }
 
       break;
@@ -228,7 +229,7 @@ static bool GetStringOptions(const SettingConstPtr& setting,
       const TranslatableStringSettingOptions& settingOptions =
           pSettingString->GetTranslatableOptions();
       for (const auto& option : settingOptions)
-        options.push_back(StringSettingOption(Localize(option.first, localizer), option.second));
+        options.emplace_back(Localize(option.first, localizer), option.second);
       break;
     }
 
@@ -293,11 +294,7 @@ static bool GetStringOptions(const SettingConstPtr& setting,
 CGUIControlBaseSetting::CGUIControlBaseSetting(int id,
                                                std::shared_ptr<CSetting> pSetting,
                                                ILocalizer* localizer)
-  : m_id(id),
-    m_pSetting(std::move(pSetting)),
-    m_localizer(localizer),
-    m_delayed(false),
-    m_valid(true)
+  : m_id(id), m_pSetting(std::move(pSetting)), m_localizer(localizer)
 {
 }
 
@@ -678,6 +675,7 @@ bool CGUIControlListSetting::OnClick()
     dialog->SetHeading(CVariant{Localize(m_pSetting->GetLabel())});
     dialog->SetItems(options);
     dialog->SetMultiSelection(control->CanMultiSelect());
+    dialog->SetUseDetails(control->UseDetails());
     dialog->Open();
 
     if (!dialog->IsConfirmed())
@@ -897,7 +895,8 @@ bool CGUIControlListSetting::GetIntegerItems(const SettingConstPtr& setting,
 
   // turn them into CFileItems and add them to the item list
   for (const auto& option : options)
-    items.Add(GetFileItem(option.label, option.value, option.properties, selectedValues));
+    items.Add(
+        GetFileItem(option.label, option.label2, option.value, option.properties, selectedValues));
 
   return true;
 }
@@ -914,7 +913,8 @@ bool CGUIControlListSetting::GetStringItems(const SettingConstPtr& setting,
 
   // turn them into CFileItems and add them to the item list
   for (const auto& option : options)
-    items.Add(GetFileItem(option.label, option.value, option.properties, selectedValues));
+    items.Add(
+        GetFileItem(option.label, option.label2, option.value, option.properties, selectedValues));
 
   return true;
 }

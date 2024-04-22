@@ -10,6 +10,7 @@
 
 #include "DVDCodecs/Video/DVDVideoCodec.h"
 #include "VideoRenderers/BaseRenderer.h"
+#include "VideoRenderers/HwDecRender/DXVAEnumeratorHD.h"
 #include "WIN32Util.h"
 #include "rendering/dx/RenderContext.h"
 #include "utils/log.h"
@@ -18,6 +19,7 @@
 
 #include <ppl.h>
 
+using namespace DXVA;
 using namespace Microsoft::WRL;
 
 CRendererBase* CRendererDXVA::Create(CVideoSettings& videoSettings)
@@ -29,33 +31,46 @@ void CRendererDXVA::GetWeight(std::map<RenderMethod, int>& weights, const VideoP
 {
   unsigned weight = 0;
   const AVPixelFormat av_pixel_format = picture.videoBuffer->GetFormat();
+  const DXGI_FORMAT dxgi_format = GetDXGIFormat(av_pixel_format, __super::GetDXGIFormat(picture));
 
-  if (av_pixel_format == AV_PIX_FMT_D3D11VA_VLD)
-    weight += 1000;
-  else
+  if (dxgi_format == DXGI_FORMAT_UNKNOWN)
+  {
+    CLog::LogF(LOGWARNING, "Unknown texture format is not supported.",
+               DX::DXGIFormatToString(dxgi_format));
+    return;
+  }
+
+  if (av_pixel_format != AV_PIX_FMT_D3D11VA_VLD)
   {
     // check format for buffer
-    const DXGI_FORMAT dxgi_format = CRenderBufferImpl::GetDXGIFormat(av_pixel_format, GetDXGIFormat(picture));
-    if (dxgi_format == DXGI_FORMAT_UNKNOWN)
-      return;
-
-    CD3D11_TEXTURE2D_DESC texDesc(
-      dxgi_format,
-      FFALIGN(picture.iWidth, 32),
-      FFALIGN(picture.iHeight, 32),
-      1, 1,
-      D3D11_BIND_DECODER,
-      D3D11_USAGE_DYNAMIC,
-      D3D11_CPU_ACCESS_WRITE
-    );
+    CD3D11_TEXTURE2D_DESC texDesc(dxgi_format, FFALIGN(picture.iWidth, 32),
+                                  FFALIGN(picture.iHeight, 32), 1, 1, D3D11_BIND_DECODER,
+                                  D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE);
 
     ComPtr<ID3D11Device> pDevice = DX::DeviceResources::Get()->GetD3DDevice();
     if (FAILED(pDevice->CreateTexture2D(&texDesc, nullptr, nullptr)))
     {
-      CLog::LogF(LOGWARNING, "Texture format {} is not supported.", dxgi_format);
+      CLog::LogF(LOGWARNING, "Texture format {} is not supported.",
+                 DX::DXGIFormatToString(dxgi_format));
       return;
     }
+  }
 
+  CEnumeratorHD enumerator;
+  enumerator.Open(picture.iWidth, picture.iHeight, dxgi_format);
+
+  if (enumerator.SupportedConversions({picture, IntendToRenderAsHDR(picture)}).empty())
+  {
+    CLog::LogF(LOGWARNING, "DXVA will not be used.");
+    return;
+  }
+
+  if (av_pixel_format == AV_PIX_FMT_D3D11VA_VLD)
+  {
+    weight += 1000;
+  }
+  else
+  {
     if (av_pixel_format == AV_PIX_FMT_NV12 ||
         av_pixel_format == AV_PIX_FMT_P010 ||
         av_pixel_format == AV_PIX_FMT_P016)
@@ -76,12 +91,15 @@ void CRendererDXVA::GetWeight(std::map<RenderMethod, int>& weights, const VideoP
     weights[RENDER_DXVA] = weight;
 }
 
+CRendererDXVA::CRendererDXVA(CVideoSettings& videoSettings) : CRendererHQ(videoSettings)
+{
+  m_renderMethodName = "DXVA";
+}
+
 CRenderInfo CRendererDXVA::GetRenderInfo()
 {
   auto info = __super::GetRenderInfo();
 
-  const int buffers = NUM_BUFFERS + m_processor->PastRefs();
-  info.optimal_buffer_size = std::min(NUM_BUFFERS, buffers);
   info.m_deintMethods.push_back(VS_INTERLACEMETHOD_DXVA_AUTO);
 
   return  info;
@@ -89,24 +107,51 @@ CRenderInfo CRendererDXVA::GetRenderInfo()
 
 bool CRendererDXVA::Configure(const VideoPicture& picture, float fps, unsigned orientation)
 {
-  const auto support_type = D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT;
-
   if (__super::Configure(picture, fps, orientation))
   {
     m_format = picture.videoBuffer->GetFormat();
-    const DXGI_FORMAT dxgi_format = CRenderBufferImpl::GetDXGIFormat(m_format, GetDXGIFormat(picture));
+    const DXGI_FORMAT dxgi_format = GetDXGIFormat(m_format, __super::GetDXGIFormat(picture));
 
-    // create processor
-    m_processor = std::make_unique<DXVA::CProcessorHD>();
-    if (m_processor->PreInit() &&
-        m_processor->Open(m_sourceWidth, m_sourceWidth) &&
-        m_processor->IsFormatSupported(dxgi_format, support_type))
+    if (DX::Windowing()->IsVideoSuperResolutionSettingEnabled() &&
+        CProcessorHD::IsSuperResolutionSuitable(picture))
     {
-      return true;
+      m_tryVSR = true;
     }
 
+    m_enumerator = std::make_shared<DXVA::CEnumeratorHD>();
+    if (m_enumerator->Open(picture.iWidth, picture.iHeight, dxgi_format))
+    {
+      if (CServiceBroker::GetLogging().IsLogLevelLogged(LOGDEBUG) &&
+          CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
+      {
+        m_enumerator->LogSupportedConversions(
+            dxgi_format, CEnumeratorHD::AvToDxgiColorSpace(DXVA::DXGIColorSpaceArgs(picture)));
+      }
+
+      m_conversionsArgs = SupportedConversionsArgs{picture, IntendToRenderAsHDR(picture)};
+
+      const ProcessorConversions conversions =
+          m_enumerator->SupportedConversions(m_conversionsArgs);
+      if (!conversions.empty())
+      {
+        m_conversion = ChooseConversion(conversions);
+
+        CLog::LogF(LOGINFO, "chosen conversion: {}", m_conversion.ToString());
+
+        // create processor
+        m_processor = std::make_unique<DXVA::CProcessorHD>();
+        if (m_processor->Open(picture, m_enumerator) && m_processor->SetConversion(m_conversion))
+        {
+          if (m_tryVSR)
+            m_processor->TryEnableVideoSuperResolution();
+
+          return true;
+        }
+      }
+    }
     CLog::LogF(LOGERROR, "unable to create DXVA processor");
     m_processor.reset();
+    m_enumerator.reset();
   }
   return false;
 }
@@ -127,9 +172,36 @@ void CRendererDXVA::CheckVideoParameters()
 {
   __super::CheckVideoParameters();
 
-  CreateIntermediateTarget(
-    HasHQScaler() ? m_sourceWidth : m_viewWidth, 
-    HasHQScaler() ? m_sourceHeight : m_viewHeight);
+  CRenderBuffer* buf = m_renderBuffers[m_iBufferIndex];
+  if (m_enumerator)
+  {
+    const SupportedConversionsArgs args{buf->primaries, buf->color_space, buf->color_transfer,
+                                        buf->full_range, ActualRenderAsHDR()};
+
+    if (m_conversionsArgs != args)
+    {
+      CLog::LogF(LOGINFO, "source format change detected");
+
+      const ProcessorConversions conversions = m_enumerator->SupportedConversions(args);
+      // TODO case no supported conversion: add support in WinRenderer to fallback to a render method with support
+      // For now, keep using the current conversion. Results won't be ideal but a black screen is avoided
+      const ProcessorConversion conversion =
+          conversions.empty() ? m_conversion : ChooseConversion(conversions);
+
+      if (m_conversion != conversion)
+      {
+        CLog::LogF(LOGINFO, "new conversion: {}", conversion.ToString());
+
+        m_processor->SetConversion(conversion);
+        m_conversion = conversion;
+      }
+      m_conversionsArgs = args;
+    }
+  }
+
+  CreateIntermediateTarget(HasHQScaler() ? m_sourceWidth : m_viewWidth,
+                           HasHQScaler() ? m_sourceHeight : m_viewHeight, false,
+                           m_conversion.m_outputFormat);
 }
 
 void CRendererDXVA::RenderImpl(CD3DTexture& target, CRect& sourceRect, CPoint(&destPoints)[4], uint32_t flags)
@@ -232,6 +304,20 @@ void CRendererDXVA::FillBuffersSet(CRenderBuffer* (&buffers)[8])
   }
 }
 
+bool CRendererDXVA::Supports(ERENDERFEATURE feature) const
+{
+  if (feature == RENDERFEATURE_BRIGHTNESS || feature == RENDERFEATURE_CONTRAST ||
+      feature == RENDERFEATURE_ROTATION)
+  {
+    if (m_processor)
+      return m_processor->Supports(feature);
+
+    return false;
+  }
+
+  return CRendererBase::Supports(feature);
+}
+
 bool CRendererDXVA::Supports(ESCALINGMETHOD method) const
 {
   if (method == VS_SCALINGMETHOD_DXVA_HARDWARE)
@@ -243,6 +329,21 @@ bool CRendererDXVA::Supports(ESCALINGMETHOD method) const
 CRenderBuffer* CRendererDXVA::CreateBuffer()
 {
   return new CRenderBufferImpl(m_format, m_sourceWidth, m_sourceHeight);
+}
+
+std::string CRendererDXVA::GetRenderMethodDebugInfo() const
+{
+  if (m_processor && DX::Windowing()->SupportsVideoSuperResolution())
+  {
+    return StringUtils::Format("Video Super Resolution: {}",
+                               m_processor->IsVideoSuperResolutionEnabled() ? "requested" : "OFF");
+  }
+  return {};
+}
+
+DXGI_FORMAT CRendererDXVA::GetDXGIFormat(AVPixelFormat format, DXGI_FORMAT default_fmt)
+{
+  return CRenderBufferImpl::GetDXGIFormat(format, default_fmt);
 }
 
 CRendererDXVA::CRenderBufferImpl::CRenderBufferImpl(AVPixelFormat av_pix_format, unsigned width, unsigned height)
@@ -381,4 +482,38 @@ bool CRendererDXVA::CRenderBufferImpl::UploadToTexture()
 
   m_bLoaded = m_texture.UnlockRect(0);
   return m_bLoaded;
+}
+
+ProcessorConversion CRendererDXVA::ChooseConversion(const ProcessorConversions& conversions) const
+{
+  assert(conversions.size() > 0);
+
+  // Try HQ except when:
+  // - trying VSR scaling, which requires RGB8 processor output format
+  // - the user opted out of high quality and the swap chain is 8 bits.
+  if (!m_tryVSR && (DX::Windowing()->IsHighPrecisionProcessingSettingEnabled() ||
+                    DX::Windowing()->GetBackBuffer().GetFormat() == DXGI_FORMAT_R10G10B10A2_UNORM))
+  {
+    const auto it =
+        std::find_if(conversions.cbegin(), conversions.cend(), [](const ProcessorConversion& c) {
+          return c.m_outputFormat == DXGI_FORMAT_R10G10B10A2_UNORM;
+        });
+
+    if (it != conversions.end())
+      return *it;
+    else
+      CLog::LogF(LOGDEBUG, "no compatible high precision format found.");
+  }
+
+  const auto it =
+      std::find_if(conversions.cbegin(), conversions.cend(), [](const ProcessorConversion& c) {
+        return c.m_outputFormat == DXGI_FORMAT_B8G8R8A8_UNORM;
+      });
+
+  if (it != conversions.end())
+    return *it;
+
+  // bad situation, nothing matching our needs found, return the first conversion available
+  CLog::LogF(LOGWARNING, "no conversion to wanted formats found, defaulting to first conversion.");
+  return conversions.front();
 }

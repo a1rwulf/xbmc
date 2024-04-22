@@ -17,6 +17,7 @@
 #include "threads/Thread.h"
 
 #include <list>
+#include <memory>
 #include <queue>
 #include <string>
 #include <utility>
@@ -61,7 +62,7 @@ struct AudioSettings
   AEQuality resampleQuality;
   double atempoThreshold;
   bool streamNoise;
-  int silenceTimeout;
+  int silenceTimeoutMinutes;
 };
 
 class CActiveAEControlProtocol : public Protocol
@@ -198,6 +199,7 @@ public:
   void SetCurrentSinkFormat(const AEAudioFormat& SinkFormat);
   void SetSinkCacheTotal(float time) { m_sinkCacheTotal = time; }
   void SetSinkLatency(float time) { m_sinkLatency = time; }
+  void SetSinkNeedIec(bool needIEC) { m_sinkNeedIecPack = needIEC; }
   bool IsSuspended();
   AEAudioFormat GetCurrentSinkFormat();
 protected:
@@ -209,6 +211,7 @@ protected:
   bool m_suspended;
   AEAudioFormat m_sinkFormat;
   bool m_pcmOutput;
+  bool m_sinkNeedIecPack{false};
   CCriticalSection m_lock;
   struct StreamStats
   {
@@ -305,6 +308,7 @@ protected:
   void UnconfigureSink();
   void Dispose();
   void LoadSettings();
+  void ValidateOutputDevices(bool saveChanges);
   bool NeedReconfigureBuffers();
   bool NeedReconfigureSink();
   void ApplySettingsToFormat(AEAudioFormat& format,
@@ -368,15 +372,16 @@ protected:
   std::unique_ptr<CActiveAESettings> m_settingsHandler;
 
   // buffers
-  CActiveAEBufferPoolResample *m_sinkBuffers;
-  CActiveAEBufferPoolResample *m_vizBuffers;
-  CActiveAEBufferPool *m_vizBuffersInput;
-  CActiveAEBufferPool *m_silenceBuffers;  // needed to drive gui sounds if we have no streams
-  CActiveAEBufferPool *m_encoderBuffers;
+  std::unique_ptr<CActiveAEBufferPoolResample> m_sinkBuffers;
+  std::unique_ptr<CActiveAEBufferPoolResample> m_vizBuffers;
+  std::unique_ptr<CActiveAEBufferPool> m_vizBuffersInput;
+  std::unique_ptr<CActiveAEBufferPool>
+      m_silenceBuffers; // needed to drive gui sounds if we have no streams
+  std::unique_ptr<CActiveAEBufferPool> m_encoderBuffers;
 
   // streams
   std::list<CActiveAEStream*> m_streams;
-  std::list<CActiveAEBufferPool*> m_discardBufferPools;
+  std::list<std::unique_ptr<CActiveAEBufferPool>> m_discardBufferPools;
   unsigned int m_streamIdGen;
 
   // gui sounds

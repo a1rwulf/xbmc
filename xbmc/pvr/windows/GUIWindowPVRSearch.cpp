@@ -98,7 +98,7 @@ void AsyncSearchAction::Run()
 } // unnamed namespace
 
 CGUIWindowPVRSearchBase::CGUIWindowPVRSearchBase(bool bRadio, int id, const std::string& xmlFile)
-  : CGUIWindowPVRBase(bRadio, id, xmlFile), m_bSearchConfirmed(false)
+  : CGUIWindowPVRBase(bRadio, id, xmlFile)
 {
 }
 
@@ -144,7 +144,7 @@ void CGUIWindowPVRSearchBase::SetItemToSearch(const CFileItem& item)
   {
     SetSearchFilter(std::make_shared<CPVREpgSearchFilter>(m_bRadio));
 
-    const std::shared_ptr<CPVREpgInfoTag> epgTag(CPVRItem(item).GetEpgInfoTag());
+    const std::shared_ptr<const CPVREpgInfoTag> epgTag(CPVRItem(item).GetEpgInfoTag());
     if (epgTag && !CServiceBroker::GetPVRManager().IsParentalLocked(epgTag))
       m_searchfilter->SetSearchPhrase(epgTag->Title());
   }
@@ -441,7 +441,8 @@ CGUIDialogPVRGuideSearch::Result CGUIWindowPVRSearchBase::OpenDialogSearch(
   else if (result == CGUIDialogPVRGuideSearch::Result::SAVE)
   {
     CServiceBroker::GetPVRManager().EpgContainer().PersistSavedSearch(*tmpSearchFilter);
-    searchFilter->SetDatabaseId(tmpSearchFilter->GetDatabaseId());
+    if (searchFilter)
+      searchFilter->SetDatabaseId(tmpSearchFilter->GetDatabaseId());
 
     const CPVREpgSearchPath path(m_vecItems->GetPath());
     if (path.IsValid() && path.IsSearchRoot())

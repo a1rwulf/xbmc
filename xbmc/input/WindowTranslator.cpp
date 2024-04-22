@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -78,7 +78,6 @@ const CWindowTranslator::WindowMapByName CWindowTranslator::WindowMappingByName 
     {"virtualkeyboard", WINDOW_DIALOG_KEYBOARD},
     {"volumebar", WINDOW_DIALOG_VOLUME_BAR},
     {"submenu", WINDOW_DIALOG_SUB_MENU},
-    {"favourites", WINDOW_DIALOG_FAVOURITES},
     {"contextmenu", WINDOW_DIALOG_CONTEXT_MENU},
     {"notification", WINDOW_DIALOG_KAI_TOAST},
     {"numericinput", WINDOW_DIALOG_NUMERIC},
@@ -120,6 +119,10 @@ const CWindowTranslator::WindowMapByName CWindowTranslator::WindowMappingByName 
     {"musicinformation", WINDOW_DIALOG_MUSIC_INFO},
     {"okdialog", WINDOW_DIALOG_OK},
     {"movieinformation", WINDOW_DIALOG_VIDEO_INFO},
+    {"managevideoversions", WINDOW_DIALOG_MANAGE_VIDEO_VERSIONS},
+    {"managevideoextras", WINDOW_DIALOG_MANAGE_VIDEO_EXTRAS},
+    {"selectvideoversion", WINDOW_DIALOG_SELECT_VIDEO_VERSION},
+    {"selectvideoextra", WINDOW_DIALOG_SELECT_VIDEO_EXTRA},
     {"textviewer", WINDOW_DIALOG_TEXT_VIEWER},
     {"fullscreenvideo", WINDOW_FULLSCREEN_VIDEO},
     {"dialogcolorpicker", WINDOW_DIALOG_COLOR_PICKER},
@@ -154,6 +157,7 @@ const CWindowTranslator::WindowMapByName CWindowTranslator::WindowMappingByName 
     {"splash", WINDOW_SPLASH},
     {"startwindow", WINDOW_START},
     {"startup", WINDOW_STARTUP_ANIM},
+    {"peripherals", WINDOW_DIALOG_PERIPHERALS},
     {"peripheralsettings", WINDOW_DIALOG_PERIPHERAL_SETTINGS},
     {"extendedprogressdialog", WINDOW_DIALOG_EXT_PROGRESS},
     {"mediafilter", WINDOW_DIALOG_MEDIA_FILTER},
@@ -169,7 +173,9 @@ const CWindowTranslator::WindowMapByName CWindowTranslator::WindowMappingByName 
     {"gameadvancedsettings", WINDOW_DIALOG_GAME_ADVANCED_SETTINGS},
     {"gamevideorotation", WINDOW_DIALOG_GAME_VIDEO_ROTATION},
     {"ingamesaves", WINDOW_DIALOG_IN_GAME_SAVES},
-    {"gamesaves", WINDOW_DIALOG_GAME_SAVES}};
+    {"gamesaves", WINDOW_DIALOG_GAME_SAVES},
+    {"gameagents", WINDOW_DIALOG_GAME_AGENTS},
+};
 
 namespace
 {
@@ -219,7 +225,7 @@ int CWindowTranslator::TranslateWindow(const std::string& window)
 
   // Eliminate .xml
   if (StringUtils::EndsWith(strWindow, ".xml"))
-    strWindow = strWindow.substr(0, strWindow.size() - 4);
+    strWindow.resize(strWindow.size() - 4);
 
   // window12345, for custom window to be keymapped
   if (strWindow.length() > 6 && StringUtils::StartsWith(strWindow, "window"))
@@ -264,9 +270,9 @@ std::string CWindowTranslator::TranslateWindow(int windowId)
 
 int CWindowTranslator::GetFallbackWindow(int windowId)
 {
-  auto it = std::find_if(
-      FallbackWindows.begin(), FallbackWindows.end(),
-      [windowId](const FallbackWindowMapping& mapping) { return mapping.origin == windowId; });
+  auto it = std::find_if(FallbackWindows.begin(), FallbackWindows.end(),
+                         [windowId](const FallbackWindowMapping& mapping)
+                         { return mapping.origin == windowId; });
 
   if (it != FallbackWindows.end())
     return it->target;

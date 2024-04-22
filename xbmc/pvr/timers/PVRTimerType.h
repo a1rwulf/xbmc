@@ -39,7 +39,8 @@ namespace PVR
      * @param client the PVR client.
      * @return A timer type or NULL if none available.
      */
-    static const std::shared_ptr<CPVRTimerType> GetFirstAvailableType(const std::shared_ptr<CPVRClient>& client);
+    static const std::shared_ptr<CPVRTimerType> GetFirstAvailableType(
+        const std::shared_ptr<const CPVRClient>& client);
 
     /*!
      * @brief Create a timer type from given timer type id and client id.
@@ -73,6 +74,12 @@ namespace PVR
 
     bool operator ==(const CPVRTimerType& right) const;
     bool operator !=(const CPVRTimerType& right) const;
+
+    /*!
+     * @brief Update the data of this instance with the data given by another type instance.
+     * @param type The instance containing the updated data.
+     */
+    void Update(const CPVRTimerType& type);
 
     /*!
      * @brief Get the PVR client id for this type.

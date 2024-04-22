@@ -48,10 +48,20 @@ struct SNativeIoControl
 
 struct SCacheStatus
 {
+  uint64_t maxforward; /**< forward cache max capacity in bytes */
   uint64_t forward; /**< number of bytes cached forward of current position */
   uint32_t maxrate; /**< maximum allowed read(fill) rate (bytes/second) */
   uint32_t currate; /**< average read rate (bytes/second) since last position change */
   uint32_t lowrate; /**< low speed read rate (bytes/second) (if any, else 0) */
+};
+
+enum CACHE_BUFFER_MODES
+{
+  CACHE_BUFFER_MODE_INTERNET = 0,
+  CACHE_BUFFER_MODE_ALL = 1,
+  CACHE_BUFFER_MODE_TRUE_INTERNET = 2,
+  CACHE_BUFFER_MODE_NONE = 3,
+  CACHE_BUFFER_MODE_NETWORK = 4,
 };
 
 typedef enum {

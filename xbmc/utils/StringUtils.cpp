@@ -591,6 +591,39 @@ std::string& StringUtils::RemoveDuplicatedSpacesAndTabs(std::string& str)
   return str;
 }
 
+bool StringUtils::IsSpecialCharacter(char c)
+{
+  static constexpr std::string_view view(" .-_+,!'\"\t/\\*?#$%&@()[]{}");
+  if (std::any_of(view.begin(), view.end(), [c](char ch) { return ch == c; }))
+    return true;
+  else
+    return false;
+}
+
+std::string StringUtils::ReplaceSpecialCharactersWithSpace(const std::string& str)
+{
+  std::string result;
+  bool prevCharWasSpecial = false;
+
+  for (char c : str)
+  {
+    if (IsSpecialCharacter(c))
+    {
+      if (!prevCharWasSpecial)
+      {
+        result += ' ';
+      }
+      prevCharWasSpecial = true;
+    }
+    else
+    {
+      result += c;
+      prevCharWasSpecial = false;
+    }
+  }
+  return result;
+}
+
 int StringUtils::Replace(std::string &str, char oldChar, char newChar)
 {
   int replacedChars = 0;
@@ -1135,7 +1168,7 @@ int64_t StringUtils::AlphaNumericCompare(const wchar_t* left, const wchar_t* rig
     if (lsym && rsym)
     {
       if (lc != rc)
-        return lc - rc;
+        return static_cast<int64_t>(lc) - static_cast<int64_t>(rc);
       else
       { // Same symbol advance to next wchar
         l++;
@@ -1312,7 +1345,7 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
     if (lsym && rsym)
     {
       if (zA[i] != zB[j])
-        return zA[i] - zB[j];
+        return static_cast<int>(zA[i]) - static_cast<int>(zB[j]);
       else
       { // Same symbol advance to next
         i++;
@@ -1345,7 +1378,7 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
     {
       if (!g_langInfo.UseLocaleCollation() || (lc <= 128 && rc <= 128))
         // Compare unicode (having applied accent folding collation to non-ascii chars).
-        return lc - rc;
+        return static_cast<int>(lc) - static_cast<int>(rc);
       else
       {
         // Fetch collation facet from locale to do comparison of wide char although on some
@@ -1887,6 +1920,22 @@ std::string StringUtils::FormatFileSize(uint64_t bytes)
   }
   unsigned int decimals = value < 9.995 ? 2 : (value < 99.95 ? 1 : 0);
   return Format("{:.{}f}{}", value, decimals, units[i]);
+}
+
+bool StringUtils::Contains(std::string_view str,
+                           std::string_view keyword,
+                           bool isCaseInsensitive /* = true */)
+{
+  if (isCaseInsensitive)
+  {
+    auto itStr = std::search(str.begin(), str.end(), keyword.begin(), keyword.end(),
+                             [](unsigned char ch1, unsigned char ch2) {
+                               return std::toupper(ch1) == std::toupper(ch2);
+                             });
+    return (itStr != str.end());
+  }
+
+  return str.find(keyword) != std::string_view::npos;
 }
 
 const std::locale& StringUtils::GetOriginalLocale() noexcept

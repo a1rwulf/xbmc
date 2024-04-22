@@ -20,7 +20,7 @@ if(CORE_PLATFORM_NAME_LC STREQUAL tvos)
                                                   XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS ${ENTITLEMENTS_OUT_PATH})
 
 else()
-  set(BUNDLE_RESOURCES ${CMAKE_SOURCE_DIR}/media/splash.jpg
+  set(BUNDLE_RESOURCES ${CMAKE_SOURCE_DIR}/media/applaunch_screen.png
                        ${CMAKE_SOURCE_DIR}/tools/darwin/packaging/media/ios/rounded/AppIcon29x29.png
                        ${CMAKE_SOURCE_DIR}/tools/darwin/packaging/media/ios/rounded/AppIcon29x29@2x.png
                        ${CMAKE_SOURCE_DIR}/tools/darwin/packaging/media/ios/rounded/AppIcon40x40.png
@@ -85,8 +85,8 @@ if(ADDONS_TO_BUILD)
   set(_addons "ADDONS=${ADDONS_TO_BUILD}")
 endif()
 add_custom_target(binary-addons
-  COMMAND $(MAKE) -C ${CMAKE_SOURCE_DIR}/tools/depends/target/binary-addons clean
-  COMMAND $(MAKE) -C ${CMAKE_SOURCE_DIR}/tools/depends/target/binary-addons VERBOSE=1 V=99
+  COMMAND make -C ${CMAKE_SOURCE_DIR}/tools/depends/target/binary-addons clean
+  COMMAND make -C ${CMAKE_SOURCE_DIR}/tools/depends/target/binary-addons VERBOSE=1 V=99
         INSTALL_PREFIX="${CMAKE_BINARY_DIR}/addons" CROSS_COMPILING=yes ${_addons})
 if(ENABLE_XCODE_ADDONBUILD)
   add_dependencies(${APP_NAME_LC} binary-addons)
@@ -103,6 +103,7 @@ add_custom_command(TARGET ${APP_NAME_LC} POST_BUILD
     COMMAND "ACTION=build"
             "APP_NAME=${APP_NAME}"
             "XBMC_DEPENDS=${DEPENDS_PATH}"
+            "SRCROOT=${CMAKE_BINARY_DIR}"
             ${CMAKE_SOURCE_DIR}/tools/darwin/Support/CopyRootFiles-darwin_embedded.command
     COMMAND "XBMC_DEPENDS=${DEPENDS_PATH}"
             "PYTHON_VERSION=${PYTHON_VERSION}"
@@ -122,6 +123,9 @@ endif()
 set(DEPENDS_ROOT_FOR_XCODE ${NATIVEPREFIX}/..)
 configure_file(${CMAKE_SOURCE_DIR}/tools/darwin/packaging/darwin_embedded/mkdeb-darwin_embedded.sh.in
                ${CMAKE_BINARY_DIR}/tools/darwin/packaging/darwin_embedded/mkdeb-darwin_embedded.sh @ONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/xbmc/platform/darwin/Credits.html.in
+               ${CMAKE_BINARY_DIR}/xbmc/platform/darwin/Credits.html @ONLY)
 
 add_custom_target(deb
     COMMAND sh ./mkdeb-darwin_embedded.sh ${CORE_BUILD_CONFIG}

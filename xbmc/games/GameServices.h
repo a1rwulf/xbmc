@@ -30,10 +30,13 @@ class CGUIGameRenderManager;
 
 namespace GAME
 {
-class CGameAgentManager;
+class CAgentInput;
 class CControllerManager;
 class CGameSettings;
 
+/*!
+ * \ingroup games
+ */
 class CGameServices
 {
 public:
@@ -50,13 +53,24 @@ public:
   ControllerPtr GetDefaultMouse();
   ControllerVector GetControllers();
 
+  /*!
+   * \brief Translate a feature on a controller into its localized name
+   *
+   * \param controllerId The controller ID that the feature belongs to
+   * \param featureName The feature name
+   *
+   * \return The localized feature name, or empty if the controller or feature
+   *         doesn't exist
+   */
+  std::string TranslateFeature(const std::string& controllerId, const std::string& featureName);
+
   std::string GetSavestatesFolder() const;
 
   CGameSettings& GameSettings() { return *m_gameSettings; }
 
   RETRO::CGUIGameRenderManager& GameRenderManager() { return m_gameRenderManager; }
 
-  CGameAgentManager& GameAgentManager() { return *m_gameAgentManager; }
+  CAgentInput& AgentInput() { return *m_agentInput; }
 
 private:
   // Construction parameters
@@ -66,7 +80,7 @@ private:
 
   // Game services
   std::unique_ptr<CGameSettings> m_gameSettings;
-  std::unique_ptr<CGameAgentManager> m_gameAgentManager;
+  std::unique_ptr<CAgentInput> m_agentInput;
 };
 } // namespace GAME
 } // namespace KODI

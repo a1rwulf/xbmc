@@ -6,13 +6,6 @@
  *  See LICENSES/README.md for more information.
  */
 
-#if defined(TARGET_DARWIN_OSX)
-// SDL redefines main as SDL_main
-#ifdef HAS_SDL
-#include <SDL/SDL.h>
-#endif
-#endif
-
 #include "PlatformPosix.h"
 #include "application/AppEnvironment.h"
 #include "application/AppParamParser.h"
@@ -20,6 +13,10 @@
 
 #if defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
 #include "platform/linux/AppParamParserLinux.h"
+#endif
+
+#ifdef TARGET_WEBOS
+#include "platform/linux/AppParamParserWebOS.h"
 #endif
 
 #include <cstdio>
@@ -60,7 +57,9 @@ int main(int argc, char* argv[])
 
   setlocale(LC_NUMERIC, "C");
 
-#if defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
+#ifdef TARGET_WEBOS
+  CAppParamParserWebOS appParamParser;
+#elif defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
   CAppParamParserLinux appParamParser;
 #else
   CAppParamParser appParamParser;

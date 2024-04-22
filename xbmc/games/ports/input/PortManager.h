@@ -10,12 +10,22 @@
 
 #include "games/controllers/types/ControllerTree.h"
 
-class TiXmlElement;
+#include <future>
+#include <mutex>
+#include <string>
+
+namespace tinyxml2
+{
+class XMLElement;
+}
 
 namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup games
+ */
 class CPortManager
 {
 public:
@@ -27,7 +37,7 @@ public:
 
   void SetControllerTree(const CControllerTree& controllerTree);
   void LoadXML();
-  void SaveXML();
+  void SaveXMLAsync();
   void Clear();
 
   void ConnectController(const std::string& portAddress,
@@ -37,15 +47,19 @@ public:
   const CControllerTree& GetControllerTree() const { return m_controllerTree; }
 
 private:
-  static void DeserializePorts(const TiXmlElement* pElement, PortVec& ports);
-  static void DeserializePort(const TiXmlElement* pElement, CPortNode& port);
-  static void DeserializeControllers(const TiXmlElement* pElement, ControllerNodeVec& controllers);
-  static void DeserializeController(const TiXmlElement* pElement, CControllerNode& controller);
+  static void DeserializePorts(const tinyxml2::XMLElement* pElement, PortVec& ports);
+  static void DeserializePort(const tinyxml2::XMLElement* pElement, CPortNode& port);
+  static void DeserializeControllers(const tinyxml2::XMLElement* pElement,
+                                     ControllerNodeVec& controllers);
+  static void DeserializeController(const tinyxml2::XMLElement* pElement,
+                                    CControllerNode& controller);
 
-  static void SerializePorts(TiXmlElement& node, const PortVec& ports);
-  static void SerializePort(TiXmlElement& portNode, const CPortNode& port);
-  static void SerializeControllers(TiXmlElement& portNode, const ControllerNodeVec& controllers);
-  static void SerializeController(TiXmlElement& controllerNode, const CControllerNode& controller);
+  static void SerializePorts(tinyxml2::XMLElement& node, const PortVec& ports);
+  static void SerializePort(tinyxml2::XMLElement& portNode, const CPortNode& port);
+  static void SerializeControllers(tinyxml2::XMLElement& portNode,
+                                   const ControllerNodeVec& controllers);
+  static void SerializeController(tinyxml2::XMLElement& controllerNode,
+                                  const CControllerNode& controller);
 
   static bool ConnectController(const std::string& portAddress,
                                 bool connected,
@@ -69,6 +83,9 @@ private:
 
   CControllerTree m_controllerTree;
   std::string m_xmlPath;
+
+  std::vector<std::future<void>> m_saveFutures;
+  std::mutex m_saveMutex;
 };
 } // namespace GAME
 } // namespace KODI

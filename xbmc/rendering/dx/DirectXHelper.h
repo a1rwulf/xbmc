@@ -21,6 +21,7 @@ enum PCI_Vendors
   PCIV_AMD = 0x1002,
   PCIV_NVIDIA = 0x10DE,
   PCIV_Intel = 0x8086,
+  PCIV_MICROSOFT = 0x1414,
 };
 
 namespace DX
@@ -101,23 +102,38 @@ namespace DX
     return StringUtils::Format("D3D_FEATURE_LEVEL_{}_{}", fl_major, fl_minor);
   }
 
-  inline std::string GetGFXProviderName(UINT vendorId)
+  constexpr std::string_view GetGFXProviderName(UINT vendorId)
   {
-    std::string name;
     switch (vendorId)
     {
       case PCIV_AMD:
-        name = "AMD";
-        break;
+        return "AMD";
       case PCIV_Intel:
-        name = "Intel";
-        break;
+        return "Intel";
       case PCIV_NVIDIA:
-        name = "NVIDIA";
-        break;
+        return "NVIDIA";
+      case PCIV_MICROSOFT:
+        return "Microsoft";
+      default:
+        return "unknown";
     }
+  }
 
-    return name;
+  constexpr std::string_view DXGIFormatToShortString(const DXGI_FORMAT format)
+  {
+    switch (format)
+    {
+      case DXGI_FORMAT_B8G8R8A8_UNORM:
+        return "BGRA8";
+      case DXGI_FORMAT_R10G10B10A2_UNORM:
+        return "RGBA10";
+      case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        return "FP16";
+      case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        return "FP32";
+      default:
+        return "unknown";
+    }
   }
 
   template <typename T> struct SizeGen
@@ -181,6 +197,11 @@ namespace DX
 		return SUCCEEDED(hr);
 	}
 #endif
+
+  const std::string DXGIFormatToString(const DXGI_FORMAT format);
+  const std::string DXGIColorSpaceTypeToString(DXGI_COLOR_SPACE_TYPE type);
+  const std::string D3D11VideoProcessorFormatSupportToString(
+      D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT value);
 }
 
 #ifdef TARGET_WINDOWS_DESKTOP

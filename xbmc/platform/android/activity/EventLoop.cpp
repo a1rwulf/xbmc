@@ -8,17 +8,12 @@
 
 #include "EventLoop.h"
 
-#include "AndroidExtra.h"
 #include "XBMCApp.h"
-
-#include <dlfcn.h>
 
 #define IS_FROM_SOURCE(v, s) ((v & s) == s)
 
 CEventLoop::CEventLoop(android_app* application)
-  : m_enabled(false),
-    m_application(application),
-    m_activityHandler(NULL), m_inputHandler(NULL)
+  : m_application(application), m_activityHandler(NULL), m_inputHandler(NULL)
 {
   if (m_application == NULL)
     return;

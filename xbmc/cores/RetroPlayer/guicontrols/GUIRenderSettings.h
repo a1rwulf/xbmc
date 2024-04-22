@@ -30,16 +30,18 @@ public:
   bool HasVideoFilter() const override;
   bool HasStretchMode() const override;
   bool HasRotation() const override;
+  bool HasPixels() const override;
   CRenderSettings GetSettings() const override;
   CRect GetDimensions() const override;
 
   // Render functions
   void Reset();
-  void SetSettings(CRenderSettings settings);
+  void SetSettings(const CRenderSettings& settings);
   void SetDimensions(const CRect& dimensions);
   void SetVideoFilter(const std::string& videoFilter);
   void SetStretchMode(STRETCHMODE stretchMode);
   void SetRotationDegCCW(unsigned int rotationDegCCW);
+  void SetPixels(const std::string& pixelPath);
 
 private:
   // Construction parameters

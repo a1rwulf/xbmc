@@ -518,7 +518,6 @@ CDecoder::CDecoder(CProcessInfo& processInfo) :
   m_vaapiConfig.context = 0;
   m_vaapiConfig.configId = VA_INVALID_ID;
   m_vaapiConfig.processInfo = &m_processInfo;
-  m_avctx = nullptr;
   m_getBufferError = 0;
 }
 
@@ -715,7 +714,7 @@ bool CDecoder::Open(AVCodecContext* avctx, AVCodecContext* mainctx, const enum A
   else if (avctx->codec_id == AV_CODEC_ID_VP9)
     m_vaapiConfig.maxReferences = 8;
   else if (avctx->codec_id == AV_CODEC_ID_AV1)
-    m_vaapiConfig.maxReferences = 18;
+    m_vaapiConfig.maxReferences = 21;
   else
     m_vaapiConfig.maxReferences = 2;
 
@@ -728,10 +727,12 @@ bool CDecoder::Open(AVCodecContext* avctx, AVCodecContext* mainctx, const enum A
     return false;
   }
 
-  AVBufferRef *deviceRef =  av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VAAPI);
-  AVHWDeviceContext *deviceCtx = (AVHWDeviceContext*)deviceRef->data;
+  m_deviceRef = std::unique_ptr<AVBufferRef, AVBufferRefDeleter>(
+      av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VAAPI), AVBufferRefDeleter());
+
+  AVHWDeviceContext* deviceCtx = (AVHWDeviceContext*)m_deviceRef->data;
   AVVAAPIDeviceContext *vaapiDeviceCtx = (AVVAAPIDeviceContext*)deviceCtx->hwctx;
-  AVBufferRef *framesRef = av_hwframe_ctx_alloc(deviceRef);
+  AVBufferRef* framesRef = av_hwframe_ctx_alloc(m_deviceRef.get());
   AVHWFramesContext *framesCtx = (AVHWFramesContext*)framesRef->data;
   AVVAAPIFramesContext *vaapiFramesCtx = (AVVAAPIFramesContext*)framesCtx->hwctx;
 
@@ -751,7 +752,6 @@ bool CDecoder::Open(AVCodecContext* avctx, AVCodecContext* mainctx, const enum A
   avctx->get_buffer2 = CDecoder::FFGetBuffer;
   avctx->slice_flags = SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
 
-  m_avctx = mainctx;
   return true;
 }
 
@@ -763,6 +763,8 @@ void CDecoder::Close()
 
   FiniVAAPIOutput();
 
+  m_deviceRef.reset();
+
   if (m_vaapiConfig.context)
     m_vaapiConfig.context->Release(this);
   m_vaapiConfig.context = 0;
@@ -770,12 +772,6 @@ void CDecoder::Close()
 
 long CDecoder::Release()
 {
-  // if ffmpeg holds any references, flush buffers
-  if (m_avctx && m_videoSurfaces.HasRefs())
-  {
-    avcodec_flush_buffers(m_avctx);
-  }
-
   if (m_presentPicture)
   {
     m_presentPicture->Release();
@@ -790,9 +786,8 @@ long CDecoder::Release()
 
     std::unique_lock<CCriticalSection> lock1(CServiceBroker::GetWinSystem()->GetGfxContext());
     Message *reply;
-    if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::PRECLEANUP,
-                                                   &reply,
-                                                   2000))
+    if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::PRECLEANUP, &reply,
+                                                       2s))
     {
       bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
       reply->Release();
@@ -864,7 +859,10 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *pic, int flags)
   }
   pic->buf[0] = buffer;
 
+#if LIBAVCODEC_VERSION_MAJOR < 60
   pic->reordered_opaque = avctx->reordered_opaque;
+#endif
+
   va->Acquire();
   return 0;
 }
@@ -1089,9 +1087,7 @@ void CDecoder::Reset()
     return;
 
   Message *reply;
-  if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::FLUSH,
-                                                 &reply,
-                                                 2000))
+  if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::FLUSH, &reply, 2s))
   {
     bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
     reply->Release();
@@ -1155,7 +1151,7 @@ bool CDecoder::ConfigVAAPI()
   unsigned int format = VA_RT_FORMAT_YUV420;
   std::int32_t pixelFormat = VA_FOURCC_NV12;
 
-  if ((m_vaapiConfig.profile == VAProfileHEVCMain10
+  if ((m_vaapiConfig.profile == VAProfileHEVCMain10 || m_vaapiConfig.profile == VAProfileVP9Profile2
 #if VA_CHECK_VERSION(1, 8, 0)
        || m_vaapiConfig.profile == VAProfileAV1Profile0
 #endif
@@ -1193,11 +1189,8 @@ bool CDecoder::ConfigVAAPI()
   m_bufferStats.Reset();
   m_vaapiOutput.Start();
   Message *reply;
-  if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::INIT,
-                                                     &reply,
-                                                     2000,
-                                                     &m_vaapiConfig,
-                                                     sizeof(m_vaapiConfig)))
+  if (m_vaapiOutput.m_controlPort.SendOutMessageSync(COutputControlProtocol::INIT, &reply, 2s,
+                                                     &m_vaapiConfig, sizeof(m_vaapiConfig)))
   {
     bool success = reply->signal == COutputControlProtocol::ACC ? true : false;
     if (!success)
@@ -1255,7 +1248,9 @@ void CDecoder::ReturnRenderPicture(CVaapiRenderPicture *renderPic)
 
 IHardwareDecoder* CDecoder::Create(CDVDStreamInfo &hint, CProcessInfo &processInfo, AVPixelFormat fmt)
 {
-  if (fmt == AV_PIX_FMT_VAAPI_VLD && CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(SETTING_VIDEOPLAYER_USEVAAPI))
+  // https://github.com/FFmpeg/FFmpeg/blob/56450a0ee4fdda160f4039fc2ae33edfd27765c9/doc/APIchanges#L18-L26
+  if (fmt == AV_PIX_FMT_VAAPI &&
+      CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(SETTING_VIDEOPLAYER_USEVAAPI))
     return new VAAPI::CDecoder(processInfo);
 
   return nullptr;
@@ -1300,6 +1295,11 @@ void CDecoder::Register(IVaapiWinSystem *winSystem, bool deepColor)
 
     setting->SetVisible(true);
   }
+}
+
+void CDecoder::AVBufferRefDeleter::operator()(AVBufferRef* p) const
+{
+  av_buffer_unref(&p);
 }
 
 //-----------------------------------------------------------------------------
@@ -1492,14 +1492,14 @@ void CVaapiRenderPicture::GetStrides(int(&strides)[YuvImage::MAX_PLANES])
 //-----------------------------------------------------------------------------
 // Output
 //-----------------------------------------------------------------------------
-COutput::COutput(CDecoder &decoder, CEvent *inMsgEvent) :
-  CThread("Vaapi-Output"),
-  m_controlPort("OutputControlPort", inMsgEvent, &m_outMsgEvent),
-  m_dataPort("OutputDataPort", inMsgEvent, &m_outMsgEvent),
-  m_vaapi(decoder)
+COutput::COutput(CDecoder& decoder, CEvent* inMsgEvent)
+  : CThread("Vaapi-Output"),
+    m_controlPort("OutputControlPort", inMsgEvent, &m_outMsgEvent),
+    m_dataPort("OutputDataPort", inMsgEvent, &m_outMsgEvent),
+    m_vaapi(decoder),
+    m_bufferPool(std::make_shared<CVaapiBufferPool>(decoder))
 {
   m_inMsgEvent = inMsgEvent;
-  m_bufferPool = std::make_shared<CVaapiBufferPool>(decoder);
 }
 
 void COutput::Start()
@@ -1646,7 +1646,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           ReleaseBufferPool(true);
           msg->Reply(COutputControlProtocol::ACC);
           m_state = O_TOP_UNCONFIGURED;
-          m_extTimeout = 10000;
+          m_extTimeout = 10s;
           return;
         default:
           break;
@@ -1662,7 +1662,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           if (payload)
           {
             m_bufferPool->decodedPics.push_back(*(payload->GetPlayload()));
-            m_extTimeout = 0;
+            m_extTimeout = 0ms;
           }
           return;
         case COutputDataProtocol::RETURNPIC:
@@ -1670,13 +1670,13 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           pic = *((CVaapiRenderPicture**)msg->data);
           QueueReturnPicture(pic);
           m_controlPort.SendInMessage(COutputControlProtocol::STATS);
-          m_extTimeout = 0;
+          m_extTimeout = 0ms;
           return;
         case COutputDataProtocol::RETURNPROCPIC:
           int id;
           id = *((int*)msg->data);
           ProcessReturnProcPicture(id);
-          m_extTimeout = 0;
+          m_extTimeout = 0ms;
           return;
         default:
           break;
@@ -1691,11 +1691,11 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
         {
         case COutputControlProtocol::TIMEOUT:
           ProcessSyncPicture();
-          m_extTimeout = 100;
+          m_extTimeout = 100ms;
           if (HasWork())
           {
             m_state = O_TOP_CONFIGURED_WORK;
-            m_extTimeout = 0;
+            m_extTimeout = 0ms;
           }
           return;
         default:
@@ -1716,19 +1716,19 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
             m_bufferPool->decodedPics.pop_front();
             InitCycle();
             m_state = O_TOP_CONFIGURED_STEP1;
-            m_extTimeout = 0;
+            m_extTimeout = 0ms;
             return;
           }
           else if (m_bufferPool->HasFree() &&
                    !m_bufferPool->processedPics.empty())
           {
             m_state = O_TOP_CONFIGURED_OUTPUT;
-            m_extTimeout = 0;
+            m_extTimeout = 0ms;
             return;
           }
           else
             m_state = O_TOP_CONFIGURED_IDLE;
-          m_extTimeout = 100;
+          m_extTimeout = 100ms;
           return;
         default:
           break;
@@ -1761,7 +1761,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           }
           m_config.stats->DecDecoded();
           m_controlPort.SendInMessage(COutputControlProtocol::STATS);
-          m_extTimeout = 0;
+          m_extTimeout = 0ms;
           return;
         }
         default:
@@ -1782,11 +1782,11 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
           {
             m_bufferPool->processedPics.push_back(outPic);
             m_config.stats->IncProcessed();
-            m_extTimeout = 0;
+            m_extTimeout = 0ms;
             return;
           }
           m_state = O_TOP_CONFIGURED_IDLE;
-          m_extTimeout = 0;
+          m_extTimeout = 0ms;
           return;
         }
         default:
@@ -1816,7 +1816,7 @@ void COutput::StateMachine(int signal, Protocol *port, Message *msg)
             m_config.stats->DecProcessed();
           }
           m_state = O_TOP_CONFIGURED_IDLE;
-          m_extTimeout = 0;
+          m_extTimeout = 0ms;
           return;
         default:
           break;
@@ -1838,7 +1838,7 @@ void COutput::Process()
   bool gotMsg;
 
   m_state = O_TOP_UNCONFIGURED;
-  m_extTimeout = 1000;
+  m_extTimeout = 1s;
   m_bStateMachineSelfTrigger = false;
 
   while (!m_bStop)
@@ -1881,7 +1881,7 @@ void COutput::Process()
     }
 
     // wait for message
-    else if (m_outMsgEvent.Wait(std::chrono::milliseconds(m_extTimeout)))
+    else if (m_outMsgEvent.Wait(m_extTimeout))
     {
       continue;
     }
@@ -2957,10 +2957,11 @@ bool CFFmpegPostproc::Init(EINTERLACEMETHOD method)
   const AVFilter* srcFilter = avfilter_get_by_name("buffer");
   const AVFilter* outFilter = avfilter_get_by_name("buffersink");
 
-  std::string args = StringUtils::Format("{}:{}:{}:{}:{}:{}:{}", m_config.vidWidth,
-                                         m_config.vidHeight, AV_PIX_FMT_NV12, 1, 1,
-                                         (m_config.aspect.num != 0) ? m_config.aspect.num : 1,
-                                         (m_config.aspect.num != 0) ? m_config.aspect.den : 1);
+  std::string args =
+      StringUtils::Format("video_size={}x{}:pix_fmt={}:time_base={}/{}:pixel_aspect={}/{}",
+                          m_config.vidWidth, m_config.vidHeight, AV_PIX_FMT_NV12, 1, 1,
+                          (m_config.aspect.num != 0) ? m_config.aspect.num : 1,
+                          (m_config.aspect.num != 0) ? m_config.aspect.den : 1);
 
   if (avfilter_graph_create_filter(&m_pFilterIn, srcFilter, "src", args.c_str(), NULL, m_pFilterGraph) < 0)
   {
@@ -2998,7 +2999,7 @@ bool CFFmpegPostproc::Init(EINTERLACEMETHOD method)
   {
     std::string filter;
 
-    filter = "yadif=1:-1";
+    filter = "bwdif=1:-1";
 
     if (avfilter_graph_parse_ptr(m_pFilterGraph, filter.c_str(), &inputs, &outputs, NULL) < 0)
     {
@@ -3017,7 +3018,7 @@ bool CFFmpegPostproc::Init(EINTERLACEMETHOD method)
       return false;
     }
 
-    m_config.processInfo->SetVideoDeintMethod("yadif");
+    m_config.processInfo->SetVideoDeintMethod("bwdif");
   }
   else if (method == VS_INTERLACEMETHOD_RENDER_BOB ||
            method == VS_INTERLACEMETHOD_NONE)

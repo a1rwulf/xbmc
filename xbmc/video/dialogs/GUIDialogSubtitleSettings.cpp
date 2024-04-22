@@ -99,6 +99,11 @@ void CGUIDialogSubtitleSettings::OnSettingChanged(const std::shared_ptr<const CS
   if (settingId == SETTING_SUBTITLE_ENABLE)
   {
     bool value = std::static_pointer_cast<const CSettingBool>(setting)->GetValue();
+    if (value)
+    {
+      // Ensure that we use/store the subtitle stream the user currently sees in the dialog.
+      appPlayer->SetSubtitle(m_subtitleStream);
+    }
     appPlayer->SetSubtitleVisible(value);
   }
   else if (settingId == SETTING_SUBTITLE_DELAY)
@@ -123,13 +128,14 @@ std::string CGUIDialogSubtitleSettings::BrowseForSubtitle()
   }
 
   std::string strPath;
-  if (URIUtils::IsInRAR(g_application.CurrentFileItem().GetPath()) || URIUtils::IsInZIP(g_application.CurrentFileItem().GetPath()))
+  const std::string dynPath{g_application.CurrentFileItem().GetDynPath()};
+  if (URIUtils::IsInRAR(dynPath) || URIUtils::IsInZIP(dynPath))
   {
-    strPath = CURL(g_application.CurrentFileItem().GetPath()).GetHostName();
+    strPath = CURL(dynPath).GetHostName();
   }
-  else if (!URIUtils::IsPlugin(g_application.CurrentFileItem().GetPath()))
+  else if (!URIUtils::IsPlugin(dynPath))
   {
-    strPath = g_application.CurrentFileItem().GetPath();
+    strPath = dynPath;
   }
 
   std::string strMask =

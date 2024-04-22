@@ -11,7 +11,9 @@
 #include "Utils/AEAudioFormat.h"
 #include "Utils/AEDeviceInfo.h"
 
+#include <functional>
 #include <map>
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -27,16 +29,29 @@ struct AESinkInfo
   AEDeviceInfoList m_deviceInfoList;
 };
 
-typedef IAESink* (*CreateSink)(std::string &device, AEAudioFormat &desiredFormat);
-typedef void (*Enumerate)(AEDeviceInfoList &list, bool force);
-typedef void (*Cleanup)();
+using CreateSink =
+    std::function<std::unique_ptr<IAESink>(std::string& device, AEAudioFormat& desiredFormat)>;
+using Enumerate = std::function<void(AEDeviceInfoList& list, bool force)>;
+using Cleanup = std::function<void()>;
 
 struct AESinkRegEntry
 {
   std::string sinkName;
-  CreateSink createFunc = nullptr;
-  Enumerate enumerateFunc = nullptr;
-  Cleanup cleanupFunc = nullptr;
+  CreateSink createFunc;
+  Enumerate enumerateFunc;
+  Cleanup cleanupFunc;
+};
+
+struct AESinkDevice
+{
+  std::string driver;
+  std::string name;
+  std::string friendlyName;
+
+  bool IsSameDeviceAs(const AESinkDevice& d) const
+  {
+    return driver == d.driver && (name == d.name || friendlyName == d.friendlyName);
+  }
 };
 
 class CAESinkFactory
@@ -46,8 +61,8 @@ public:
   static void ClearSinks();
   static bool HasSinks();
 
-  static void ParseDevice(std::string &device, std::string &driver);
-  static IAESink *Create(std::string &device, AEAudioFormat &desiredFormat);
+  static AESinkDevice ParseDevice(const std::string& device);
+  static std::unique_ptr<IAESink> Create(const std::string& device, AEAudioFormat& desiredFormat);
   static void EnumerateEx(std::vector<AESinkInfo>& list, bool force, const std::string& driver);
   static void Cleanup();
 

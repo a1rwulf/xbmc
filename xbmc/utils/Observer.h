@@ -25,7 +25,7 @@ typedef enum
   // Used for example when the subtitle alignment position change
   ObservableMessagePositionChanged,
   ObservableMessageGamePortsChanged,
-  ObservableMessageGameAgentsChanged,
+  ObservableMessageAgentControllersChanged,
 } ObservableMessage;
 
 class Observer
@@ -48,7 +48,7 @@ class Observable
 public:
   Observable() = default;
   virtual ~Observable() = default;
-  virtual Observable &operator=(const Observable &observable);
+  Observable& operator=(const Observable& observable);
 
   /*!
    * @brief Register an observer.

@@ -38,9 +38,7 @@ CLog::CLog()
   : m_platform(IPlatformLog::CreatePlatformLog()),
     m_sinks(std::make_shared<spdlog::sinks::dist_sink_mt>()),
     m_defaultLogger(CreateLogger("general")),
-    m_logLevel(LOG_LEVEL_DEBUG),
-    m_componentLogEnabled(false),
-    m_componentLogLevels(0)
+    m_logLevel(LOG_LEVEL_DEBUG)
 {
   // add platform-specific debug sinks
   m_platform->AddSinks(m_sinks);
@@ -214,6 +212,7 @@ void CLog::SettingOptionsLoggingComponentsFiller(const SettingConstPtr& setting,
   list.emplace_back(g_localizeStrings.Get(685), LOGPVR);
   list.emplace_back(g_localizeStrings.Get(686), LOGEPG);
   list.emplace_back(g_localizeStrings.Get(39117), LOGANNOUNCE);
+  list.emplace_back(g_localizeStrings.Get(39124), LOGADDONS);
 #ifdef HAS_DBUS
   list.emplace_back(g_localizeStrings.Get(674), LOGDBUS);
 #endif

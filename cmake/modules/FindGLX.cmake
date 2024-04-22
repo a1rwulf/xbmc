@@ -14,20 +14,25 @@
 #
 #   GLX::GLX    - The GLX library
 
+find_package(PkgConfig)
+
 if(PKG_CONFIG_FOUND)
   pkg_check_modules(PC_GLX glx QUIET)
 endif()
 
 find_path(GLX_INCLUDE_DIR NAMES GL/glx.h
-                          PATHS ${PC_GLX_INCLUDEDIR})
-find_library(GLX_LIBRARY NAMES GLX
-                         PATHS ${PC_GLX_LIBDIR})
+                          HINTS ${PC_GLX_INCLUDEDIR})
+find_library(GLX_LIBRARY NAMES GL
+                         HINTS ${PC_GLX_LIBDIR})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(GLX
                                   REQUIRED_VARS GLX_LIBRARY GLX_INCLUDE_DIR)
 
 if(GLX_FOUND)
+  list(APPEND GL_INTERFACES_LIST glx)
+  set(GL_INTERFACES_LIST ${GL_INTERFACES_LIST} PARENT_SCOPE)
+
   set(GLX_LIBRARIES ${GLX_LIBRARY})
   set(GLX_INCLUDE_DIRS ${GLX_INCLUDE_DIR})
   set(GLX_DEFINITIONS -DHAS_GLX=1)

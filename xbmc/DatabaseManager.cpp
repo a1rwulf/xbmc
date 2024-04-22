@@ -166,10 +166,29 @@ bool CDatabaseManager::UpdateVersion(CDatabase &db, const std::string &dbName)
               version, db.GetSchemaVersion());
     bool success = true;
     db.BeginTransaction();
+
     try
     {
-      // drop old analytics, update table(s), recreate analytics, update version
+      // drop old analytics
       db.DropAnalytics();
+    }
+    catch (...)
+    {
+      success = false;
+    }
+    if (!success)
+    {
+      CLog::Log(LOGERROR, "Exception dropping old analytics from {}", dbName);
+      db.RollbackTransaction();
+      return false;
+    }
+
+    db.CommitTransaction();
+    db.BeginTransaction();
+
+    try
+    {
+      // update table(s), recreate analytics, update version
       db.UpdateTables(version);
       db.CreateAnalytics();
       db.UpdateVersionNumber();
@@ -210,4 +229,18 @@ void CDatabaseManager::UpdateStatus(const std::string &name, DB_STATUS status)
 {
   std::unique_lock<CCriticalSection> lock(m_section);
   m_dbStatus[name] = status;
+}
+
+void CDatabaseManager::LocalizationChanged()
+{
+  std::unique_lock<CCriticalSection> lock(m_section);
+
+  // update video version type table after language changed
+  CVideoDatabase videodb;
+  if (videodb.Open())
+  {
+    videodb.UpdateVideoVersionTypeTable();
+    CLog::Log(LOGDEBUG, "{}, Video version type table updated for new language settings",
+              __FUNCTION__);
+  }
 }

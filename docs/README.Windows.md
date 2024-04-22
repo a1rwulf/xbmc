@@ -38,14 +38,20 @@ git clone -b Matrix https://github.com/xbmc/xbmc kodi
 
 Several different strategies are used to draw your attention to certain pieces of information. In order of how critical the information is, these items are marked as a note, tip, or warning. For example:
 
-**NOTE:** Linux is user friendly... It's just very particular about who its friends are.  
-**TIP:** Algorithm is what developers call code they do not want to explain.  
-**WARNING:** Developers don't change light bulbs. It's a hardware problem.
+> [!NOTE]  
+> Linux is user friendly... It's just very particular about who its friends are.
+
+> [!TIP]
+> Algorithm is what developers call code they do not want to explain.
+
+> [!WARNING]  
+> Developers don't change light bulbs. It's a hardware problem.
 
 **[back to top](#table-of-contents)** | **[back to section top](#1-document-conventions)**
 
 ## 2. Prerequisites
 To build Kodi:
+* **Windows** 64bit OS, Windows 8.1 or above (allows build of x64, win32, uwp, arm)
 * **[CMake](https://cmake.org/download/)** (version 3.20 or greater is required to build Kodi, version 3.21 or greater to build with Visual Studio 2022)
 * **[Git for Windows](https://gitforwindows.org/)**
 * **[Java Runtime Environment (JRE)](http://www.oracle.com/technetwork/java/javase/downloads/index.html)**
@@ -82,8 +88,6 @@ Start the Visual Studio installer and click **Workloads** select
 Click in **Individual components** select
 * Under **Compilers, build tools and runtimes** section select
   * `MSVC v142/3 - VS 2019/22 C++ ARM build tools (Latest)` (if compiling for UWP-ARM)
-* Under **SDKs, libraries, and frameworks** section select
-  * `Windows 10 SDK (10.0.18362.0)` (if compiling for UWP or UWP-ARM)
 
 Hit `Install`. Yes, it will download and install almost 8GB of stuff for x64 only or up to 20GB if everything is selected for UWP / UWP-ARM as well.
 
@@ -105,11 +109,13 @@ git clone https://github.com/xbmc/xbmc kodi
 ## 4. Set up the build environment
 To set up the build environment, several scripts must be called.
 
-**WARNING:** The scripts may fail if you have a space in the path to the bat files.
+> [!WARNING]  
+> The scripts may fail if you have a space in the path to the bat files.
 
 Kodi can be built as either a normal 32bit or 64bit program, UWP 32bit and 64bit and UWP ARM 32bit. Unless there is a reason to prefer 32bit builds, we advise you to build Kodi for 64bit.
 
-**TIP:** Look for comments starting with `Or ...` and only execute the command(s) you need.
+> [!TIP]
+> Look for comments starting with `Or ...` and only execute the command(s) you need.
 
 Change to the 64bit build directory (**recommended**):
 ```
@@ -140,7 +146,9 @@ Download dependencies:
 ```
 download-dependencies.bat
 ```
-**TIP:** Look for the `All formed packages ready!` success message. If you see the message `ERROR: Not all formed packages are ready!`, execute the command again until you see the success message.
+
+> [!TIP]
+> Look for the `All formed packages ready!` success message. If you see the message `ERROR: Not all formed packages are ready!`, execute the command again until you see the success message.
 
 Download and setup the build environment for libraries:
 ```
@@ -166,7 +174,8 @@ BuildSetup.bat
 
 UWP builds generate `msix`, `appxsym` and `cer` files, located at `%userprofile%\kodi\project\UWPBuildSetup`. You can install them following this **[guide](https://kodi.wiki/view/HOW-TO:Install_Kodi_for_Universal_Windows_Platform)**.
 
-**NOTE:** To generate an exact replica of the official Kodi Windows installer, some additional steps are required:
+> [!NOTE]  
+> To generate an exact replica of the official Kodi Windows installer, some additional steps are required:
 
 Build built-in add-ons (peripheral.joystick only) with command line:
 ```
@@ -210,17 +219,17 @@ cmake -G "Visual Studio 17 2022" -A Win32 -T host=x64 %userprofile%\kodi
 
 Or configure build for UWP 64bit:
 ```
-cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.18362.0 -T host=x64 %userprofile%\kodi
+cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0 -T host=x64 %userprofile%\kodi
 ```
 
 Or configure build for UWP 32bit:
 ```
-cmake -G "Visual Studio 17 2022" -A Win32 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.18362.0 -T host=x64 %userprofile%\kodi
+cmake -G "Visual Studio 17 2022" -A Win32 -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0 -T host=x64 %userprofile%\kodi
 ```
 
 Or configure build for UWP ARM 32bit:
 ```
-cmake -G "Visual Studio 17 2022" -A ARM -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0.18362.0 -T host=x64 %userprofile%\kodi
+cmake -G "Visual Studio 17 2022" -A ARM -DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0 -T host=x64 %userprofile%\kodi
 ```
 
 **Visual Studio 2019:**

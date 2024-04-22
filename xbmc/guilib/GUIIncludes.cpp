@@ -529,7 +529,8 @@ void CGUIIncludes::InsertNested(TiXmlElement *controls, TiXmlElement *include, T
       }
       child = child->NextSiblingElement();
     }
-    target->RemoveChild(nested);
+    if (nested != node)
+      target->RemoveChild(nested);
   }
 
 }
@@ -618,12 +619,17 @@ void CGUIIncludes::ResolveParametersForNode(TiXmlElement *node, const Params& pa
       else if (result != NO_PARAMS_FOUND)
         child->SetValue(newValue);
     }
-    else if (child->Type() == TiXmlNode::TINYXML_ELEMENT)
+    else if (child->Type() == TiXmlNode::TINYXML_ELEMENT ||
+             child->Type() == TiXmlNode::TINYXML_COMMENT)
     {
       do
       {
-        TiXmlElement *next = child->NextSiblingElement();   // save next as current child might be removed from the tree
-        ResolveParametersForNode(static_cast<TiXmlElement *>(child), params);
+        // save next as current child might be removed from the tree
+        TiXmlElement* next = child->NextSiblingElement();
+
+        if (child->Type() == TiXmlNode::TINYXML_ELEMENT)
+          ResolveParametersForNode(static_cast<TiXmlElement*>(child), params);
+
         child = next;
       }
       while (child);
@@ -635,11 +641,11 @@ class ParamReplacer
 {
   const std::map<std::string, std::string>& m_params;
   // keep some stats so that we know exactly what's been resolved
-  int m_numTotalParams;
-  int m_numUndefinedParams;
+  int m_numTotalParams = 0;
+  int m_numUndefinedParams = 0;
+
 public:
-  explicit ParamReplacer(const std::map<std::string, std::string>& params)
-    : m_params(params), m_numTotalParams(0), m_numUndefinedParams(0) {}
+  explicit ParamReplacer(const std::map<std::string, std::string>& params) : m_params(params) {}
   int GetNumTotalParams() const { return m_numTotalParams; }
   int GetNumDefinedParams() const { return m_numTotalParams - m_numUndefinedParams; }
   int GetNumUndefinedParams() const { return m_numUndefinedParams; }

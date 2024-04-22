@@ -12,14 +12,16 @@
 #include "threads/Event.h"
 #include "windowing/VideoSync.h"
 
+#include <dxgi1_5.h>
+
 class CVideoSyncD3D : public CVideoSync, IDispResource
 {
 public:
-  CVideoSyncD3D(void* clock)
-    : CVideoSync(clock), m_displayLost(false), m_displayReset(false), m_lastUpdateTime(0)
+  CVideoSyncD3D(CVideoReferenceClock* clock)
+    : CVideoSync(clock), m_displayLost(false), m_displayReset(false)
   {
   }
-  bool Setup(PUPDATECLOCK func) override;
+  bool Setup() override;
   void Run(CEvent& stopEvent) override;
   void Cleanup() override;
   float GetFps() override;
@@ -32,6 +34,7 @@ private:
   volatile bool m_displayLost;
   volatile bool m_displayReset;
   CEvent m_lostEvent;
-  int64_t m_lastUpdateTime;
+  DXGI_OUTPUT_DESC m_outputDesc{};
+  Microsoft::WRL::ComPtr<IDXGIFactory2> m_factory;
 };
 

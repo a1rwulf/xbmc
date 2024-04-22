@@ -19,6 +19,9 @@ namespace GAME
 {
 class IPortList;
 
+/*!
+ * \ingroup games
+ */
 class CGUIPortWindow : public CGUIDialog
 {
 public:
@@ -40,7 +43,7 @@ private:
   // Actions for port list
   void UpdatePortList();
   void FocusPortList();
-  void OnClickAction();
+  bool OnClickAction();
 
   // Actions for the available buttons
   void ResetPorts();

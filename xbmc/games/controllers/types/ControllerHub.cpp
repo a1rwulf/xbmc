@@ -51,18 +51,17 @@ void CControllerHub::SetPorts(PortVec ports)
 
 bool CControllerHub::IsControllerAccepted(const std::string& controllerId) const
 {
-  return std::any_of(m_ports.begin(), m_ports.end(), [controllerId](const CPortNode& port) {
-    return port.IsControllerAccepted(controllerId);
-  });
+  return std::any_of(m_ports.begin(), m_ports.end(),
+                     [controllerId](const CPortNode& port)
+                     { return port.IsControllerAccepted(controllerId); });
 }
 
 bool CControllerHub::IsControllerAccepted(const std::string& portAddress,
                                           const std::string& controllerId) const
 {
   return std::any_of(m_ports.begin(), m_ports.end(),
-                     [portAddress, controllerId](const CPortNode& port) {
-                       return port.IsControllerAccepted(portAddress, controllerId);
-                     });
+                     [portAddress, controllerId](const CPortNode& port)
+                     { return port.IsControllerAccepted(portAddress, controllerId); });
 }
 
 ControllerVector CControllerHub::GetControllers() const
@@ -106,4 +105,10 @@ const CPortNode& CControllerHub::GetPortInternal(const PortVec& ports, const std
   // Not found
   static const CPortNode empty{};
   return empty;
+}
+
+void CControllerHub::GetInputPorts(std::vector<std::string>& inputPorts) const
+{
+  for (const CPortNode& port : m_ports)
+    port.GetInputPorts(inputPorts);
 }

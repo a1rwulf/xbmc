@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -23,6 +23,14 @@ class CSetting;
 
 namespace PERIPHERALS
 {
+/// \ingroup peripherals
+/// \{
+
+/*!
+ * \brief Indicates a joystick has no preference for port number
+ */
+constexpr auto JOYSTICK_NO_PORT_REQUESTED = -1;
+
 enum PeripheralBusType
 {
   PERIPHERAL_BUS_UNKNOWN = 0,
@@ -367,4 +375,6 @@ struct PeripheralScanResults
 
   std::vector<PeripheralScanResult> m_results;
 };
+
+/// \}
 } // namespace PERIPHERALS

@@ -20,8 +20,8 @@
 #include "guilib/GUIRadioButtonControl.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
-#include "input/Key.h"
 #include "input/actions/Action.h"
+#include "input/actions/ActionIDs.h"
 #include "pvr/PVRManager.h"
 #include "pvr/channels/PVRChannel.h"
 #include "pvr/channels/PVRChannelGroup.h"
@@ -46,7 +46,7 @@ using namespace PVR;
 CGUIWindowPVRChannelsBase::CGUIWindowPVRChannelsBase(bool bRadio,
                                                      int id,
                                                      const std::string& xmlFile)
-  : CGUIWindowPVRBase(bRadio, id, xmlFile), m_bShowHiddenChannels(false)
+  : CGUIWindowPVRBase(bRadio, id, xmlFile)
 {
   CServiceBroker::GetPVRManager().Get<PVR::GUI::Channels>().RegisterChannelNumberInputHandler(this);
 }
@@ -115,7 +115,7 @@ void CGUIWindowPVRChannelsBase::UpdateButtons()
     btnShowHidden->SetVisible(CServiceBroker::GetPVRManager()
                                   .ChannelGroups()
                                   ->GetGroupAll(m_bRadio)
-                                  ->GetNumHiddenChannels() > 0);
+                                  ->HasHiddenChannels());
     btnShowHidden->SetSelected(m_bShowHiddenChannels);
   }
 
@@ -161,7 +161,17 @@ bool CGUIWindowPVRChannelsBase::OnMessage(CGUIMessage& message)
       {
         // if a path to a channel group is given we must init
         // that group instead of last played/selected group
-        m_channelGroupPath = message.GetStringParam(0);
+        if (path.GetGroupName() == "*") // all channels
+        {
+          // Replace wildcard with real group name
+          const auto group =
+              CServiceBroker::GetPVRManager().ChannelGroups()->GetGroupAll(path.IsRadio());
+          m_channelGroupPath = group->GetPath();
+        }
+        else
+        {
+          m_channelGroupPath = message.GetStringParam(0);
+        }
       }
       break;
     }
@@ -275,7 +285,9 @@ bool CGUIWindowPVRChannelsBase::OnContextButtonManage(const CFileItemPtr& item,
     CContextButtons buttons;
     buttons.Add(CONTEXT_BUTTON_GROUP_MANAGER, 19048);
     buttons.Add(CONTEXT_BUTTON_CHANNEL_MANAGER, 19199);
-    buttons.Add(CONTEXT_BUTTON_UPDATE_EPG, 19251);
+
+    if (item->HasPVRChannelInfoTag())
+      buttons.Add(CONTEXT_BUTTON_UPDATE_EPG, 19251);
 
     // Get the response
     int choice = CGUIDialogContextMenu::ShowAndGetChoice(buttons);
@@ -308,7 +320,7 @@ bool CGUIWindowPVRChannelsBase::OnContextButtonManage(const CFileItemPtr& item,
 
 void CGUIWindowPVRChannelsBase::UpdateEpg(const CFileItemPtr& item)
 {
-  const std::shared_ptr<CPVRChannel> channel(item->GetPVRChannelInfoTag());
+  const std::shared_ptr<const CPVRChannel> channel(item->GetPVRChannelInfoTag());
 
   if (!CGUIDialogYesNo::ShowAndGetInput(
           CVariant{19251}, // "Update guide information"
@@ -388,7 +400,7 @@ void CGUIWindowPVRChannelsBase::OnInputDone()
 
 void CGUIWindowPVRChannelsBase::GetChannelNumbers(std::vector<std::string>& channelNumbers)
 {
-  const std::shared_ptr<CPVRChannelGroup> group = GetChannelGroup();
+  const std::shared_ptr<const CPVRChannelGroup> group = GetChannelGroup();
   if (group)
     group->GetChannelNumbers(channelNumbers);
 }
@@ -400,7 +412,8 @@ CGUIWindowPVRTVChannels::CGUIWindowPVRTVChannels()
 
 std::string CGUIWindowPVRTVChannels::GetDirectoryPath()
 {
-  return CPVRChannelsPath(false, m_bShowHiddenChannels, GetChannelGroup()->GroupName());
+  return CPVRChannelsPath(false, m_bShowHiddenChannels, GetChannelGroup()->GroupName(),
+                          GetChannelGroup()->GetClientID());
 }
 
 CGUIWindowPVRRadioChannels::CGUIWindowPVRRadioChannels()
@@ -410,5 +423,6 @@ CGUIWindowPVRRadioChannels::CGUIWindowPVRRadioChannels()
 
 std::string CGUIWindowPVRRadioChannels::GetDirectoryPath()
 {
-  return CPVRChannelsPath(true, m_bShowHiddenChannels, GetChannelGroup()->GroupName());
+  return CPVRChannelsPath(true, m_bShowHiddenChannels, GetChannelGroup()->GroupName(),
+                          GetChannelGroup()->GetClientID());
 }

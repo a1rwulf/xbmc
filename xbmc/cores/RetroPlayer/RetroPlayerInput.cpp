@@ -10,8 +10,8 @@
 
 #include "cores/RetroPlayer/process/RPProcessInfo.h"
 #include "cores/RetroPlayer/rendering/RenderContext.h"
-#include "peripherals/EventPollHandle.h"
 #include "peripherals/Peripherals.h"
+#include "peripherals/events/EventPollHandle.h"
 #include "utils/log.h"
 
 using namespace KODI;
@@ -41,7 +41,7 @@ void CRetroPlayerInput::StartAgentManager()
   if (!m_bAgentManagerStarted)
   {
     m_bAgentManagerStarted = true;
-    m_processInfo.GetRenderContext().StartAgentManager(m_gameClient);
+    m_processInfo.GetRenderContext().StartAgentInput(m_gameClient);
   }
 }
 
@@ -50,7 +50,7 @@ void CRetroPlayerInput::StopAgentManager()
   if (m_bAgentManagerStarted)
   {
     m_bAgentManagerStarted = false;
-    m_processInfo.GetRenderContext().StopAgentManager();
+    m_processInfo.GetRenderContext().StopAgentInput();
   }
 }
 

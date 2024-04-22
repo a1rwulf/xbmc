@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,15 +12,21 @@
 
 #include <stdint.h>
 
-class TiXmlElement;
+namespace tinyxml2
+{
+class XMLElement;
+}
 
+/*!
+ * \ingroup mouse
+ */
 class CMouseTranslator
 {
 public:
   /*!
    * \brief Translate a keymap element to a key ID
    */
-  static uint32_t TranslateCommand(const TiXmlElement* pButton);
+  static uint32_t TranslateCommand(const tinyxml2::XMLElement* pButton);
 
   /*!
    * \brief Translate a mouse event ID to a mouse button index

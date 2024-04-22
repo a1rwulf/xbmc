@@ -49,15 +49,30 @@ bool CActiveAEResampleFFMPEG::Init(SampleConfig dstConfig, SampleConfig srcConfi
     m_doesResample = true;
 
   if (m_dst_chan_layout == 0)
-    m_dst_chan_layout = av_get_default_channel_layout(m_dst_channels);
+  {
+    AVChannelLayout layout = {};
+    av_channel_layout_default(&layout, m_dst_channels);
+    m_dst_chan_layout = layout.u.mask;
+    av_channel_layout_uninit(&layout);
+  }
   if (m_src_chan_layout == 0)
-    m_src_chan_layout = av_get_default_channel_layout(m_src_channels);
+  {
+    AVChannelLayout layout = {};
+    av_channel_layout_default(&layout, m_src_channels);
+    m_src_chan_layout = layout.u.mask;
+    av_channel_layout_uninit(&layout);
+  }
 
-  m_pContext = swr_alloc_set_opts(NULL, m_dst_chan_layout, m_dst_fmt, m_dst_rate,
-                                                        m_src_chan_layout, m_src_fmt, m_src_rate,
-                                                        0, NULL);
+  AVChannelLayout dstChLayout = {};
+  AVChannelLayout srcChLayout = {};
 
-  if (!m_pContext)
+  av_channel_layout_from_mask(&dstChLayout, m_dst_chan_layout);
+  av_channel_layout_from_mask(&srcChLayout, m_src_chan_layout);
+
+  int ret = swr_alloc_set_opts2(&m_pContext, &dstChLayout, m_dst_fmt, m_dst_rate, &srcChLayout,
+                                m_src_fmt, m_src_rate, 0, NULL);
+
+  if (ret)
   {
     CLog::Log(LOGERROR, "CActiveAEResampleFFMPEG::Init - create context failed");
     return false;
@@ -126,26 +141,28 @@ bool CActiveAEResampleFFMPEG::Init(SampleConfig dstConfig, SampleConfig srcConfi
   else if (upmix && m_src_channels == 2 && m_dst_channels > 2)
   {
     memset(m_rematrix, 0, sizeof(m_rematrix));
+    av_channel_layout_uninit(&dstChLayout);
+    av_channel_layout_from_mask(&dstChLayout, m_dst_chan_layout);
     for (int out=0; out<m_dst_channels; out++)
     {
-      uint64_t out_chan = av_channel_layout_extract_channel(m_dst_chan_layout, out);
-      switch(out_chan)
+      AVChannel outChan = av_channel_layout_channel_from_index(&dstChLayout, out);
+      switch (outChan)
       {
-        case AV_CH_FRONT_LEFT:
-        case AV_CH_BACK_LEFT:
-        case AV_CH_SIDE_LEFT:
+        case AV_CHAN_FRONT_LEFT:
+        case AV_CHAN_BACK_LEFT:
+        case AV_CHAN_SIDE_LEFT:
           m_rematrix[out][0] = 1.0;
           break;
-        case AV_CH_FRONT_RIGHT:
-        case AV_CH_BACK_RIGHT:
-        case AV_CH_SIDE_RIGHT:
+        case AV_CHAN_FRONT_RIGHT:
+        case AV_CHAN_BACK_RIGHT:
+        case AV_CHAN_SIDE_RIGHT:
           m_rematrix[out][1] = 1.0;
           break;
-        case AV_CH_FRONT_CENTER:
+        case AV_CHAN_FRONT_CENTER:
           m_rematrix[out][0] = 0.5;
           m_rematrix[out][1] = 0.5;
           break;
-        case AV_CH_LOW_FREQUENCY:
+        case AV_CHAN_LOW_FREQUENCY:
           m_rematrix[out][0] = 0.5;
           m_rematrix[out][1] = 0.5;
           break;
@@ -153,6 +170,8 @@ bool CActiveAEResampleFFMPEG::Init(SampleConfig dstConfig, SampleConfig srcConfi
           break;
       }
     }
+
+    av_channel_layout_uninit(&dstChLayout);
 
     if (swr_set_matrix(m_pContext, (const double*)m_rematrix, AE_CH_MAX) < 0)
     {

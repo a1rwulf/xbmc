@@ -18,6 +18,7 @@
 #include "settings/lib/Setting.h"
 #include "threads/SingleLock.h"
 #include "utils/CPUInfo.h"
+#include "utils/StringUtils.h"
 #include "utils/log.h"
 
 #if defined(HAVE_GBM)
@@ -71,6 +72,18 @@ static void AlignedSize(AVCodecContext* avctx, int& width, int& height)
   height = h;
 }
 
+bool SupportsDRM()
+{
+  AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
+  while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
+  {
+    if (type == AV_HWDEVICE_TYPE_DRM)
+      return true;
+  }
+
+  return false;
+}
+
 } // namespace
 
 CDVDVideoCodecDRMPRIME::CDVDVideoCodecDRMPRIME(CProcessInfo& processInfo)
@@ -97,6 +110,12 @@ std::unique_ptr<CDVDVideoCodec> CDVDVideoCodecDRMPRIME::Create(CProcessInfo& pro
 
 void CDVDVideoCodecDRMPRIME::Register()
 {
+  if (!SupportsDRM())
+  {
+    CLog::Log(LOGINFO, "CDVDVideoCodecDRMPRIME: FFMPEG has no libdrm support");
+    return;
+  }
+
   auto settingsComponent = CServiceBroker::GetSettingsComponent();
   if (!settingsComponent)
     return;
@@ -137,7 +156,8 @@ static bool IsSupportedHwFormat(const enum AVPixelFormat fmt)
 
 static bool IsSupportedSwFormat(const enum AVPixelFormat fmt)
 {
-  return fmt == AV_PIX_FMT_YUV420P || fmt == AV_PIX_FMT_YUVJ420P;
+  return fmt == AV_PIX_FMT_YUV420P || fmt == AV_PIX_FMT_YUVJ420P || fmt == AV_PIX_FMT_YUV422P ||
+         fmt == AV_PIX_FMT_YUVJ422P || fmt == AV_PIX_FMT_YUV444P || fmt == AV_PIX_FMT_YUVJ444P;
 }
 
 static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
@@ -201,7 +221,14 @@ enum AVPixelFormat CDVDVideoCodecDRMPRIME::GetFormat(struct AVCodecContext* avct
     }
   }
 
-  CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - unsupported pixel format", __FUNCTION__);
+  std::vector<std::string> formats;
+  for (int n = 0; fmt[n] != AV_PIX_FMT_NONE; n++)
+  {
+    formats.emplace_back(av_get_pix_fmt_name(fmt[n]));
+  }
+  CLog::Log(LOGERROR, "CDVDVideoCodecDRMPRIME::{} - no supported pixel formats: {}", __FUNCTION__,
+            StringUtils::Join(formats, ", "));
+
   return AV_PIX_FMT_NONE;
 }
 
@@ -220,6 +247,14 @@ int CDVDVideoCodecDRMPRIME::GetBuffer(struct AVCodecContext* avctx, AVFrame* fra
       case AV_PIX_FMT_YUV420P:
       case AV_PIX_FMT_YUVJ420P:
         size = width * height * 3 / 2;
+        break;
+      case AV_PIX_FMT_YUV422P:
+      case AV_PIX_FMT_YUVJ422P:
+        size = width * height * 2;
+        break;
+      case AV_PIX_FMT_YUV444P:
+      case AV_PIX_FMT_YUVJ444P:
+        size = width * height * 3;
         break;
       default:
         return -1;
@@ -316,12 +351,15 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   m_pCodecContext->time_base.den = DVD_TIME_BASE;
   m_pCodecContext->thread_count = CServiceBroker::GetCPUInfo()->GetCPUCount();
 
-  if (hints.extradata && hints.extrasize > 0)
+  if (hints.extradata)
   {
-    m_pCodecContext->extradata_size = hints.extrasize;
     m_pCodecContext->extradata =
-        static_cast<uint8_t*>(av_mallocz(hints.extrasize + AV_INPUT_BUFFER_PADDING_SIZE));
-    memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
+        static_cast<uint8_t*>(av_mallocz(hints.extradata.GetSize() + AV_INPUT_BUFFER_PADDING_SIZE));
+    if (m_pCodecContext->extradata)
+    {
+      m_pCodecContext->extradata_size = hints.extradata.GetSize();
+      memcpy(m_pCodecContext->extradata, hints.extradata.GetData(), hints.extradata.GetSize());
+    }
   }
 
   for (auto&& option : options.m_keys)
@@ -493,9 +531,10 @@ void CDVDVideoCodecDRMPRIME::SetPictureParams(VideoPicture* pVideoPicture)
         (static_cast<int>(lrint(pVideoPicture->iWidth / aspect_ratio))) & -3;
   }
 
-  pVideoPicture->color_range = m_pFrame->color_range == AVCOL_RANGE_JPEG ||
-                               m_pFrame->format == AV_PIX_FMT_YUVJ420P ||
-                               m_hints.colorRange == AVCOL_RANGE_JPEG;
+  pVideoPicture->color_range =
+      m_pFrame->color_range == AVCOL_RANGE_JPEG || m_pFrame->format == AV_PIX_FMT_YUVJ420P ||
+      m_pFrame->format == AV_PIX_FMT_YUVJ422P || m_pFrame->format == AV_PIX_FMT_YUVJ444P ||
+      m_hints.colorRange == AVCOL_RANGE_JPEG;
   pVideoPicture->color_primaries = m_pFrame->color_primaries == AVCOL_PRI_UNSPECIFIED
                                        ? m_hints.colorPrimaries
                                        : m_pFrame->color_primaries;

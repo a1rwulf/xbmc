@@ -1,11 +1,5 @@
 # Android packaging
 
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  set(ANDROID_DEBUGGABLE true)
-else()
-  set(ANDROID_DEBUGGABLE false)
-endif()
-
 # Configure files into packaging environment.
 configure_file(${CMAKE_SOURCE_DIR}/tools/android/packaging/Makefile.in
                ${CMAKE_BINARY_DIR}/tools/android/packaging/Makefile @ONLY)
@@ -34,9 +28,6 @@ unset(APP_VERSION_CODE_LIST)
 math(EXPR APP_VERSION_CODE_ANDROID "(${major} * 100 + ${minor}) * 1000 + ${patch}")
 unset(major)
 unset(minor)
-if(ARCH STREQUAL aarch64 AND patch LESS 999)
-  math(EXPR APP_VERSION_CODE_ANDROID "${APP_VERSION_CODE_ANDROID} + 1")
-endif()
 unset(patch)
 
 set(package_files strings.xml
@@ -72,6 +63,7 @@ set(package_files strings.xml
                   src/interfaces/XBMCMediaDrmOnEventListener.java
                   src/interfaces/XBMCDisplayManagerDisplayListener.java
                   src/interfaces/XBMCSpeechRecognitionListener.java
+		  src/interfaces/XBMCConnectivityManagerNetworkCallback.java
                   src/model/TVEpisode.java
                   src/model/Movie.java
                   src/model/TVShow.java
@@ -109,6 +101,19 @@ function(add_bundle_file file destination relative)
     file(REMOVE ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/BundleFiles.cmake)
     add_custom_target(bundle_files COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/BundleFiles.cmake)
     add_dependencies(bundle bundle_files)
+    add_dependencies(bundle_files ${APP_NAME_LC})
+  endif()
+
+  if(TARGET ${file})
+    # Add support for IMPORTED lib targets
+    # If we need specific properties from other target types later, we can add them
+    # here with some validity checks
+    get_target_property(imploc_file ${file} IMPORTED_LOCATION)
+    if(imploc_file)
+      set(file ${imploc_file})
+    else()
+      return()
+    endif()
   endif()
 
   string(REPLACE "${relative}/" "" outfile ${file})
@@ -130,28 +135,22 @@ foreach(file IN LISTS XBT_FILES install_data)
   add_bundle_file(${CMAKE_BINARY_DIR}/${file} ${datarootdir}/${APP_NAME_LC} ${CMAKE_BINARY_DIR})
 endforeach()
 
+# libdvdnav is currently the only LIBRARY_FILES item remaining for android
 foreach(library IN LISTS LIBRARY_FILES)
   add_bundle_file(${library} ${libdir}/${APP_NAME_LC} ${CMAKE_BINARY_DIR})
 endforeach()
 
-foreach(lib IN LISTS required_dyload dyload_optional ITEMS Shairplay)
-  string(TOUPPER ${lib} lib_up)
-  set(lib_so ${${lib_up}_SONAME})
-  if(lib_so AND EXISTS ${DEPENDS_PATH}/lib/${lib_so})
-    add_bundle_file(${DEPENDS_PATH}/lib/${lib_so} ${libdir} "")
-  endif()
-endforeach()
-add_bundle_file(${ASS_LIBRARY} ${libdir} "")
-add_bundle_file(${SHAIRPLAY_LIBRARY} ${libdir} "")
-add_bundle_file(${SMBCLIENT_LIBRARY} ${libdir} "")
+if(TARGET Shairplay::Shairplay)
+  add_bundle_file(Shairplay::Shairplay ${libdir} "")
+endif()
 
 # Main targets from Makefile.in
 if(CPU MATCHES i686)
   set(CPU x86)
 endif()
-foreach(target apk obb apk-obb apk-clean)
+foreach(target apk apk-clean)
   add_custom_target(${target}
-      COMMAND env PATH=${NATIVEPREFIX}/bin:$ENV{PATH} ${CMAKE_MAKE_PROGRAM}
+      COMMAND env PATH=${NATIVEPREFIX}/bin:$ENV{PATH} ${CMAKE_MAKE_PROGRAM} -j1
               -C ${CMAKE_BINARY_DIR}/tools/android/packaging
               CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
               CC=${CMAKE_C_COMPILER}

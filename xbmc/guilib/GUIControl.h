@@ -24,9 +24,17 @@
 
 class CGUIListItem; // forward
 class CAction;
-class CMouseEvent;
+
 class CGUIMessage;
 class CGUIAction;
+
+namespace KODI
+{
+namespace MOUSE
+{
+class CMouseEvent;
+} // namespace MOUSE
+} // namespace KODI
 
 enum ORIENTATION { HORIZONTAL = 0, VERTICAL };
 
@@ -123,7 +131,7 @@ public:
    \return EVENT_RESULT corresponding to whether the control handles this event
    \sa HitTest, CanFocusFromPoint, CMouseEvent, EVENT_RESULT
    */
-  virtual EVENT_RESULT SendMouseEvent(const CPoint &point, const CMouseEvent &event);
+  virtual EVENT_RESULT SendMouseEvent(const CPoint& point, const KODI::MOUSE::CMouseEvent& event);
 
   /*! \brief Perform a mouse action
 
@@ -135,7 +143,7 @@ public:
    \return EVENT_RESULT corresponding to whether the control handles this event
    \sa SendMouseEvent, HitTest, CanFocusFromPoint, CMouseEvent
    */
-  virtual EVENT_RESULT OnMouseEvent(const CPoint& point, const CMouseEvent& event)
+  virtual EVENT_RESULT OnMouseEvent(const CPoint& point, const KODI::MOUSE::CMouseEvent& event)
   {
     return EVENT_RESULT_UNHANDLED;
   }
@@ -257,43 +265,51 @@ public:
   enum GUICONTROLTYPES
   {
     GUICONTROL_UNKNOWN,
-    GUICONTROL_BUTTON,
-    GUICONTROL_FADELABEL,
-    GUICONTROL_IMAGE,
+
+    // Keep sorted
+    GUICONTAINER_EPGGRID,
+    GUICONTAINER_FIXEDLIST,
+    GUICONTAINER_LIST,
+    GUICONTAINER_PANEL,
+    GUICONTAINER_WRAPLIST,
     GUICONTROL_BORDEREDIMAGE,
+    GUICONTROL_BUTTON,
+    GUICONTROL_COLORBUTTON,
+    GUICONTROL_EDIT,
+    GUICONTROL_FADELABEL,
+    GUICONTROL_GAME,
+    GUICONTROL_GAMECONTROLLER,
+    GUICONTROL_GAMECONTROLLERLIST,
+    GUICONTROL_GROUP,
+    GUICONTROL_GROUPLIST,
+    GUICONTROL_IMAGE,
     GUICONTROL_LABEL,
     GUICONTROL_LISTGROUP,
+    GUICONTROL_LISTLABEL,
+    GUICONTROL_MOVER,
+    GUICONTROL_MULTI_IMAGE,
     GUICONTROL_PROGRESS,
     GUICONTROL_RADIO,
+    GUICONTROL_RANGES,
+    GUICONTROL_RENDERADDON,
+    GUICONTROL_RESIZE,
     GUICONTROL_RSS,
-    GUICONTROL_SLIDER,
+    GUICONTROL_SCROLLBAR,
     GUICONTROL_SETTINGS_SLIDER,
+    GUICONTROL_SLIDER,
     GUICONTROL_SPIN,
     GUICONTROL_SPINEX,
     GUICONTROL_TEXTBOX,
     GUICONTROL_TOGGLEBUTTON,
     GUICONTROL_VIDEO,
-    GUICONTROL_GAME,
-    GUICONTROL_MOVER,
-    GUICONTROL_RESIZE,
-    GUICONTROL_EDIT,
     GUICONTROL_VISUALISATION,
-    GUICONTROL_RENDERADDON,
-    GUICONTROL_MULTI_IMAGE,
-    GUICONTROL_GROUP,
-    GUICONTROL_GROUPLIST,
-    GUICONTROL_SCROLLBAR,
-    GUICONTROL_LISTLABEL,
-    GUICONTROL_GAMECONTROLLER,
-    GUICONTAINER_LIST,
-    GUICONTAINER_WRAPLIST,
-    GUICONTAINER_FIXEDLIST,
-    GUICONTAINER_EPGGRID,
-    GUICONTAINER_PANEL,
-    GUICONTROL_RANGES,
-    GUICONTROL_COLORBUTTON
   };
   GUICONTROLTYPES GetControlType() const { return ControlType; }
+
+  /*! \brief Test whether the control is "drawable" (not a group or similar)
+   \return true if the control has textures/labels it wants to render
+   */
+  bool IsControlRenderable();
 
   enum GUIVISIBLE { HIDDEN = 0, DELAYED, VISIBLE };
 

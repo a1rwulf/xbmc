@@ -11,6 +11,9 @@
 #include "pictures/PictureScalingAlgorithm.h"
 #include "utils/Job.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -27,11 +30,7 @@ public:
   static bool GetThumbnailFromSurface(const unsigned char* buffer, int width, int height, int stride, const std::string &thumbFile, uint8_t* &result, size_t& result_size);
   static bool CreateThumbnailFromSurface(const unsigned char* buffer, int width, int height, int stride, const std::string &thumbFile);
 
-  /*! \brief Create a tiled thumb of the given files
-   \param files the files to create the thumb from
-   \param thumb the filename of the thumb
-   */
-  static bool CreateTiledThumb(const std::vector<std::string> &files, const std::string &thumb);
+  static std::unique_ptr<CTexture> CreateTiledThumb(const std::vector<std::string>& files);
 
   static bool ResizeTexture(
       const std::string& image,
@@ -77,21 +76,40 @@ public:
       CPictureScalingAlgorithm::Algorithm scalingAlgorithm = CPictureScalingAlgorithm::NoAlgorithm);
 
 private:
-  static bool OrientateImage(uint32_t *&pixels, unsigned int &width, unsigned int &height, int orientation);
+  static bool OrientateImage(std::unique_ptr<uint32_t[]>& pixels,
+                             unsigned int& width,
+                             unsigned int& height,
+                             int orientation,
+                             unsigned int& stridePixels);
 
-  static bool FlipHorizontal(uint32_t*& pixels,
+  static bool FlipHorizontal(std::unique_ptr<uint32_t[]>& pixels,
                              const unsigned int& width,
-                             const unsigned int& height);
-  static bool FlipVertical(uint32_t*& pixels,
+                             const unsigned int& height,
+                             const unsigned int& stridePixels);
+  static bool FlipVertical(std::unique_ptr<uint32_t[]>& pixels,
                            const unsigned int& width,
-                           const unsigned int& height);
-  static bool Rotate90CCW(uint32_t *&pixels, unsigned int &width, unsigned int &height);
-  static bool Rotate270CCW(uint32_t *&pixels, unsigned int &width, unsigned int &height);
-  static bool Rotate180CCW(uint32_t*& pixels,
+                           const unsigned int& height,
+                           const unsigned int& stridePixels);
+  static bool Rotate90CCW(std::unique_ptr<uint32_t[]>& pixels,
+                          unsigned int& width,
+                          unsigned int& height,
+                          unsigned int& stridePixels);
+  static bool Rotate270CCW(std::unique_ptr<uint32_t[]>& pixels,
+                           unsigned int& width,
+                           unsigned int& height,
+                           unsigned int& stridePixels);
+  static bool Rotate180CCW(std::unique_ptr<uint32_t[]>& pixels,
                            const unsigned int& width,
-                           const unsigned int& height);
-  static bool Transpose(uint32_t *&pixels, unsigned int &width, unsigned int &height);
-  static bool TransposeOffAxis(uint32_t *&pixels, unsigned int &width, unsigned int &height);
+                           const unsigned int& height,
+                           const unsigned int& stridePixels);
+  static bool Transpose(std::unique_ptr<uint32_t[]>& pixels,
+                        unsigned int& width,
+                        unsigned int& height,
+                        unsigned int& width_aligned);
+  static bool TransposeOffAxis(std::unique_ptr<uint32_t[]>& pixels,
+                               unsigned int& width,
+                               unsigned int& height,
+                               unsigned int& stridePixels);
 };
 
 //this class calls CreateThumbnailFromSurface in a CJob, so a png file can be written without halting the render thread

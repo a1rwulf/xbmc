@@ -7,25 +7,31 @@
  */
 
 #include "DVDInputStreamNavigator.h"
-#include "filesystem/IFileTypes.h"
-#include "utils/LangCodeExpander.h"
+
 #include "../DVDDemuxSPU.h"
-#include "settings/Settings.h"
-#include "settings/SettingsComponent.h"
 #include "LangInfo.h"
 #include "ServiceBroker.h"
-#include "utils/Geometry.h"
-#include "utils/log.h"
-#include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
+#include "filesystem/IFileTypes.h"
+#if defined(TARGET_WINDOWS_STORE)
+#include "filesystem/SpecialProtocol.h"
+#endif
 #include "guilib/LocalizeStrings.h"
+#if defined(TARGET_WINDOWS_STORE)
+#include "platform/Environment.h"
+#endif
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
+#include "utils/Geometry.h"
+#include "utils/LangCodeExpander.h"
+#include "utils/StringUtils.h"
+#include "utils/URIUtils.h"
+#include "utils/log.h"
+
 #if defined(TARGET_DARWIN_OSX)
 #include "platform/darwin/osx/CocoaInterface.h"
 #endif
-#if defined(TARGET_WINDOWS_STORE)
-#include "filesystem/SpecialProtocol.h"
-#include "platform/Environment.h"
-#endif
+
+#include <memory>
 
 namespace
 {
@@ -144,7 +150,8 @@ bool CDVDInputStreamNavigator::Open()
   if (m_item.IsDiscImage())
   {
     // if dvd image file (ISO or alike) open using libdvdnav stream callback functions
-    m_pstream.reset(new CDVDInputStreamFile(m_item, XFILE::READ_TRUNCATED | XFILE::READ_BITRATE | XFILE::READ_CHUNKED));
+    m_pstream = std::make_unique<CDVDInputStreamFile>(
+        m_item, XFILE::READ_TRUNCATED | XFILE::READ_BITRATE | XFILE::READ_CHUNKED);
 #if DVDNAV_VERSION >= 60100
     if (!m_pstream->Open() || m_dll.dvdnav_open_stream2(&m_dvdnav, m_pstream.get(), &loggerCallback,
                                                         &m_dvdnav_stream_cb) != DVDNAV_STATUS_OK)
@@ -1068,7 +1075,7 @@ void CDVDInputStreamNavigator::SetAudioStreamName(AudioStreamInfo &info, const a
     break;
   default:
     char temp[32];
-    sprintf(temp, " %d-chs", audio_attributes.channels + 1);
+    snprintf(temp, sizeof(temp), " %d-chs", audio_attributes.channels + 1);
     info.name += temp;
   }
 
@@ -1148,7 +1155,9 @@ bool CDVDInputStreamNavigator::SetAngle(int angle)
   return (status == DVDNAV_STATUS_OK);
 }
 
-bool CDVDInputStreamNavigator::GetCurrentButtonInfo(CDVDOverlaySpu* pOverlayPicture, CDVDDemuxSPU* pSPU, int iButtonType)
+bool CDVDInputStreamNavigator::GetCurrentButtonInfo(CDVDOverlaySpu& pOverlayPicture,
+                                                    CDVDDemuxSPU* pSPU,
+                                                    int iButtonType)
 {
   int colorAndAlpha[4][4];
   dvdnav_highlight_area_t hl;
@@ -1168,10 +1177,10 @@ bool CDVDInputStreamNavigator::GetCurrentButtonInfo(CDVDOverlaySpu* pOverlayPict
                               m_dll.dvdnav_get_current_nav_pci(m_dvdnav), button, iButtonType, &hl))
   {
     // button cropping information
-    pOverlayPicture->crop_i_x_start = hl.sx;
-    pOverlayPicture->crop_i_x_end = hl.ex;
-    pOverlayPicture->crop_i_y_start = hl.sy;
-    pOverlayPicture->crop_i_y_end = hl.ey;
+    pOverlayPicture.crop_i_x_start = hl.sx;
+    pOverlayPicture.crop_i_x_end = hl.ex;
+    pOverlayPicture.crop_i_y_start = hl.sy;
+    pOverlayPicture.crop_i_y_end = hl.ey;
   }
 
   if (pSPU->m_bHasClut)
@@ -1190,9 +1199,9 @@ bool CDVDInputStreamNavigator::GetCurrentButtonInfo(CDVDOverlaySpu* pOverlayPict
 
     for (int i = 0; i < 4; i++)
     {
-      pOverlayPicture->highlight_alpha[i] = colorAndAlpha[i][3];
+      pOverlayPicture.highlight_alpha[i] = colorAndAlpha[i][3];
       for (int j = 0; j < 3; j++)
-        pOverlayPicture->highlight_color[i][j] = colorAndAlpha[i][j];
+        pOverlayPicture.highlight_color[i][j] = colorAndAlpha[i][j];
     }
   }
 

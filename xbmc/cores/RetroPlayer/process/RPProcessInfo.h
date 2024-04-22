@@ -12,11 +12,15 @@
 #include "cores/RetroPlayer/RetroPlayerTypes.h"
 #include "threads/CriticalSection.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+extern "C"
+{
 #include <libavutil/pixfmt.h>
+}
 
 class CDataCacheCore;
 
@@ -34,7 +38,7 @@ class IRenderBufferPool;
 /*!
  * \brief Process info factory
  */
-using CreateRPProcessControl = CRPProcessInfo* (*)();
+using CreateRPProcessControl = std::function<std::unique_ptr<CRPProcessInfo>()>;
 
 /*!
  * \brief Rendering factory
@@ -76,8 +80,8 @@ public:
 class CRPProcessInfo
 {
 public:
-  static CRPProcessInfo* CreateInstance();
-  static void RegisterProcessControl(CreateRPProcessControl createFunc);
+  static std::unique_ptr<CRPProcessInfo> CreateInstance();
+  static void RegisterProcessControl(const CreateRPProcessControl& createFunc);
   static void RegisterRendererFactory(IRendererFactory* factory);
 
   virtual ~CRPProcessInfo();

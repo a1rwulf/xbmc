@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Interface/StreamInfo.h"
+#include "cores/FFmpeg.h"
 
 #include <memory>
 #include <string>
@@ -32,6 +33,7 @@ class IAddonProvider;
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+#include <libavutil/dovi_meta.h>
 #include <libavutil/mastering_display_metadata.h>
 }
 
@@ -82,14 +84,13 @@ public:
     source = STREAM_SOURCE_NONE;
     iDuration = 0;
     pPrivate = NULL;
-    ExtraData = NULL;
-    ExtraSize = 0;
     disabled = false;
     changes = 0;
     flags = StreamFlags::FLAG_NONE;
   }
 
-  virtual ~CDemuxStream() { delete[] ExtraData; }
+  virtual ~CDemuxStream() = default;
+  CDemuxStream(CDemuxStream&&) = default;
 
   virtual std::string GetStreamName();
 
@@ -105,8 +106,7 @@ public:
 
   int iDuration; // in mseconds
   void* pPrivate; // private pointer for the demuxer
-  uint8_t* ExtraData; // extra data for codec to use
-  unsigned int ExtraSize; // size of extra data
+  FFmpegExtraData extraData;
 
   StreamFlags flags;
   std::string language; // RFC 5646 language code (empty string if undefined)
@@ -129,6 +129,7 @@ public:
   ~CDemuxStreamVideo() override = default;
   int iFpsScale = 0; // scale of 1000 and a rate of 29970 will result in 29.97 fps
   int iFpsRate = 0;
+  bool interlaced = false; // unknown or progressive => false, otherwise true.
   int iHeight = 0; // height of the stream reported by the demuxer
   int iWidth = 0; // width of the stream reported by the demuxer
   double fAspect = 0; // display aspect of stream
@@ -150,6 +151,7 @@ public:
 
   std::string stereo_mode; // expected stereo mode
   StreamHdrType hdr_type = StreamHdrType::HDR_TYPE_NONE; // type of HDR for this stream (hdr10, etc)
+  AVDOVIDecoderConfigurationRecord dovi{};
 };
 
 class CDemuxStreamAudio : public CDemuxStream

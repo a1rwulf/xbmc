@@ -12,6 +12,7 @@
 #include "AddonString.h"
 #include "Alternative.h"
 #include "Exception.h"
+#include "InfoTagGame.h"
 #include "InfoTagMusic.h"
 #include "InfoTagRadioRDS.h"
 #include "InfoTagVideo.h"
@@ -89,7 +90,12 @@ namespace XBMCAddon
       /// @param listitem            [opt] listitem - used with setInfo() to set
       ///                            different infolabels.
       /// @param windowed            [opt] bool - true=play video windowed,
-      ///                            false=play users preference.(default)
+      ///                            false=play users preference.(default) \n
+      ///                            If playback is started windowed refresh rate
+      ///                            switch (resolution update) is ignored. This
+      ///                            might be useful if you are designing your own
+      ///                            player window and want to avoid other GUI
+      ///                            elements popping up on screen.
       /// @param startpos            [opt] int - starting position when playing
       ///                            a playlist. Default = -1
       ///
@@ -426,6 +432,22 @@ namespace XBMCAddon
 #ifdef DOXYGEN_SHOULD_USE_THIS
       ///
       /// \ingroup python_Player
+      /// @brief \python_func{ isPlayingGame() }
+      /// Check for playing game.
+      ///
+      /// @return                    True if kodi is playing a game
+      ///
+      ///------------------------------------------------------------------------
+      /// @python_v20 New function added.
+      ///
+      isPlayingGame();
+#else
+      bool isPlayingGame();
+#endif
+
+#ifdef DOXYGEN_SHOULD_USE_THIS
+      ///
+      /// \ingroup python_Player
       /// @brief \python_func{ isExternalPlayer() }
       /// Check for external player.
       ///
@@ -623,6 +645,25 @@ namespace XBMCAddon
       void updateInfoTag(const XBMCAddon::xbmcgui::ListItem* item);
 #endif
 
+#ifdef DOXYGEN_SHOULD_USE_THIS
+      ///
+      /// \ingroup python_Player
+      /// @brief \python_func{ getGameInfoTag() }
+      /// To get game info tag.
+      ///
+      /// Returns the GameInfoTag of the current playing game.
+      ///
+      /// @return                    Game info tag
+      /// @throws Exception          If player is not playing a file or current
+      ///                            file is not a game file.
+      ///
+      ///------------------------------------------------------------------------
+      /// @python_v20 New function added.
+      ///
+      getGameInfoTag();
+#else
+      InfoTagGame* getGameInfoTag();
+#endif
 
 #ifdef DOXYGEN_SHOULD_USE_THIS
       ///

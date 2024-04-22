@@ -251,7 +251,7 @@ extern "C"
 
   typedef int KODI_ADDON_INSTANCE_TYPE;
 
-  struct KODI_ADDON_INSTANCE_INFO
+  typedef struct KODI_ADDON_INSTANCE_INFO
   {
     KODI_ADDON_INSTANCE_TYPE type;
     uint32_t number;
@@ -262,7 +262,7 @@ extern "C"
     bool first_instance;
 
     struct KODI_ADDON_INSTANCE_FUNC_CB* functions;
-  };
+  } KODI_ADDON_INSTANCE_INFO;
 
   typedef struct KODI_ADDON_INSTANCE_STRUCT
   {
@@ -270,7 +270,8 @@ extern "C"
 
     KODI_ADDON_INSTANCE_HDL hdl;
     struct KODI_ADDON_INSTANCE_FUNC* functions;
-    union {
+    union
+    {
       KODI_ADDON_FUNC_DUMMY dummy;
       struct AddonInstance_AudioDecoder* audiodecoder;
       struct AddonInstance_AudioEncoder* audioencoder;

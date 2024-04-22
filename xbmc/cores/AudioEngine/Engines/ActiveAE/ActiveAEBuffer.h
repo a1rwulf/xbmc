@@ -46,10 +46,10 @@ class CSampleBuffer
 {
 public:
   CSampleBuffer() = default;
-  ~CSampleBuffer();
+  ~CSampleBuffer() = default;
   CSampleBuffer *Acquire();
   void Return();
-  CSoundPacket *pkt = nullptr;
+  std::unique_ptr<CSoundPacket> pkt;
   CActiveAEBufferPool *pool = nullptr;
   int64_t timestamp;
   int pkt_start_offset = 0;
@@ -102,7 +102,7 @@ protected:
   int64_t m_lastSamplePts = 0;
   bool m_remap = false;
   CSampleBuffer *m_procSample = nullptr;
-  IAEResample *m_resampler = nullptr;
+  std::unique_ptr<IAEResample> m_resampler;
   double m_resampleRatio = 1.0;
   double m_centerMixLevel = M_SQRT1_2;
   bool m_fillPackets = false;

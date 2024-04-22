@@ -66,7 +66,7 @@ public:
   virtual CRenderInfo GetRenderInfo() { return CRenderInfo(); }
   virtual void Update() = 0;
   virtual void RenderUpdate(int index, int index2, bool clear, unsigned int flags, unsigned int alpha) = 0;
-  virtual bool RenderCapture(CRenderCapture* capture) = 0;
+  virtual bool RenderCapture(int index, CRenderCapture* capture) = 0;
   virtual bool ConfigChanged(const VideoPicture &picture) = 0;
 
   // Feature support
@@ -85,6 +85,7 @@ public:
   */
   void GetVideoRect(CRect& source, CRect& dest, CRect& view) const;
   float GetAspectRatio() const;
+  unsigned int GetOrientation() const { return m_renderOrientation; }
 
   static void SettingOptionsRenderMethodsFiller(const std::shared_ptr<const CSetting>& setting,
                                                 std::vector<IntegerSettingOption>& list,
@@ -114,6 +115,7 @@ protected:
   virtual void ReorderDrawPoints();
   virtual EShaderFormat GetShaderFormat();
   void MarkDirty();
+  void EnableAlwaysClip();
 
   //@todo drop those
   void saveRotatedCoords();//saves the current state of m_rotatedDestCoords
@@ -141,4 +143,7 @@ protected:
   AVPixelFormat m_format = AV_PIX_FMT_NONE;
 
   CVideoSettings m_videoSettings;
+
+private:
+  bool m_alwaysClip = false;
 };

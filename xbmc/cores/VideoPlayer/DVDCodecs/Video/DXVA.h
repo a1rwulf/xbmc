@@ -16,6 +16,7 @@
 #include <mutex>
 #include <vector>
 
+#include <d3d11_4.h>
 #include <wrl/client.h>
 extern "C"
 {
@@ -62,13 +63,28 @@ class CVideoBufferShared : public CVideoBuffer
 public:
   HRESULT GetResource(ID3D11Resource** ppResource) override;
   void Initialize(CDecoder* decoder) override;
+  virtual ~CVideoBufferShared();
 
 protected:
   explicit CVideoBufferShared(int id)
       : CVideoBuffer(id) {}
+  void InitializeFence(CDecoder* decoder);
+  void SetFence();
 
   HANDLE handle = INVALID_HANDLE_VALUE;
   Microsoft::WRL::ComPtr<ID3D11Resource> m_sharedRes;
+
+  /*! \brief decoder-side fence object */
+  Microsoft::WRL::ComPtr<ID3D11Fence> m_fence;
+  /*! \brief decoder-side context */
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext4> m_deviceContext4;
+  /*! \brief fence shared handle that allows opening the fence on a different device */
+  HANDLE m_handleFence{INVALID_HANDLE_VALUE};
+  UINT64 m_fenceValue{0};
+  /*! \brief app-side fence object */
+  Microsoft::WRL::ComPtr<ID3D11Fence> m_appFence;
+  /*! \brief app-side context */
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext4> m_appContext4;
 };
 
 class CVideoBufferCopy : public CVideoBufferShared
@@ -135,6 +151,10 @@ private:
   bool m_sharingAllowed = false;
   Microsoft::WRL::ComPtr<ID3D11VideoContext> m_pD3D11Context;
   Microsoft::WRL::ComPtr<ID3D11VideoDevice> m_pD3D11Device;
+#ifdef _DEBUG
+  Microsoft::WRL::ComPtr<ID3D11Debug> m_d3d11Debug;
+#endif
+
   std::vector<CDecoder*> m_decoders;
 };
 
@@ -157,7 +177,6 @@ public:
   bool IsValid(ID3D11View* view);
   size_t Size();
   bool HasFree();
-  bool HasRefs();
 
 protected:
   void Reset();
@@ -197,9 +216,6 @@ public:
   const std::string Name() override { return "d3d11va"; }
   unsigned GetAllowedReferences() override;
   void Reset() override;
-
-  // IDVDResourceCounted overrides
-  long Release() override;
 
   bool OpenDecoder();
   int GetBuffer(AVCodecContext* avctx, AVFrame* pic);
@@ -250,7 +266,6 @@ protected:
   CContext::shared_ptr m_dxvaContext;
   CVideoBuffer* m_videoBuffer = nullptr;
   struct AVD3D11VAContext* m_avD3D11Context = nullptr;
-  struct AVCodecContext* m_avCtx = nullptr;
   int m_refs = 0;
   unsigned int m_shared = 0;
   unsigned int m_surface_alignment = 0;

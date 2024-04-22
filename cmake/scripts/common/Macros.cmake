@@ -73,6 +73,10 @@ function(core_add_library name)
     set_target_properties(${name} PROPERTIES PREFIX "")
     set(core_DEPENDS ${name} ${core_DEPENDS} CACHE STRING "" FORCE)
     add_dependencies(${name} ${GLOBAL_TARGET_DEPS})
+
+    # Adds global target to library. This propagates dep lib info (eg include_dir locations)
+    target_link_libraries(${name} PRIVATE ${GLOBAL_TARGET_DEPS})
+
     set(CORE_LIBRARY ${name} PARENT_SCOPE)
 
     if(NOT MSVC)
@@ -204,6 +208,14 @@ endfunction()
 #   Files is mirrored to the build tree and added to ${install_data}
 #   (if NO_INSTALL is not given).
 function(copy_file_to_buildtree file)
+  # Exclude autotools build artifacts and other blacklisted files in source tree.
+  if(file MATCHES "(Makefile|\\.in|\\.xbt|\\.so|\\.dylib|\\.gitignore)$")
+    if(VERBOSE)
+      message(STATUS "copy_file_to_buildtree - ignoring file: ${file}")
+    endif()
+    return()
+  endif()
+
   cmake_parse_arguments(arg "NO_INSTALL" "DIRECTORY;KEEP_DIR_STRUCTURE" "" ${ARGN})
   if(arg_DIRECTORY)
     set(outdir ${arg_DIRECTORY})
@@ -223,40 +235,54 @@ function(copy_file_to_buildtree file)
   endif()
 
   if(NOT TARGET export-files)
+    if(${CORE_SYSTEM_NAME} MATCHES "windows")
+      set(_bundle_dir $<TARGET_FILE_DIR:${APP_NAME_LC}>)
+    else()
+      set(_bundle_dir ${CMAKE_BINARY_DIR})
+    endif()
     file(REMOVE ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake)
     add_custom_target(export-files ALL COMMENT "Copying files into build tree"
-                      COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake)
+                                       COMMAND ${CMAKE_COMMAND} -DBUNDLEDIR=${_bundle_dir}
+                                                                -P ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake)
     set_target_properties(export-files PROPERTIES FOLDER "Build Utilities")
+    # Add comment to ensure ExportFiles.cmake is created even if not used.
     file(APPEND ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake "# Export files to build tree\n")
   endif()
 
-  # Exclude autotools build artefacts and other blacklisted files in source tree.
-  if(file MATCHES "(Makefile|\\.in|\\.xbt|\\.so|\\.dylib|\\.gitignore)$")
-    if(VERBOSE)
-      message(STATUS "copy_file_to_buildtree - ignoring file: ${file}")
-    endif()
-    return()
-  endif()
-
-  if(NOT file STREQUAL ${CMAKE_BINARY_DIR}/${outfile})
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows" OR NOT IS_SYMLINK "${file}")
-      if(VERBOSE)
-        message(STATUS "copy_file_to_buildtree - copying file: ${file} -> ${CMAKE_BINARY_DIR}/${outfile}")
-      endif()
+  if(${CORE_SYSTEM_NAME} MATCHES "windows")
+    # if DEPENDS_PATH in fille
+    if(${file} MATCHES ${DEPENDS_PATH})
       file(APPEND ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake
-           "file(COPY \"${file}\" DESTINATION \"${CMAKE_BINARY_DIR}/${outdir}\")\n" )
+"file(GLOB filenames ${file})
+foreach(filename \$\{filenames\})
+  file(COPY \"\$\{filename\}\" DESTINATION \"\$\{BUNDLEDIR\}/${outdir}\")
+endforeach()\n"
+      )
     else()
-      if(VERBOSE)
-        message(STATUS "copy_file_to_buildtree - copying symlinked file: ${file} -> ${CMAKE_BINARY_DIR}/${outfile}")
-      endif()
       file(APPEND ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake
-           "execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E copy_if_different \"${file}\" \"${CMAKE_BINARY_DIR}/${outfile}\")\n")
+               "file(COPY \"${file}\" DESTINATION \"\$\{BUNDLEDIR\}/${outdir}\")\n" )
     endif()
-  endif()
+  else()
+    if(NOT file STREQUAL ${CMAKE_BINARY_DIR}/${outfile})
+      if(NOT IS_SYMLINK "${file}")
+        if(VERBOSE)
+          message(STATUS "copy_file_to_buildtree - copying file: ${file} -> ${CMAKE_BINARY_DIR}/${outfile}")
+        endif()
+        file(APPEND ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake
+             "file(COPY \"${file}\" DESTINATION \"${CMAKE_BINARY_DIR}/${outdir}\")\n" )
+      else()
+        if(VERBOSE)
+          message(STATUS "copy_file_to_buildtree - copying symlinked file: ${file} -> ${CMAKE_BINARY_DIR}/${outfile}")
+        endif()
+        file(APPEND ${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/ExportFiles.cmake
+             "execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E copy_if_different \"${file}\" \"${CMAKE_BINARY_DIR}/${outfile}\")\n")
+      endif()
+    endif()
 
-  if(NOT arg_NO_INSTALL)
-    list(APPEND install_data ${outfile})
-    set(install_data ${install_data} PARENT_SCOPE)
+    if(NOT arg_NO_INSTALL)
+      list(APPEND install_data ${outfile})
+      set(install_data ${install_data} PARENT_SCOPE)
+    endif()
   endif()
 endfunction()
 
@@ -305,11 +331,16 @@ function(copy_files_from_filelist_to_buildtree pattern)
           list(GET dir -1 dest)
         endif()
 
-        # If the full path to an existing file is specified then add that single file.
-        # Don't recursively add all files with the given name.
-        if(EXISTS ${CMAKE_SOURCE_DIR}/${src} AND (NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/${src} OR DIR_OPTION))
+        if((${CMAKE_SOURCE_DIR}/${src} MATCHES ${DEPENDS_PATH}) OR
+           (EXISTS ${CMAKE_SOURCE_DIR}/${src} AND (NOT IS_DIRECTORY ${CMAKE_SOURCE_DIR}/${src} OR DIR_OPTION)))
+          # If the path is in DEPENDS_PATH, pass through as is. This will be handled in a build time
+          # glob of the location. This insures any dependencies built at build time can be bundled if 
+          # required.
+          # OR If the full path to an existing file is specified then add that single file.
+          # Don't recursively add all files with the given name.
           set(files ${src})
         else()
+          # Static path contents, so we can just glob at generation time
           file(GLOB_RECURSE files RELATIVE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/${src})
         endif()
 
@@ -646,6 +677,10 @@ endfunction()
 #   APP_PACKAGE - Android full package name
 #   COMPANY_NAME - company name
 #   APP_WEBSITE - site url
+#   ABOUT_WEBSITE - url for the about page of the app
+#   DEV_NAME - name of the developer of the app
+#   DOCS_WEBSITE - url for the documentation of the app
+#   FORUM_WEBSITE - url for the forum/discussion board of the app
 #   APP_VERSION_MAJOR - the app version major
 #   APP_VERSION_MINOR - the app version minor
 #   APP_VERSION_TAG - the app version tag
@@ -676,10 +711,14 @@ macro(core_find_versions)
   set(version_props
     ADDON_API
     ADDON_REPOS
+    ABOUT_WEBSITE
     APP_NAME
     APP_PACKAGE
     COMPANY_NAME
     COPYRIGHT_YEARS
+    DEV_NAME
+    DOCS_WEBSITE
+    FORUM_WEBSITE
     JSONRPC_VERSION
     PACKAGE_DESCRIPTION
     PACKAGE_IDENTITY
@@ -699,6 +738,10 @@ macro(core_find_versions)
   string(TOLOWER ${APP_APP_NAME} APP_NAME_LC)
   string(TOUPPER ${APP_APP_NAME} APP_NAME_UC)
   set(COMPANY_NAME ${APP_COMPANY_NAME})
+  set(ABOUT_WEBSITE ${APP_ABOUT_WEBSITE})
+  set(DEV_NAME ${APP_DEV_NAME})
+  set(DOCS_WEBSITE ${APP_DOCS_WEBSITE})
+  set(FORUM_WEBSITE ${APP_FORUM_WEBSITE})
   set(APP_VERSION ${APP_VERSION_MAJOR}.${APP_VERSION_MINOR})
   # Let Flatpak builders etc override APP_PACKAGE
   # NOTE: We cannot declare an option() in top-level CMakeLists.txt

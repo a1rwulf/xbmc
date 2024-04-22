@@ -14,6 +14,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <stdio.h>
 #include <string>
 #include <string_view>
@@ -118,10 +119,11 @@ struct webvttCssStyle
   webvttCssStyle(WebvttSelector selectorType,
                  const std::string& selectorName,
                  const std::string& colorHexRGB)
-    : m_selectorType{selectorType}, m_selectorName{selectorName}
+    : m_selectorType{selectorType},
+      m_selectorName{selectorName},
+      // Color hex values need to be in BGR format
+      m_color(colorHexRGB.substr(4, 2) + colorHexRGB.substr(2, 2) + colorHexRGB.substr(0, 2))
   {
-    // Color hex values need to be in BGR format
-    m_color = colorHexRGB.substr(4, 2) + colorHexRGB.substr(2, 2) + colorHexRGB.substr(0, 2);
   }
 
   WebvttSelector m_selectorType = WebvttSelector::ANY;
@@ -191,7 +193,7 @@ private:
   void GetCueData(std::string& cueText);
   std::string GetCueSettingValue(const std::string& propName,
                                  std::string& text,
-                                 std::string defaultValue);
+                                 const std::string& defaultValue);
   std::string GetCueCssValue(const std::string& cssPropName, std::string& line);
   void AddDefaultCssClasses();
   void InsertCssStyleStartTag(const tagToken& tag,
@@ -209,6 +211,9 @@ private:
   void ConvertAddSubtitle(std::vector<subtitleData>* subList);
   void LoadColors();
   double GetTimeFromRegexTS(CRegExp& regex, int indexStart = 1);
+
+  // Last subtitle data added, must persist and be updated between all demuxer packages
+  std::unique_ptr<subtitleData> m_lastSubtitleData;
 
   std::string m_previousLines[3];
   bool m_overrideStyle{false};

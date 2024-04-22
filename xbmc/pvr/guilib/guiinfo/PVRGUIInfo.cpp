@@ -29,6 +29,7 @@
 #include "pvr/channels/PVRChannelGroupMember.h"
 #include "pvr/channels/PVRChannelGroupsContainer.h"
 #include "pvr/channels/PVRRadioRDSInfoTag.h"
+#include "pvr/epg/EpgContainer.h"
 #include "pvr/epg/EpgInfoTag.h"
 #include "pvr/epg/EpgSearchFilter.h"
 #include "pvr/guilib/PVRGUIActionsChannels.h"
@@ -232,7 +233,7 @@ void CPVRGUIInfo::UpdateQualityData()
           CSettings::SETTING_PVRPLAYBACK_SIGNALQUALITY))
     return;
 
-  const std::shared_ptr<CPVRPlaybackState> playbackState =
+  const std::shared_ptr<const CPVRPlaybackState> playbackState =
       CServiceBroker::GetPVRManager().PlaybackState();
   if (!playbackState)
     return;
@@ -243,7 +244,7 @@ void CPVRGUIInfo::UpdateQualityData()
   const int channelUid = playbackState->GetPlayingChannelUniqueID();
   if (channelUid > 0)
   {
-    const std::shared_ptr<CPVRClient> client =
+    const std::shared_ptr<const CPVRClient> client =
         CServiceBroker::GetPVRManager().Clients()->GetCreatedClient(
             playbackState->GetPlayingClientID());
     if (client)
@@ -256,7 +257,7 @@ void CPVRGUIInfo::UpdateQualityData()
 
 void CPVRGUIInfo::UpdateDescrambleData()
 {
-  const std::shared_ptr<CPVRPlaybackState> playbackState =
+  const std::shared_ptr<const CPVRPlaybackState> playbackState =
       CServiceBroker::GetPVRManager().PlaybackState();
   if (!playbackState)
     return;
@@ -267,7 +268,7 @@ void CPVRGUIInfo::UpdateDescrambleData()
   const int channelUid = playbackState->GetPlayingChannelUniqueID();
   if (channelUid > 0)
   {
-    const std::shared_ptr<CPVRClient> client =
+    const std::shared_ptr<const CPVRClient> client =
         CServiceBroker::GetPVRManager().Clients()->GetCreatedClient(
             playbackState->GetPlayingClientID());
     if (client)
@@ -282,7 +283,7 @@ void CPVRGUIInfo::UpdateMisc()
 {
   const CPVRManager& mgr = CServiceBroker::GetPVRManager();
   bool bStarted = mgr.IsStarted();
-  const std::shared_ptr<CPVRPlaybackState> state = mgr.PlaybackState();
+  const std::shared_ptr<const CPVRPlaybackState> state = mgr.PlaybackState();
 
   /* safe to fetch these unlocked, since they're updated from the same thread as this one */
   const std::string strPlayingClientName = bStarted ? state->GetPlayingClientName() : "";
@@ -359,7 +360,7 @@ std::string GetAsLocalizedDateTimeString(const CDateTime& datetime)
   return datetime.IsValid() ? datetime.GetAsLocalizedDateTime(false, false) : "";
 }
 
-std::string GetEpgTagTitle(const std::shared_ptr<CPVREpgInfoTag>& epgTag)
+std::string GetEpgTagTitle(const std::shared_ptr<const CPVREpgInfoTag>& epgTag)
 {
   if (epgTag)
   {
@@ -382,7 +383,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
                                             const CGUIInfo& info,
                                             std::string& strValue) const
 {
-  const std::shared_ptr<CPVRTimerInfoTag> timer = item->GetPVRTimerInfoTag();
+  const std::shared_ptr<const CPVRTimerInfoTag> timer = item->GetPVRTimerInfoTag();
   if (timer)
   {
     switch (info.m_info)
@@ -443,7 +444,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
     }
   }
 
-  const std::shared_ptr<CPVRRecording> recording(item->GetPVRRecordingInfoTag());
+  const std::shared_ptr<const CPVRRecording> recording(item->GetPVRRecordingInfoTag());
   if (recording)
   {
     // Note: CPVRRecoding is derived from CVideoInfoTag. All base class properties will be handled
@@ -507,7 +508,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
       case VIDEOPLAYER_CHANNEL_NUMBER:
       case LISTITEM_CHANNEL_NUMBER:
       {
-        const std::shared_ptr<CPVRChannelGroupMember> groupMember =
+        const std::shared_ptr<const CPVRChannelGroupMember> groupMember =
             CServiceBroker::GetPVRManager().Get<PVR::GUI::Channels>().GetChannelGroupMember(*item);
         if (groupMember)
         {
@@ -561,7 +562,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
     return false;
   }
 
-  const std::shared_ptr<CPVREpgSearchFilter> filter = item->GetEPGSearchFilter();
+  const std::shared_ptr<const CPVREpgSearchFilter> filter = item->GetEPGSearchFilter();
   if (filter)
   {
     switch (info.m_info)
@@ -579,8 +580,8 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
     return false;
   }
 
-  std::shared_ptr<CPVREpgInfoTag> epgTag;
-  std::shared_ptr<CPVRChannel> channel;
+  std::shared_ptr<const CPVREpgInfoTag> epgTag;
+  std::shared_ptr<const CPVRChannel> channel;
   if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
   {
     CPVRItem pvrItem(item);
@@ -751,6 +752,9 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
           return true;
         }
         return false;
+      case LISTITEM_PARENTAL_RATING_CODE:
+        strValue = epgTag->ParentalRatingCode();
+        return true;
       case VIDEOPLAYER_PREMIERED:
       case LISTITEM_PREMIERED:
         if (epgTag->FirstAired().IsValid())
@@ -784,7 +788,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerLabel(const CFileItem* item,
     {
       case MUSICPLAYER_CHANNEL_NAME:
       {
-        const std::shared_ptr<CPVRRadioRDSInfoTag> rdsTag = channel->GetRadioRDSInfoTag();
+        const std::shared_ptr<const CPVRRadioRDSInfoTag> rdsTag = channel->GetRadioRDSInfoTag();
         if (rdsTag)
         {
           strValue = rdsTag->GetProgStation();
@@ -837,7 +841,7 @@ bool CPVRGUIInfo::GetPVRLabel(const CFileItem* item,
   {
     case PVR_EPG_EVENT_ICON:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       if (epgTag)
       {
@@ -847,14 +851,14 @@ bool CPVRGUIInfo::GetPVRLabel(const CFileItem* item,
     }
     case PVR_EPG_EVENT_DURATION:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       strValue = m_timesInfo.GetEpgEventDuration(epgTag, static_cast<TIME_FORMAT>(info.GetData1()));
       return true;
     }
     case PVR_EPG_EVENT_ELAPSED_TIME:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       strValue =
           m_timesInfo.GetEpgEventElapsedTime(epgTag, static_cast<TIME_FORMAT>(info.GetData1()));
@@ -862,7 +866,7 @@ bool CPVRGUIInfo::GetPVRLabel(const CFileItem* item,
     }
     case PVR_EPG_EVENT_REMAINING_TIME:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       strValue =
           m_timesInfo.GetEpgEventRemainingTime(epgTag, static_cast<TIME_FORMAT>(info.GetData1()));
@@ -870,7 +874,7 @@ bool CPVRGUIInfo::GetPVRLabel(const CFileItem* item,
     }
     case PVR_EPG_EVENT_FINISH_TIME:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       strValue =
           m_timesInfo.GetEpgEventFinishTime(epgTag, static_cast<TIME_FORMAT>(info.GetData1()));
@@ -1066,7 +1070,7 @@ bool CPVRGUIInfo::GetRadioRDSLabel(const CFileItem* item,
   if (!item->HasPVRChannelInfoTag())
     return false;
 
-  const std::shared_ptr<CPVRRadioRDSInfoTag> tag =
+  const std::shared_ptr<const CPVRRadioRDSInfoTag> tag =
       item->GetPVRChannelInfoTag()->GetRadioRDSInfoTag();
   if (tag)
   {
@@ -1246,7 +1250,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerInt(const CFileItem* item,
     case LISTITEM_PROGRESS:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
+        const std::shared_ptr<const CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
         if (epgTag)
           iValue = static_cast<int>(epgTag->ProgressPercentage());
       }
@@ -1263,14 +1267,14 @@ bool CPVRGUIInfo::GetPVRInt(const CFileItem* item, const CGUIInfo& info, int& iV
   {
     case PVR_EPG_EVENT_DURATION:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       iValue = m_timesInfo.GetEpgEventDuration(epgTag);
       return true;
     }
     case PVR_EPG_EVENT_PROGRESS:
     {
-      const std::shared_ptr<CPVREpgInfoTag> epgTag =
+      const std::shared_ptr<const CPVREpgInfoTag> epgTag =
           (item->IsPVRChannel() || item->IsEPG()) ? CPVRItem(item).GetEpgInfoTag() : nullptr;
       iValue = m_timesInfo.GetEpgEventProgress(epgTag);
       return true;
@@ -1357,7 +1361,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
       }
       else if (item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->IsRecording();
         return true;
@@ -1371,7 +1375,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_INPROGRESS:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
+        const std::shared_ptr<const CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
         if (epgTag)
           bValue = epgTag->IsActive();
         return true;
@@ -1380,7 +1384,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HASTIMER:
       if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = true;
         return true;
@@ -1389,7 +1393,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HASTIMERSCHEDULE:
       if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->HasParent();
         return true;
@@ -1398,7 +1402,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HASREMINDER:
       if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->IsReminder();
         return true;
@@ -1407,7 +1411,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HASREMINDERRULE:
       if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->IsReminder() && timer->HasParent();
         return true;
@@ -1416,7 +1420,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_TIMERISACTIVE:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->IsActive();
         break;
@@ -1425,7 +1429,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_TIMERHASCONFLICT:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = timer->HasConflict();
         return true;
@@ -1434,7 +1438,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_TIMERHASERROR:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
+        const std::shared_ptr<const CPVRTimerInfoTag> timer = CPVRItem(item).GetTimerInfoTag();
         if (timer)
           bValue = (timer->IsBroken() && !timer->HasConflict());
         return true;
@@ -1443,7 +1447,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HASRECORDING:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
+        const std::shared_ptr<const CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
         if (epgTag)
           bValue = !!CServiceBroker::GetPVRManager().Recordings()->GetRecordingForEpgTag(epgTag);
         return true;
@@ -1452,7 +1456,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_HAS_EPG:
       if (item->IsPVRChannel() || item->IsEPG() || item->IsPVRTimer())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
+        const std::shared_ptr<const CPVREpgInfoTag> epgTag = CPVRItem(item).GetEpgInfoTag();
         bValue = (epgTag != nullptr);
         return true;
       }
@@ -1460,7 +1464,7 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case LISTITEM_ISENCRYPTED:
       if (item->IsPVRChannel() || item->IsEPG())
       {
-        const std::shared_ptr<CPVRChannel> channel = CPVRItem(item).GetChannel();
+        const std::shared_ptr<const CPVRChannel> channel = CPVRItem(item).GetChannel();
         if (channel)
           bValue = channel->IsEncrypted();
         return true;
@@ -1487,7 +1491,8 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
       }
       else if (item->IsPVRChannel())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgNow = item->GetPVRChannelInfoTag()->GetEPGNow();
+        const std::shared_ptr<const CPVREpgInfoTag> epgNow =
+            item->GetPVRChannelInfoTag()->GetEPGNow();
         bValue = epgNow ? epgNow->IsNew() : false;
         return true;
       }
@@ -1510,7 +1515,8 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
       }
       else if (item->IsPVRChannel())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgNow = item->GetPVRChannelInfoTag()->GetEPGNow();
+        const std::shared_ptr<const CPVREpgInfoTag> epgNow =
+            item->GetPVRChannelInfoTag()->GetEPGNow();
         bValue = epgNow ? epgNow->IsPremiere() : false;
         return true;
       }
@@ -1533,7 +1539,8 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
       }
       else if (item->IsPVRChannel())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgNow = item->GetPVRChannelInfoTag()->GetEPGNow();
+        const std::shared_ptr<const CPVREpgInfoTag> epgNow =
+            item->GetPVRChannelInfoTag()->GetEPGNow();
         bValue = epgNow ? epgNow->IsFinale() : false;
         return true;
       }
@@ -1556,9 +1563,23 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
       }
       else if (item->IsPVRChannel())
       {
-        const std::shared_ptr<CPVREpgInfoTag> epgNow = item->GetPVRChannelInfoTag()->GetEPGNow();
+        const std::shared_ptr<const CPVREpgInfoTag> epgNow =
+            item->GetPVRChannelInfoTag()->GetEPGNow();
         bValue = epgNow ? epgNow->IsLive() : false;
         return true;
+      }
+      break;
+    case LISTITEM_ISPLAYING:
+      if (item->IsPVRChannel())
+      {
+        const std::shared_ptr<const CPVRChannel> playingChannel{
+            CServiceBroker::GetPVRManager().PlaybackState()->GetPlayingChannel()};
+        if (playingChannel)
+        {
+          const std::shared_ptr<const CPVRChannel> channel{item->GetPVRChannelInfoTag()};
+          bValue = (channel->StorageId() == playingChannel->StorageId());
+          return true;
+        }
       }
       break;
     case MUSICPLAYER_CONTENT:
@@ -1586,10 +1607,10 @@ bool CPVRGUIInfo::GetListItemAndPlayerBool(const CFileItem* item,
     case VIDEOPLAYER_CAN_RESUME_LIVE_TV:
       if (item->IsPVRRecording())
       {
-        const std::shared_ptr<CPVRRecording> recording = item->GetPVRRecordingInfoTag();
-        const std::shared_ptr<CPVREpg> epg =
+        const std::shared_ptr<const CPVRRecording> recording = item->GetPVRRecordingInfoTag();
+        const std::shared_ptr<const CPVREpg> epg =
             recording->Channel() ? recording->Channel()->GetEPG() : nullptr;
-        const std::shared_ptr<CPVREpgInfoTag> epgTag =
+        const std::shared_ptr<const CPVREpgInfoTag> epgTag =
             CServiceBroker::GetPVRManager().EpgContainer().GetTagById(epg,
                                                                       recording->BroadcastUid());
         bValue = (epgTag && epgTag->IsActive());
@@ -1691,7 +1712,7 @@ bool CPVRGUIInfo::GetRadioRDSBool(const CFileItem* item, const CGUIInfo& info, b
   if (!item->HasPVRChannelInfoTag())
     return false;
 
-  const std::shared_ptr<CPVRRadioRDSInfoTag> tag =
+  const std::shared_ptr<const CPVRRadioRDSInfoTag> tag =
       item->GetPVRChannelInfoTag()->GetRadioRDSInfoTag();
   if (tag)
   {
@@ -1868,7 +1889,7 @@ void CPVRGUIInfo::CharInfoEncryption(std::string& strValue) const
   }
   else
   {
-    const std::shared_ptr<CPVRChannel> channel =
+    const std::shared_ptr<const CPVRChannel> channel =
         CServiceBroker::GetPVRManager().PlaybackState()->GetPlayingChannel();
     if (channel)
     {

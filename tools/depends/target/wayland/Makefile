@@ -1,35 +1,51 @@
-include ../../Makefile.include
-DEPS =../../Makefile.include Makefile ../../download-files.include
+include ../../Makefile.include WAYLAND-VERSION ../../download-files.include
+DEPS =../../Makefile.include Makefile WAYLAND-VERSION  ../../download-files.include
 
-# lib name, version
-LIBNAME=wayland
-VERSION=1.17.0
-SOURCE=$(LIBNAME)-$(VERSION)
-ARCHIVE=$(SOURCE).tar.xz
-SHA512=c5051aab5ff078b368c196ecfedb33ccd961265bb914845d7ed81de361bb86ae18299575baa6c4eceb0d82cf8b495e8293f31b51d1cbc05d84af0a199ab3f946
-include ../../download-files.include
+MESON_BUILD_TYPE=release
+
+ifeq ($(DEBUG_BUILD), yes)
+  MESON_BUILD_TYPE=debug
+endif
 
 # configuration settings
-CONFIGURE=./configure --prefix=$(PREFIX) --with-host-scanner --disable-documentation --disable-dtd-validation
+CONFIGURE = $(NATIVEPREFIX)/bin/python3 $(NATIVEPREFIX)/bin/meson setup \
+	--prefix $(PREFIX) \
+	--libdir $(PREFIX)/lib \
+	--buildtype=$(MESON_BUILD_TYPE) \
+	-Dscanner=false \
+	-Dtests=false \
+	-Ddocumentation=false \
+	-Ddtd_validation=false
 
-LIBDYLIB=$(PLATFORM)/.libs/libwayland-client.la
+ifeq ($(CROSS_COMPILING), yes)
+	CONFIGURE += --cross-file $(PREFIX)/share/cross-file.meson
+endif
+
+export CC
+export CXX
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
+
+export PKG_CONFIG_LIBDIR=$(PREFIX)/lib/pkgconfig
 
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
-	cd $(PLATFORM); $(CONFIGURE)
+	cd $(PLATFORM); rm -rf build; mkdir -p build
+	# symlink native wayland scanner pkg-config to allow meson to find
+	rm -f $(PREFIX)/lib/pkgconfig/wayland-scanner.pc
+	ln -sf $(NATIVEPREFIX)/lib/pkgconfig/wayland-scanner.pc $(PREFIX)/lib/pkgconfig/wayland-scanner.pc
+	cd $(PLATFORM); $(CONFIGURE) . build
 
-$(LIBDYLIB): $(PLATFORM)
-	$(MAKE) -C $(PLATFORM)
+.installed-$(PLATFORM): $(PLATFORM)
+	cd $(PLATFORM)/build; $(NATIVEPREFIX)/bin/ninja -v
+	cd $(PLATFORM)/build; $(NATIVEPREFIX)/bin/ninja -v install
 
-.installed-$(PLATFORM): $(LIBDYLIB)
-	$(MAKE) -C $(PLATFORM) install
-
-	# remove the target wayland scanner from the sysroot. We only want to use the native one
-	rm -f $(PREFIX)/bin/wayland-scanner
+	# symlink native wayland scanner
 	rm -f $(PREFIX)/lib/pkgconfig/wayland-scanner.pc
 	ln -sf $(NATIVEPREFIX)/lib/pkgconfig/wayland-scanner.pc $(PREFIX)/lib/pkgconfig/wayland-scanner.pc
 	touch $@

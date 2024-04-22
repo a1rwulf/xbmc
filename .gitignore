@@ -113,8 +113,6 @@ cmake_install.cmake
 /addons/packages
 /addons/skin.estuary/media/Makefile
 /addons/skin.estuary/media/*.xbt
-/addons/skin.estouchy/media/Makefile
-/addons/skin.estouchy/media/Textures.xbt
 /addons/skin.pm3-hd/media/Textures.xbt
 /addons/audioencoder.*
 /addons/pvr.*
@@ -264,7 +262,7 @@ cmake_install.cmake
 /tools/depends/native/JsonSchemaBuilder/bin/
 /tools/depends/native/TexturePacker/bin/
 /tools/depends/target/ffmpeg/.ffmpeg-installed
-/tools/depends/target/ffmpeg/ffmpeg-*-*.tar.gz
+/tools/depends/target/ffmpeg/ffmpeg-*.tar.gz*
 /tools/depends/target/ffmpeg/ffmpeg-*-*/
 /tools/depends/target/ffmpeg/ffmpeg-install/
 /tools/depends/target/ffmpeg/ffmpeg-release/

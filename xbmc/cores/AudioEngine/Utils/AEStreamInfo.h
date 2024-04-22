@@ -22,7 +22,7 @@ extern "C" {
 class CAEStreamInfo
 {
 public:
-  double GetDuration(bool paPlayer = false) const;
+  double GetDuration() const;
   bool operator==(const CAEStreamInfo& info) const;
 
   enum DataType
@@ -45,7 +45,7 @@ public:
   bool m_dataIsLE = true;
   unsigned int m_dtsPeriod = 0;
   unsigned int m_repeat = 0;
-  unsigned int m_ac3FrameSize = 0;
+  unsigned int m_frameSize = 0;
 };
 
 class CAEStreamParser

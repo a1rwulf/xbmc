@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Team Kodi
+ *  Copyright (C) 2014-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,19 +12,21 @@
 #include "games/controllers/Controller.h"
 #include "games/controllers/ControllerManager.h"
 #include "games/controllers/input/PhysicalFeature.h"
-#include "input/IKeymap.h"
 #include "input/InputTranslator.h"
-#include "input/Key.h"
+#include "input/actions/ActionIDs.h"
 #include "input/joysticks/DriverPrimitive.h"
 #include "input/joysticks/JoystickTranslator.h"
 #include "input/joysticks/JoystickUtils.h"
 #include "input/joysticks/interfaces/IButtonMap.h"
 #include "input/joysticks/interfaces/IButtonMapper.h"
+#include "input/keyboard/Key.h"
+#include "input/keymaps/interfaces/IKeymap.h"
 #include "utils/log.h"
 
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+#include <memory>
 
 using namespace KODI;
 using namespace JOYSTICK;
@@ -81,14 +83,7 @@ bool CHatDetector::OnMotion(HAT_STATE state)
 CAxisDetector::CAxisDetector(CButtonMapping* buttonMapping,
                              unsigned int axisIndex,
                              const AxisConfiguration& config)
-  : CPrimitiveDetector(buttonMapping),
-    m_axisIndex(axisIndex),
-    m_config(config),
-    m_state(AXIS_STATE::INACTIVE),
-    m_type(AXIS_TYPE::UNKNOWN),
-    m_initialPositionKnown(false),
-    m_initialPosition(0.0f),
-    m_initialPositionChanged(false)
+  : CPrimitiveDetector(buttonMapping), m_axisIndex(axisIndex), m_config(config)
 {
 }
 
@@ -318,8 +313,10 @@ KODI::INPUT::INTERCARDINAL_DIRECTION CPointerDetector::GetPointerDirection(int x
 
 // --- CButtonMapping ----------------------------------------------------------
 
-CButtonMapping::CButtonMapping(IButtonMapper* buttonMapper, IButtonMap* buttonMap, IKeymap* keymap)
-  : m_buttonMapper(buttonMapper), m_buttonMap(buttonMap), m_keymap(keymap), m_frameCount(0)
+CButtonMapping::CButtonMapping(IButtonMapper* buttonMapper,
+                               IButtonMap* buttonMap,
+                               KEYMAP::IKeymap* keymap)
+  : m_buttonMapper(buttonMapper), m_buttonMap(buttonMap), m_keymap(keymap)
 {
   assert(m_buttonMapper != nullptr);
   assert(m_buttonMap != nullptr);
@@ -578,7 +575,7 @@ CMouseButtonDetector& CButtonMapping::GetMouseButton(MOUSE::BUTTON_ID buttonInde
 CPointerDetector& CButtonMapping::GetPointer()
 {
   if (!m_pointer)
-    m_pointer.reset(new CPointerDetector(this));
+    m_pointer = std::make_unique<CPointerDetector>(this);
 
   return *m_pointer;
 }

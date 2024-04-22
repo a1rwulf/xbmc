@@ -37,9 +37,11 @@
 #include "utils/Variant.h"
 #include "utils/log.h"
 #include "video/VideoDatabase.h"
+#include "video/VideoFileItemClassify.h"
 
 using namespace PLAYLIST;
 using namespace KODI::MESSAGING;
+using namespace KODI::VIDEO;
 
 CPlayListPlayer::CPlayListPlayer(void)
 {
@@ -115,7 +117,7 @@ bool CPlayListPlayer::OnMessage(CGUIMessage &message)
   return false;
 }
 
-int CPlayListPlayer::GetNextSong(int offset) const
+int CPlayListPlayer::GetNextItemIdx(int offset) const
 {
   if (m_iCurrentPlayList == TYPE_NONE)
     return -1;
@@ -141,7 +143,7 @@ int CPlayListPlayer::GetNextSong(int offset) const
   return song;
 }
 
-int CPlayListPlayer::GetNextSong()
+int CPlayListPlayer::GetNextItemIdx()
 {
   if (m_iCurrentPlayList == TYPE_NONE)
     return -1;
@@ -182,7 +184,7 @@ int CPlayListPlayer::GetNextSong()
 
 bool CPlayListPlayer::PlayNext(int offset, bool bAutoPlay)
 {
-  int iSong = GetNextSong(offset);
+  int iSong = GetNextItemIdx(offset);
   const CPlayList& playlist = GetPlaylist(m_iCurrentPlayList);
 
   if ((iSong < 0) || (iSong >= playlist.size()) || (playlist.GetPlayable() <= 0))
@@ -197,7 +199,11 @@ bool CPlayListPlayer::PlayNext(int offset, bool bAutoPlay)
     return false;
   }
 
-  return Play(iSong, "", false);
+  const auto& components = CServiceBroker::GetAppComponents();
+  const auto appPlayer = components.GetComponent<CApplicationPlayer>();
+  const std::string player = appPlayer->GetName();
+
+  return Play(iSong, player, false);
 }
 
 bool CPlayListPlayer::PlayPrevious()
@@ -241,7 +247,7 @@ bool CPlayListPlayer::Play()
   return Play(0, "");
 }
 
-bool CPlayListPlayer::PlaySongId(int songId)
+bool CPlayListPlayer::PlayItemIdx(int itemIdx)
 {
   if (m_iCurrentPlayList == TYPE_NONE)
     return false;
@@ -252,7 +258,8 @@ bool CPlayListPlayer::PlaySongId(int songId)
 
   for (int i = 0; i < playlist.size(); i++)
   {
-    if (playlist[i]->HasMusicInfoTag() && playlist[i]->GetMusicInfoTag()->GetDatabaseId() == songId)
+    if (playlist[i]->HasMusicInfoTag() &&
+        playlist[i]->GetMusicInfoTag()->GetDatabaseId() == itemIdx)
       return Play(i, "");
   }
   return Play();
@@ -261,23 +268,33 @@ bool CPlayListPlayer::PlaySongId(int songId)
 bool CPlayListPlayer::Play(const CFileItemPtr& pItem, const std::string& player)
 {
   Id playlistId;
-  bool isVideo{pItem->IsVideo()};
+  bool isVideo{IsVideo(*pItem)};
   bool isAudio{pItem->IsAudio()};
-  if (isVideo && isAudio && pItem->HasProperty("playlist_type_hint"))
+
+  if (isAudio && !isVideo)
+    playlistId = TYPE_MUSIC;
+  else if (isVideo && !isAudio)
+    playlistId = TYPE_VIDEO;
+  else if (pItem->HasProperty("playlist_type_hint"))
   {
-    // If an extension is set in both audio / video lists (e.g. playlist .strm),
-    // is not possible detect the type of playlist then we rely on the hint
+    // There are two main cases that can fall here:
+    // - If an extension is set on both audio / video extension lists example .strm
+    //   see GetFileExtensionProvider() -> GetVideoExtensions() / GetAudioExtensions()
+    //   When you play the .strm containing single path, cause that
+    //   IsVideo() and IsAudio() methods both return true
+    //
+    // - When you play a playlist (e.g. .m3u / .strm) containing multiple paths,
+    //   and the path played is generic (e.g.without extension) and have no properties
+    //   to detect the media type, IsVideo() / IsAudio() both return false
+    //
+    // for these cases the type is unknown so we rely on the hint
     playlistId = pItem->GetProperty("playlist_type_hint").asInteger32(TYPE_NONE);
   }
-  else if (isAudio)
-    playlistId = TYPE_MUSIC;
-  else if (isVideo)
-    playlistId = TYPE_VIDEO;
   else
   {
-    CLog::Log(
-        LOGWARNING,
-        "Playlist Player: ListItem type must be audio or video, use ListItem::setInfo to specify!");
+    CLog::LogF(LOGWARNING, "ListItem type must be audio or video type. The type can be specified "
+                           "by using ListItem::getVideoInfoTag or ListItem::getMusicInfoTag, in "
+                           "the case of playlist entries by adding #KODIPROP mimetype value.");
     return false;
   }
 
@@ -316,7 +333,7 @@ bool CPlayListPlayer::Play(int iSong,
 
   m_iCurrentSong = iSong;
   CFileItemPtr item = playlist[m_iCurrentSong];
-  if (item->IsVideoDb() && !item->HasVideoInfoTag())
+  if (IsVideoDb(*item) && !item->HasVideoInfoTag())
     *(item->GetVideoInfoTag()) = XFILE::CVideoDatabaseFile::GetVideoTag(CURL(item->GetDynPath()));
 
   playlist.SetPlayed(true);
@@ -393,13 +410,13 @@ bool CPlayListPlayer::Play(int iSong,
   return true;
 }
 
-void CPlayListPlayer::SetCurrentSong(int iSong)
+void CPlayListPlayer::SetCurrentItemIdx(int iSong)
 {
   if (iSong >= -1 && iSong < GetPlaylist(m_iCurrentPlayList).size())
     m_iCurrentSong = iSong;
 }
 
-int CPlayListPlayer::GetCurrentSong() const
+int CPlayListPlayer::GetCurrentItemIdx() const
 {
   return m_iCurrentSong;
 }
@@ -679,6 +696,10 @@ void CPlayListPlayer::Add(Id playlistId, const CFileItemPtr& pItem)
   list.Add(pItem);
   if (list.IsShuffled())
     ReShuffle(playlistId, iSize);
+
+  // its likely that the playlist changed
+  CGUIMessage msg(GUI_MSG_PLAYLIST_CHANGED, 0, 0);
+  CServiceBroker::GetGUI()->GetWindowManager().SendMessage(msg);
 }
 
 void CPlayListPlayer::Add(Id playlistId, const CFileItemList& items)
@@ -827,11 +848,11 @@ void PLAYLIST::CPlayListPlayer::OnApplicationMessage(KODI::MESSAGING::ThreadMess
       Play();
     break;
 
-  case TMSG_PLAYLISTPLAYER_PLAY_SONG_ID:
+  case TMSG_PLAYLISTPLAYER_PLAY_ITEM_ID:
     if (pMsg->param1 != -1)
     {
       bool *result = (bool*)pMsg->lpVoid;
-      *result = PlaySongId(pMsg->param1);
+      *result = PlayItemIdx(pMsg->param1);
     }
     else
       Play();
@@ -930,7 +951,7 @@ void PLAYLIST::CPlayListPlayer::OnApplicationMessage(KODI::MESSAGING::ThreadMess
         Id playlistId = TYPE_MUSIC;
         for (int i = 0; i < list->Size(); i++)
         {
-          if ((*list)[i]->IsVideo())
+          if (IsVideo(*list->Get(i)))
           {
             playlistId = TYPE_VIDEO;
             break;
@@ -948,7 +969,7 @@ void PLAYLIST::CPlayListPlayer::OnApplicationMessage(KODI::MESSAGING::ThreadMess
           {
             return;
           }
-          if (item->IsAudio() || item->IsVideo())
+          if (item->IsAudio() || IsVideo(*item))
             Play(item, pMsg->strParam);
           else
             g_application.PlayMedia(*item, pMsg->strParam, playlistId);

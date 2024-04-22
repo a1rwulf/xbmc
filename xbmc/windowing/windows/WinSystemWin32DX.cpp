@@ -25,11 +25,6 @@
 #ifndef _M_X64
 #include "utils/SystemInfo.h"
 #endif
-#if _DEBUG
-#pragma comment(lib, "detoursd.lib")
-#else
-#pragma comment(lib, "detours.lib")
-#endif
 #pragma comment(lib, "dxgi.lib")
 #include <windows.h>
 #include <winnt.h>
@@ -444,4 +439,9 @@ void CWinSystemWin32DX::SetHdrColorSpace(const DXGI_COLOR_SPACE_TYPE colorSpace)
 DEBUG_INFO_RENDER CWinSystemWin32DX::GetDebugInfo()
 {
   return m_deviceResources->GetDebugInfo();
+}
+
+bool CWinSystemWin32DX::SupportsVideoSuperResolution()
+{
+  return m_deviceResources->IsSuperResolutionSupported();
 }

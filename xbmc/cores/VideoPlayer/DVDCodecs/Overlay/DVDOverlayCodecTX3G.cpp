@@ -81,28 +81,14 @@ CDVDOverlayCodecTX3G::CDVDOverlayCodecTX3G() : CDVDOverlayCodec("TX3G Subtitle D
 {
 }
 
-CDVDOverlayCodecTX3G::~CDVDOverlayCodecTX3G()
-{
-  Dispose();
-}
-
 bool CDVDOverlayCodecTX3G::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options)
 {
   if (hints.codec != AV_CODEC_ID_MOV_TEXT)
     return false;
 
-  Dispose();
+  m_pOverlay.reset();
 
   return Initialize();
-}
-
-void CDVDOverlayCodecTX3G::Dispose()
-{
-  if (m_pOverlay)
-  {
-    m_pOverlay->Release();
-    m_pOverlay = nullptr;
-  }
 }
 
 OverlayMessage CDVDOverlayCodecTX3G::Decode(DemuxPacket* pPacket)
@@ -168,7 +154,8 @@ OverlayMessage CDVDOverlayCodecTX3G::Decode(DemuxPacket* pPacket)
       // Get the data of each style record
       // Each style is ordered by starting character offset, and the starting
       // offset of one style record shall be greater than or equal to the
-      // ending character offset of the preceding record.
+      // ending character offset of the preceding record,
+      // styles records shall not overlap their character ranges.
       for (int i = 0; i < styleCount; i++)
       {
         if (sampleData.CharsLeft() < 12)
@@ -192,6 +179,10 @@ OverlayMessage CDVDOverlayCodecTX3G::Decode(DemuxPacket* pPacket)
           styleRec.startChar = textLength;
         if (styleRec.endChar > textLength)
           styleRec.endChar = textLength;
+
+        // Skip zero-length style
+        if (styleRec.startChar == styleRec.endChar)
+          continue;
 
         styleRecords.emplace_back(styleRec);
       }
@@ -219,17 +210,21 @@ OverlayMessage CDVDOverlayCodecTX3G::Decode(DemuxPacket* pPacket)
       continue; // ...without incrementing 'charIndex'
     }
 
-    if (styleIndex < styleRecords.size())
+    // Go through styles, a style can end where another one begins
+    while (styleIndex < styleRecords.size())
     {
-      if (styleRecords[styleIndex].endChar == charIndex)
+      if (styleRecords[styleIndex].startChar == charIndex)
+      {
+        ConvertStyleToTags(strUTF8, styleRecords[styleIndex], false);
+        break;
+      }
+      else if (styleRecords[styleIndex].endChar == charIndex)
       {
         ConvertStyleToTags(strUTF8, styleRecords[styleIndex], true);
         styleIndex++;
       }
-      if (styleRecords[styleIndex].startChar == charIndex)
-      {
-        ConvertStyleToTags(strUTF8, styleRecords[styleIndex], false);
-      }
+      else
+        break;
     }
 
     if (*curPos == '{') // erase unsupported tags
@@ -262,25 +257,19 @@ void CDVDOverlayCodecTX3G::PostProcess(std::string& text)
 
 void CDVDOverlayCodecTX3G::Reset()
 {
-  Dispose();
   Flush();
 }
 
 void CDVDOverlayCodecTX3G::Flush()
 {
-  if (m_pOverlay)
-  {
-    m_pOverlay->Release();
-    m_pOverlay = nullptr;
-  }
-
+  m_pOverlay.reset();
   FlushSubtitles();
 }
 
-CDVDOverlay* CDVDOverlayCodecTX3G::GetOverlay()
+std::shared_ptr<CDVDOverlay> CDVDOverlayCodecTX3G::GetOverlay()
 {
   if (m_pOverlay)
     return nullptr;
   m_pOverlay = CreateOverlay();
-  return m_pOverlay->Acquire();
+  return m_pOverlay;
 }

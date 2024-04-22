@@ -17,6 +17,7 @@
 #include "threads/Thread.h"
 #include "utils/ActorProtocol.h"
 
+#include <memory>
 #include <utility>
 
 class CAEBitstreamPacker;
@@ -92,14 +93,18 @@ class CActiveAESink : private CThread
 {
 public:
   explicit CActiveAESink(CEvent *inMsgEvent);
+  ~CActiveAESink();
+
   void EnumerateSinkList(bool force, std::string driver);
   void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
+  std::string ValidateOuputDevice(const std::string& device, bool passthrough) const;
   void Start();
   void Dispose();
   AEDeviceType GetDeviceType(const std::string &device);
   bool HasPassthroughDevice();
   bool SupportsFormat(const std::string &device, AEAudioFormat &format);
   bool DeviceExist(std::string driver, const std::string& device);
+  bool NeedIecPack() const { return m_needIecPack; }
   CSinkControlProtocol m_controlPort;
   CSinkDataProtocol m_dataPort;
 
@@ -123,7 +128,7 @@ protected:
   int m_state;
   bool m_bStateMachineSelfTrigger;
   std::chrono::milliseconds m_extTimeout;
-  std::chrono::milliseconds m_silenceTimeOut;
+  std::chrono::minutes m_silenceTimeOut{std::chrono::minutes::zero()};
   bool m_extError;
   std::chrono::milliseconds m_extSilenceTimeout;
   bool m_extAppFocused;
@@ -144,13 +149,13 @@ protected:
   std::string m_deviceFriendlyName;
   std::string m_device;
   std::vector<AE::AESinkInfo> m_sinkInfoList;
-  IAESink *m_sink;
+  std::unique_ptr<IAESink> m_sink;
   AEAudioFormat m_sinkFormat, m_requestedFormat;
   CEngineStats *m_stats;
   float m_volume;
   int m_sinkLatency;
-  CAEBitstreamPacker *m_packer;
-  bool m_needIecPack;
+  std::unique_ptr<CAEBitstreamPacker> m_packer;
+  bool m_needIecPack{false};
   bool m_streamNoise;
 };
 

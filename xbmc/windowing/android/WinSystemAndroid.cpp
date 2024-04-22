@@ -24,7 +24,6 @@
 #include "settings/DisplaySettings.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
-#include "system_egl.h"
 #include "utils/HDRCapabilities.h"
 #include "utils/log.h"
 #include "windowing/GraphicContext.h"
@@ -35,8 +34,11 @@
 #include "platform/android/media/drm/MediaDrmCryptoSession.h"
 
 #include <float.h>
+#include <memory>
 #include <mutex>
 #include <string.h>
+
+#include "system_egl.h"
 
 #include <EGL/eglplatform.h>
 
@@ -54,7 +56,7 @@ CWinSystemAndroid::CWinSystemAndroid()
 
   m_android = nullptr;
 
-  m_winEvents.reset(new CWinEventsAndroid());
+  m_winEvents = std::make_unique<CWinEventsAndroid>();
 }
 
 CWinSystemAndroid::~CWinSystemAndroid()
@@ -103,34 +105,19 @@ bool CWinSystemAndroid::DestroyWindowSystem()
 }
 
 bool CWinSystemAndroid::CreateNewWindow(const std::string& name,
-                                    bool fullScreen,
-                                    RESOLUTION_INFO& res)
+                                        bool fullScreen,
+                                        RESOLUTION_INFO& res)
 {
-  RESOLUTION_INFO current_resolution;
-  current_resolution.iWidth = current_resolution.iHeight = 0;
-  RENDER_STEREO_MODE stereo_mode = CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode();
-
-  m_nWidth        = res.iWidth;
-  m_nHeight       = res.iHeight;
-  m_displayWidth  = res.iScreenWidth;
+  m_nWidth = res.iWidth;
+  m_nHeight = res.iHeight;
+  m_displayWidth = res.iScreenWidth;
   m_displayHeight = res.iScreenHeight;
-  m_fRefreshRate  = res.fRefreshRate;
-
-  if ((m_bWindowCreated && m_android->GetNativeResolution(&current_resolution)) &&
-    current_resolution.iWidth == res.iWidth && current_resolution.iHeight == res.iHeight &&
-    current_resolution.iScreenWidth == res.iScreenWidth && current_resolution.iScreenHeight == res.iScreenHeight &&
-    m_bFullScreen == fullScreen && current_resolution.fRefreshRate == res.fRefreshRate &&
-    (current_resolution.dwFlags & D3DPRESENTFLAG_MODEMASK) == (res.dwFlags & D3DPRESENTFLAG_MODEMASK) &&
-    m_stereo_mode == stereo_mode)
-  {
-    CLog::Log(LOGDEBUG, "CWinSystemAndroid::CreateNewWindow: No need to create a new window");
-    return true;
-  }
+  m_fRefreshRate = res.fRefreshRate;
 
   m_dispResetTimer->Stop();
   m_HdmiModeTriggered = false;
 
-  m_stereo_mode = stereo_mode;
+  m_stereo_mode = CServiceBroker::GetWinSystem()->GetGfxContext().GetStereoMode();
   m_bFullScreen = fullScreen;
 
   m_nativeWindow = CXBMCApp::Get().GetNativeWindow(2000);
@@ -142,6 +129,7 @@ bool CWinSystemAndroid::CreateNewWindow(const std::string& name,
 
   m_android->SetNativeResolution(res);
 
+  m_bWindowCreated = true;
   return true;
 }
 
@@ -278,6 +266,11 @@ void CWinSystemAndroid::UpdateDisplayModes()
   }
 }
 
+bool CWinSystemAndroid::Minimize()
+{
+  return CXBMCApp::Get().moveTaskToBack(true);
+}
+
 bool CWinSystemAndroid::Hide()
 {
   return false;
@@ -328,7 +321,16 @@ CHDRCapabilities CWinSystemAndroid::GetDisplayHDRCapabilities() const
   return CAndroidUtils::GetDisplayHDRCapabilities();
 }
 
+<<<<<<< HEAD
 void CWinSystemAndroid::SetRefreshRate(double refreshRate)
 {
   CAndroidUtils::SetRefreshRate(refreshRate);
+=======
+float CWinSystemAndroid::GetGuiSdrPeakLuminance() const
+{
+  const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+  const int guiSdrPeak = settings->GetInt(CSettings::SETTING_VIDEOSCREEN_GUISDRPEAKLUMINANCE);
+
+  return ((0.7f * guiSdrPeak + 30.0f) / 100.0f);
+>>>>>>> c48c9e6fab75a437bbdbbdc330bd25d640d195f8
 }

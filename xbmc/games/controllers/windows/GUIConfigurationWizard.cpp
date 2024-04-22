@@ -13,12 +13,14 @@
 #include "games/controllers/dialogs/GUIDialogAxisDetection.h"
 #include "games/controllers/guicontrols/GUIFeatureButton.h"
 #include "games/controllers/input/PhysicalFeature.h"
-#include "input/IKeymap.h"
 #include "input/InputManager.h"
+#include "input/actions/ActionIDs.h"
 #include "input/joysticks/JoystickUtils.h"
 #include "input/joysticks/interfaces/IButtonMap.h"
 #include "input/joysticks/interfaces/IButtonMapCallback.h"
-#include "input/keyboard/KeymapActionMap.h"
+#include "input/keyboard/KeyboardTranslator.h"
+#include "input/keymaps/interfaces/IKeymap.h"
+#include "input/keymaps/keyboard/KeyboardActionMap.h"
 #include "peripherals/Peripherals.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
@@ -41,7 +43,7 @@ constexpr auto POST_MAPPING_WAIT_TIME_MS = 5000ms;
 } // namespace
 
 CGUIConfigurationWizard::CGUIConfigurationWizard()
-  : CThread("GUIConfigurationWizard"), m_actionMap(new KEYBOARD::CKeymapActionMap)
+  : CThread("GUIConfigurationWizard"), m_actionMap(new KEYMAP::CKeyboardActionMap)
 {
   InitializeState();
 }
@@ -109,7 +111,7 @@ bool CGUIConfigurationWizard::Abort(bool bWait /* = true */)
 void CGUIConfigurationWizard::RegisterKey(const CPhysicalFeature& key)
 {
   if (key.Keycode() != XBMCK_UNKNOWN)
-    m_keyMap[key.Keycode()] = key;
+    m_keyMap[KEYBOARD::CKeyboardTranslator::TranslateKeycode(key.Keycode())] = key;
 }
 
 void CGUIConfigurationWizard::UnregisterKeys()
@@ -204,7 +206,7 @@ void CGUIConfigurationWizard::Process(void)
 }
 
 bool CGUIConfigurationWizard::MapPrimitive(JOYSTICK::IButtonMap* buttonMap,
-                                           IKeymap* keymap,
+                                           KEYMAP::IKeymap* keymap,
                                            const JOYSTICK::CDriverPrimitive& primitive)
 {
   using namespace INPUT;
@@ -265,7 +267,8 @@ bool CGUIConfigurationWizard::MapPrimitive(JOYSTICK::IButtonMap* buttonMap,
       {
         if (primitive.Type() == PRIMITIVE_TYPE::KEY)
         {
-          auto it = m_keyMap.find(primitive.Keycode());
+          auto it =
+              m_keyMap.find(KEYBOARD::CKeyboardTranslator::TranslateKeycode(primitive.Keycode()));
           if (it != m_keyMap.end())
           {
             const CPhysicalFeature& key = it->second;

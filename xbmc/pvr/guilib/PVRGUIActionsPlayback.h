@@ -10,6 +10,7 @@
 
 #include "pvr/IPVRComponent.h"
 #include "pvr/settings/PVRSettings.h"
+#include "utils/ContentUtils.h"
 
 #include <string>
 
@@ -24,21 +25,11 @@ enum PlaybackType
   PlaybackTypeRadio
 };
 
-class CPVRStreamProperties;
-
 class CPVRGUIActionsPlayback : public IPVRComponent
 {
 public:
   CPVRGUIActionsPlayback();
   ~CPVRGUIActionsPlayback() override = default;
-
-  /*!
-   * @brief Get a localized resume play label, if the given item can be resumed.
-   * @param item containing a recording or an epg tag.
-   * @return the localized resume play label that can be used for instance as context menu item
-   * label or an empty string if resume is not possible.
-   */
-  std::string GetResumeLabel(const CFileItem& item) const;
 
   /*!
    * @brief Resume a previously not completely played recording.
@@ -58,11 +49,22 @@ public:
   bool PlayRecording(const CFileItem& item, bool bCheckResume) const;
 
   /*!
-   * @brief Play EPG tag.
-   * @param item containing an epg tag.
+   * @brief Play a recording folder.
+   * @param item containing a recording folder.
+   * @param bCheckResume controls resume check.
    * @return true on success, false otherwise.
    */
-  bool PlayEpgTag(const CFileItem& item) const;
+  bool PlayRecordingFolder(const CFileItem& item, bool bCheckResume) const;
+
+  /*!
+   * @brief Play EPG tag.
+   * @param item containing an epg tag.
+   * @param mode playback mode.
+   * @return true on success, false otherwise.
+   */
+  bool PlayEpgTag(
+      const CFileItem& item,
+      ContentUtils::PlayMode mode = ContentUtils::PlayMode::CHECK_AUTO_PLAY_NEXT_ITEM) const;
 
   /*!
    * @brief Switch channel.
@@ -127,16 +129,6 @@ private:
    * @param bFullscreen switch to fullscreen or set windowed playback.
    */
   void CheckAndSwitchToFullscreen(bool bFullscreen) const;
-
-  /*!
-   * @brief Start playback of the given item.
-   * @param bFullscreen start playback fullscreen or not.
-   * @param epgProps properties to be used instead of calling to the client if supplied.
-   * @param item containing a channel or a recording.
-   */
-  void StartPlayback(CFileItem* item,
-                     bool bFullscreen,
-                     const CPVRStreamProperties* epgProps = nullptr) const;
 
   CPVRSettings m_settings;
 };

@@ -18,6 +18,8 @@
 #include "cores/VideoPlayer/Interface/TimingConstants.h"
 #include "utils/StringUtils.h"
 
+#include <memory>
+
 CDVDDemuxVobsub::CDVDDemuxVobsub() = default;
 
 CDVDDemuxVobsub::~CDVDDemuxVobsub()
@@ -64,7 +66,7 @@ bool CDVDDemuxVobsub::Open(const std::string& filename, int source, const std::s
   if (!m_Input || !m_Input->Open())
     return false;
 
-  m_Demuxer.reset(new CDVDDemuxFFmpeg());
+  m_Demuxer = std::make_unique<CDVDDemuxFFmpeg>();
   if (!m_Demuxer->Open(m_Input, false))
     return false;
 
@@ -113,9 +115,8 @@ bool CDVDDemuxVobsub::Open(const std::string& filename, int source, const std::s
 
   for(unsigned i=0;i<m_Streams.size();i++)
   {
-    m_Streams[i]->ExtraSize = state.extra.length()+1;
-    m_Streams[i]->ExtraData = new uint8_t[m_Streams[i]->ExtraSize];
-    strcpy((char*)m_Streams[i]->ExtraData, state.extra.c_str());
+    m_Streams[i]->extraData =
+        FFmpegExtraData(reinterpret_cast<uint8_t*>(state.extra.data()), state.extra.length() + 1);
   }
 
   return true;

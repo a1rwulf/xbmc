@@ -1,10 +1,5 @@
 /*
- *      SDL - Simple DirectMedia Layer
- *  Copyright (C) 1997-2009 Sam Lantinga
- *      Sam Lantinga
- *      slouken@libsdl.org
- *
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2023 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,29 +8,32 @@
 
 #pragma once
 
-/* Include file for SDL event handling */
-
 #include "Resolution.h"
-#include "input/XBMC_keyboard.h"
+#include "input/keyboard/XBMC_keyboard.h"
 
 /* Event enumerations */
-typedef enum {
-       XBMC_NOEVENT = 0,        /* Unused (do not remove) */
-       XBMC_KEYDOWN,            /* Keys pressed */
-       XBMC_KEYUP,              /* Keys released */
-       XBMC_MOUSEMOTION,        /* Mouse moved */
-       XBMC_MOUSEBUTTONDOWN,    /* Mouse button pressed */
-       XBMC_MOUSEBUTTONUP,      /* Mouse button released */
-       XBMC_QUIT,               /* User-requested quit */
-       XBMC_VIDEORESIZE,        /* User resized video mode */
-       XBMC_VIDEOMOVE,          /* User moved the window */
-       XBMC_MODECHANGE,         /* Video mode must be changed */
-       XBMC_TOUCH,
-       XBMC_BUTTON,             /* Button (remote) pressed */
-       XBMC_SETFOCUS,
-       XBMC_USEREVENT,
+typedef enum
+{
+  XBMC_NOEVENT = 0, /* Unused (do not remove) */
+  XBMC_KEYDOWN, /* Keys pressed */
+  XBMC_KEYUP, /* Keys released */
+  XBMC_KEYCOMPOSING_COMPOSING, /* A composed key (sequence) is under processing */
+  XBMC_KEYCOMPOSING_FINISHED, /* A composed key is finished */
+  XBMC_KEYCOMPOSING_CANCELLED, /* A composed key is cancelled */
+  XBMC_MOUSEMOTION, /* Mouse moved */
+  XBMC_MOUSEBUTTONDOWN, /* Mouse button pressed */
+  XBMC_MOUSEBUTTONUP, /* Mouse button released */
+  XBMC_QUIT, /* User-requested quit */
+  XBMC_VIDEORESIZE, /* User resized video mode */
+  XBMC_SCREENCHANGE, /* Window moved to a different screen */
+  XBMC_VIDEOMOVE, /* User moved the window */
+  XBMC_MODECHANGE, /* Video mode must be changed */
+  XBMC_TOUCH,
+  XBMC_BUTTON, /* Button (remote) pressed */
+  XBMC_SETFOCUS,
+  XBMC_USEREVENT,
 
-       XBMC_MAXEVENT = 256      /* XBMC_EventType is represented as uchar */
+  XBMC_MAXEVENT = 256 /* XBMC_EventType is represented as uchar */
 } XBMC_EventType;
 
 /* Keyboard event structure */
@@ -67,6 +65,11 @@ typedef struct XBMC_MoveEvent {
 	int x;		/* New x position */
 	int y;		/* New y position */
 } XBMC_MoveEvent;
+
+typedef struct XBMC_ScreenChangeEvent
+{
+  unsigned int screenIdx; /* The screen index */
+} XBMC_ScreenChangeEvent;
 
 struct XBMC_ModeChangeEvent
 {
@@ -127,6 +130,7 @@ typedef struct XBMC_Event {
     XBMC_TouchEvent touch;
     XBMC_ButtonEvent keybutton;
     XBMC_SetFocusEvent focus;
+    XBMC_ScreenChangeEvent screen;
   };
 } XBMC_Event;
 

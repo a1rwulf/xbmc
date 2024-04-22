@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005-2018 Team Kodi
+ *  Copyright (C) 2005-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -1524,11 +1524,7 @@ bool CPeripheralCecAdapter::WriteLogicalAddresses(const cec_logical_addresses& a
 
 CPeripheralCecAdapterUpdateThread::CPeripheralCecAdapterUpdateThread(
     CPeripheralCecAdapter* adapter, libcec_configuration* configuration)
-  : CThread("CECAdapterUpdate"),
-    m_adapter(adapter),
-    m_configuration(*configuration),
-    m_bNextConfigurationScheduled(false),
-    m_bIsUpdating(true)
+  : CThread("CECAdapterUpdate"), m_adapter(adapter), m_configuration(*configuration)
 {
   m_nextConfiguration.Clear();
   m_event.Reset();

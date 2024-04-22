@@ -33,6 +33,7 @@
 
 #include <string.h>
 
+using namespace KODI;
 using namespace JSONRPC;
 
 bool CJSONRPC::m_initialized = false;
@@ -51,7 +52,7 @@ void CJSONRPC::Initialize()
   CJSONServiceDescription::AddEnum("Addon.Types", enumList);
 
   enumList.clear();
-  CActionTranslator::GetActions(enumList);
+  ACTION::CActionTranslator::GetActions(enumList);
   CJSONServiceDescription::AddEnum("Input.Action", enumList);
 
   enumList.clear();
@@ -377,6 +378,13 @@ void CJSONRPCUtils::NotifyItemUpdated()
   CGUIMessage message(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE,
                       CServiceBroker::GetGUI()->GetWindowManager().GetActiveWindow());
   CServiceBroker::GetGUI()->GetWindowManager().SendThreadMessage(message);
+}
+
+void CJSONRPCUtils::NotifyItemUpdated(const std::shared_ptr<CFileItem>& item)
+{
+  auto& wm = CServiceBroker::GetGUI()->GetWindowManager();
+  CGUIMessage message(GUI_MSG_NOTIFY_ALL, wm.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 0, item);
+  wm.SendThreadMessage(message);
 }
 
 void CJSONRPCUtils::NotifyItemUpdated(const CVideoInfoTag& info,

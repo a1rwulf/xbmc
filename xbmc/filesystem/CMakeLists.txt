@@ -131,7 +131,7 @@ if(ISO9660PP_FOUND)
                       ISO9660File.h)
 endif()
 
-if(UDFREAD_FOUND)
+if(TARGET udfread::udfread)
   list(APPEND SOURCES UDFBlockInput.cpp
                       UDFDirectory.cpp
                       UDFFile.cpp)
@@ -151,12 +151,14 @@ endif()
 
 if(ENABLE_OPTICAL)
   list(APPEND SOURCES CDDADirectory.cpp
-                      CDDAFile.cpp)
+                      CDDAFile.cpp
+                      DVDDirectory.cpp)
   list(APPEND HEADERS CDDADirectory.h
-                      CDDAFile.h)
+                      CDDAFile.h
+                      DVDDirectory.h)
 endif()
 
-if(NFS_FOUND)
+if(TARGET libnfs::nfs)
   list(APPEND SOURCES NFSDirectory.cpp
                       NFSFile.cpp)
   list(APPEND HEADERS NFSDirectory.h

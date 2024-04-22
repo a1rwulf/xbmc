@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016-2018 Team Kodi
+ *  Copyright (C) 2016-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -19,6 +19,8 @@ namespace KODI
 namespace JOYSTICK
 {
 /*!
+ * \ingroup joystick
+ *
  * \brief Hush!!!
  */
 class CJoystickEasterEgg : public IButtonSequence
@@ -39,7 +41,7 @@ private:
 
   static const std::map<std::string, std::vector<FeatureName>> m_sequence;
 
-  unsigned int m_state;
+  unsigned int m_state = 0;
 };
 } // namespace JOYSTICK
 } // namespace KODI

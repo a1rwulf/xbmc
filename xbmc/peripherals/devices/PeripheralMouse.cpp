@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -8,9 +8,9 @@
 
 #include "PeripheralMouse.h"
 
-#include "ServiceBroker.h"
 #include "games/GameServices.h"
 #include "games/controllers/Controller.h"
+#include "games/controllers/ControllerManager.h"
 #include "input/InputManager.h"
 #include "peripherals/Peripherals.h"
 
@@ -54,8 +54,6 @@ bool CPeripheralMouse::InitialiseFeature(const PeripheralFeature feature)
 void CPeripheralMouse::RegisterMouseDriverHandler(MOUSE::IMouseDriverHandler* handler,
                                                   bool bPromiscuous)
 {
-  using namespace KEYBOARD;
-
   std::unique_lock<CCriticalSection> lock(m_mutex);
 
   MouseHandle handle{handler, bPromiscuous};
@@ -76,8 +74,10 @@ void CPeripheralMouse::UnregisterMouseDriverHandler(MOUSE::IMouseDriverHandler* 
 
 GAME::ControllerPtr CPeripheralMouse::ControllerProfile() const
 {
-  GAME::CGameServices& gameServices = CServiceBroker::GetGameServices();
-  return gameServices.GetDefaultMouse();
+  if (m_controllerProfile)
+    return m_controllerProfile;
+
+  return m_manager.GetControllerProfiles().GetDefaultMouse();
 }
 
 bool CPeripheralMouse::OnPosition(int x, int y)

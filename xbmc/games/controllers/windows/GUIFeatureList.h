@@ -24,6 +24,9 @@ namespace KODI
 {
 namespace GAME
 {
+/*!
+ * \ingroup games
+ */
 class CGUIFeatureList : public IFeatureList
 {
 public:
@@ -63,10 +66,10 @@ private:
   // GUI stuff
   CGUIWindow* const m_window;
   unsigned int m_buttonCount = 0;
-  CGUIControlGroupList* m_guiList;
-  CGUIButtonControl* m_guiButtonTemplate;
-  CGUILabelControl* m_guiGroupTitle;
-  CGUIImage* m_guiFeatureSeparator;
+  CGUIControlGroupList* m_guiList = nullptr;
+  CGUIButtonControl* m_guiButtonTemplate = nullptr;
+  CGUILabelControl* m_guiGroupTitle = nullptr;
+  CGUIImage* m_guiFeatureSeparator = nullptr;
 
   // Game window stuff
   GameClientPtr m_gameClient;

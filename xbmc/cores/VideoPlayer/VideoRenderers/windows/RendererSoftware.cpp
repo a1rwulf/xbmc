@@ -39,13 +39,26 @@ void CRendererSoftware::GetWeight(std::map<RenderMethod, int>& weights, const Vi
     weights[RENDER_SW] = weight;
 }
 
+CRendererSoftware::CRendererSoftware(CVideoSettings& videoSettings) : CRendererBase(videoSettings)
+{
+  m_renderMethodName = "Software";
+}
+
 CRendererSoftware::~CRendererSoftware()
 {
+  if (m_srcFilter)
+  {
+    sws_freeFilter(m_srcFilter);
+    m_srcFilter = nullptr;
+  }
+
   if (m_sw_scale_ctx)
   {
     sws_freeContext(m_sw_scale_ctx);
     m_sw_scale_ctx = nullptr;
   }
+  if (m_restoreMultithreadProtectedOff)
+    DX::DeviceResources::Get()->SetMultithreadProtected(false);
 }
 
 bool CRendererSoftware::Configure(const VideoPicture& picture, float fps, unsigned orientation)
@@ -57,8 +70,11 @@ bool CRendererSoftware::Configure(const VideoPicture& picture, float fps, unsign
 
     m_format = picture.videoBuffer->GetFormat();
     if (m_format == AV_PIX_FMT_D3D11VA_VLD)
+    {
       m_format = GetAVFormat(GetDXGIFormat(picture));
-
+      if (!DX::DeviceResources::Get()->SetMultithreadProtected(true))
+        m_restoreMultithreadProtectedOff = true;
+    }
     return true;
   }
   return false;
@@ -77,12 +93,38 @@ void CRendererSoftware::RenderImpl(CD3DTexture& target, CRect& sourceRect, CPoin
     return;
 
   CRenderBuffer* buf = m_renderBuffers[m_iBufferIndex];
+  const AVPixelFormat dstFormat = (target.GetFormat() == DXGI_FORMAT_R10G10B10A2_UNORM)
+                                      ? AV_PIX_FMT_X2BGR10LE
+                                      : AV_PIX_FMT_BGRA;
+
+  const int swsFlags = SWS_BILINEAR | SWS_FULL_CHR_H_INT | SWS_PRINT_INFO;
+
+  // Known chroma interpolation problems of libswscale as of 7.1.100 / ffmpeg 6.0.1:
+  // - 8 bit source and destination: swscale uses a "special converter" limited to nearest
+  // neighbor for chroma. It's used when source size = dest size and filter lengths are 1.
+  // - AV_PIX_FMT_X2BGR10 destination: full chroma interpolation is not available and there is no
+  //  swscale API to retrieve the presence of support.
+  //
+  // - 10 bit source / 8 bit dest: "normal" scaler is used by default, with good results.
+  // For simplicity assume that av_format cannot change 8 > 10 bit mid-stream (perf impact not measurable)
+
+  if (!m_srcFilter && dstFormat == AV_PIX_FMT_BGRA &&
+      (buf->av_format == AV_PIX_FMT_YUV420P || buf->av_format == AV_PIX_FMT_NV12))
+  {
+    m_srcFilter = sws_getDefaultFilter(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+
+    sws_freeVec(m_srcFilter->lumH);
+    SwsVector* vec = sws_allocVec(3);
+    vec->coeff[0] = 0.0;
+    vec->coeff[1] = 1.0;
+    vec->coeff[2] = 0.0;
+    m_srcFilter->lumH = vec;
+  }
 
   // 1. convert yuv to rgb
-  m_sw_scale_ctx = sws_getCachedContext(m_sw_scale_ctx,
-    buf->GetWidth(), buf->GetHeight(), buf->av_format,
-    buf->GetWidth(), buf->GetHeight(), AV_PIX_FMT_BGRA,
-    SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+  m_sw_scale_ctx = sws_getCachedContext(m_sw_scale_ctx, buf->GetWidth(), buf->GetHeight(),
+                                        buf->av_format, buf->GetWidth(), buf->GetHeight(),
+                                        dstFormat, swsFlags, m_srcFilter, nullptr, nullptr);
 
   if (!m_sw_scale_ctx)
     return;

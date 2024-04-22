@@ -13,9 +13,7 @@
 
 #include <pipewire/thread-loop.h>
 
-namespace AE
-{
-namespace SINK
+namespace KODI
 {
 namespace PIPEWIRE
 {
@@ -31,8 +29,8 @@ public:
   bool Start();
   void Stop();
 
-  void Lock();
-  void Unlock();
+  void Lock() const;
+  void Unlock() const;
 
   int Wait(std::chrono::nanoseconds timeout);
   void Signal(bool accept);
@@ -46,6 +44,20 @@ private:
   std::unique_ptr<pw_thread_loop, PipewireThreadLoopDeleter> m_mainloop;
 };
 
+class CLoopLockGuard
+{
+public:
+  explicit CLoopLockGuard(const CPipewireThreadLoop& loop) : m_loop(loop) { m_loop.Lock(); }
+
+  ~CLoopLockGuard() { m_loop.Unlock(); }
+
+  CLoopLockGuard() = delete;
+  CLoopLockGuard(const CLoopLockGuard&) = delete;
+  CLoopLockGuard& operator=(const CLoopLockGuard&) = delete;
+
+private:
+  const CPipewireThreadLoop& m_loop;
+};
+
 } // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE
+} // namespace KODI

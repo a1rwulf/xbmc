@@ -10,22 +10,22 @@
 
 #include <string>
 
-class CFileItemList;
-
 namespace KODI
 {
 namespace GAME
 {
 class CDialogGameSaves;
 
+/*!
+ * \ingroup games
+ */
 class CGUIDialogSelectSavestate
 {
 public:
   static bool ShowAndGetSavestate(const std::string& gamePath, std::string& savestatePath);
 
 private:
-  static CDialogGameSaves* GetDialog(const std::string& title);
-  static void LogSavestates(const CFileItemList& savestates);
+  static CDialogGameSaves* GetDialog();
 };
 } // namespace GAME
 } // namespace KODI

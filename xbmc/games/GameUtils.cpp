@@ -71,7 +71,7 @@ bool CGameUtils::FillInGameClient(CFileItem& item, std::string& savestatePath)
           int errorTextId = bHasVfsGameClient ? 35214 : 35212;
 
           // "Failed to play game"
-          KODI::MESSAGING::HELPERS::ShowOKDialogText(CVariant{35210}, CVariant{errorTextId});
+          MESSAGING::HELPERS::ShowOKDialogText(CVariant{35210}, CVariant{errorTextId});
         }
         else if (candidates.size() == 1 && installable.empty())
         {
@@ -143,7 +143,8 @@ void CGameUtils::GetGameClients(const CFileItem& file,
 
   // Sort by name
   //! @todo Move to presentation code
-  auto SortByName = [](const GameClientPtr& lhs, const GameClientPtr& rhs) {
+  auto SortByName = [](const GameClientPtr& lhs, const GameClientPtr& rhs)
+  {
     std::string lhsName = lhs->Name();
     std::string rhsName = rhs->Name();
 

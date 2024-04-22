@@ -241,7 +241,7 @@ struct CVaapiProcessedPicture
   AVFrame *frame;
   int id;
   CPostproc *source = nullptr;
-  bool crop;
+  bool crop = false;
 };
 
 class CVaapiRenderPicture : public CVideoBuffer
@@ -356,7 +356,7 @@ protected:
   CDecoder &m_vaapi;
 
   // extended state variables for state machine
-  int m_extTimeout;
+  std::chrono::milliseconds m_extTimeout = std::chrono::milliseconds::zero();
   /// \brief Whether at least one interlaced frame was encountered in the video stream (indicating that more interlaced frames could potentially follow)
   bool m_seenInterlaced;
   CVaapiConfig m_config;
@@ -497,7 +497,6 @@ protected:
   bool m_vaapiConfigured;
   CVaapiConfig  m_vaapiConfig;
   CVideoSurfaces m_videoSurfaces;
-  AVCodecContext* m_avctx;
   int m_getBufferError;
 
   COutput m_vaapiOutput;
@@ -510,6 +509,14 @@ protected:
 
   static bool m_capGeneral;
   static bool m_capDeepColor;
+
+private:
+  struct AVBufferRefDeleter
+  {
+    void operator()(AVBufferRef* p) const;
+  };
+
+  std::unique_ptr<AVBufferRef, AVBufferRefDeleter> m_deviceRef;
 };
 
 //-----------------------------------------------------------------------------

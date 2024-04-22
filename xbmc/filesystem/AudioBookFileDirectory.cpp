@@ -11,6 +11,7 @@
 #include "TextureDatabase.h"
 #include "URL.h"
 #include "Util.h"
+#include "cores/FFmpeg.h"
 #include "filesystem/File.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/tags/MusicInfoTag.h"
@@ -105,7 +106,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     item->SetStartOffset(CUtil::ConvertSecsToMilliSecs(m_fctx->chapters[i]->start *
                                                        av_q2d(m_fctx->chapters[i]->time_base)));
     item->SetEndOffset(m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base));
-    int compare = m_fctx->duration / (AV_TIME_BASE);
+    int compare = m_fctx->streams[0]->duration * av_q2d(m_fctx->streams[0]->time_base);
     if (item->GetEndOffset() < 0 || item->GetEndOffset() > compare)
     {
       if (i < m_fctx->nb_chapters-1)
@@ -149,7 +150,7 @@ bool CAudioBookFileDirectory::ContainsFiles(const CURL& url)
 
   m_ioctx->max_packet_size = 32768;
 
-  AVInputFormat* iformat=nullptr;
+  const AVInputFormat* iformat = nullptr;
   av_probe_input_buffer(m_ioctx, &iformat, url.Get().c_str(), nullptr, 0, 0);
 
   bool contains = false;

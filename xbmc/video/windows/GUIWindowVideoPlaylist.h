@@ -16,9 +16,11 @@ public:
   CGUIWindowVideoPlaylist(void);
   ~CGUIWindowVideoPlaylist(void) override;
 
+  void OnPrepareFileItems(CFileItemList& items) override;
   bool OnMessage(CGUIMessage& message) override;
   bool OnAction(const CAction &action) override;
   bool OnBack(int actionID) override;
+  bool OnSelect(int iItem) override;
 
 protected:
   bool OnPlayMedia(int iItem, const std::string &player = "") override;

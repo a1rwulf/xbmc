@@ -9,6 +9,7 @@
 #include "LangInfo.h"
 #include "XBDateTime.h"
 #include "guilib/LocalizeStrings.h"
+#include "interfaces/legacy/ModuleXbmc.h" //Needed to test getRegion()
 
 #include <array>
 #include <iostream>
@@ -78,15 +79,46 @@ TEST_F(TestDateTime, TimeTOperators)
 
 TEST_F(TestDateTime, TmOperators)
 {
-  CDateTime dateTime1(1991, 5, 14, 12, 34, 56);
-  CDateTime dateTime2(1991, 5, 14, 12, 34, 57);
+  {
+    CDateTime dateTime1(1991, 5, 14, 12, 34, 56);
 
-  tm t;
-  dateTime2.GetAsTm(t);
+    tm t1;
+    dateTime1.GetAsTm(t1);
 
-  EXPECT_TRUE(dateTime1 < t);
-  EXPECT_FALSE(dateTime1 > t);
-  EXPECT_FALSE(dateTime1 == t);
+    EXPECT_FALSE(dateTime1 < t1);
+    EXPECT_FALSE(dateTime1 > t1);
+    EXPECT_TRUE(dateTime1 == t1);
+
+    CDateTime dateTime2(1991, 5, 14, 12, 34, 57);
+
+    tm t2;
+    dateTime2.GetAsTm(t2);
+
+    EXPECT_TRUE(dateTime1 < t2);
+    EXPECT_FALSE(dateTime1 > t2);
+    EXPECT_FALSE(dateTime1 == t2);
+  }
+
+  // same test but opposite daylight saving
+  {
+    CDateTime dateTime1(1991, 1, 14, 12, 34, 56);
+
+    tm t1;
+    dateTime1.GetAsTm(t1);
+
+    EXPECT_FALSE(dateTime1 < t1);
+    EXPECT_FALSE(dateTime1 > t1);
+    EXPECT_TRUE(dateTime1 == t1);
+
+    CDateTime dateTime2(1991, 1, 14, 12, 34, 57);
+
+    tm t2;
+    dateTime2.GetAsTm(t2);
+
+    EXPECT_TRUE(dateTime1 < t2);
+    EXPECT_FALSE(dateTime1 > t2);
+    EXPECT_FALSE(dateTime1 == t2);
+  }
 }
 
 // no way to test this platform agnostically (for now) so just log it.
@@ -444,6 +476,64 @@ TEST_F(TestDateTime, GetAsLocalized)
   EXPECT_EQ(dateTime1.GetAsLocalizedTime(TIME_FORMAT(19)), "12:34:56");
   EXPECT_EQ(dateTime1.GetAsLocalizedTime(TIME_FORMAT(27)), "12:34:56 PM");
 
+  //Test abbreviated month and short year formats
+  CDateTime dateTime3;
+  dateTime3.SetDateTime(1991, 05, 9, 12, 34, 56); //Need a single digit date
+
+  g_langInfo.SetShortDateFormat("DD-mmm-YY");
+  g_langInfo.SetLongDateFormat("ddd, D MMMM YYYY");
+
+  //Actual formatted date
+  //Test short month name and 2 digit year.
+  EXPECT_EQ(dateTime3.GetAsLocalizedDate(false), "09-May-91");
+  //Test short day name and single digit day number.
+  EXPECT_EQ(dateTime3.GetAsLocalizedDate(true), "Thu, 9 May 1991");
+
+  //Test that the Python date formatting string is returned instead
+  //of the actual formatted date string.
+
+  CDateTime dateTime4;
+  dateTime4.SetDateTime(1991, 05, 9, 12, 34, 56); //Need a single digit date
+
+  //Test non zero-padded day and short month name.
+  EXPECT_EQ(
+      dateTime4.GetAsLocalizedDate(std::string("D-mmm-YY"), CDateTime::ReturnFormat::CHOICE_YES),
+      "%-d-%b-%y");
+  //Test NZP day and NZP month.
+  EXPECT_EQ(
+      dateTime4.GetAsLocalizedDate(std::string("D-M-YY"), CDateTime::ReturnFormat::CHOICE_YES),
+      "%-d-%-m-%y");
+
+  g_langInfo.SetShortDateFormat("D/M/YY");
+  g_langInfo.SetLongDateFormat("ddd, D MMMM YYYY");
+
+  //Test getRegion() here because it is directly reliant on GetAsLocalizedDate()
+  //and the windows-specific formatting happens in getRegion().
+#ifdef TARGET_WINDOWS
+  //Windows is handled differently because that's what ModuleXbmc.cpp does.
+  EXPECT_EQ(XBMCAddon::xbmc::getRegion("dateshort"), "%#d/%#m/%y");
+  EXPECT_EQ(XBMCAddon::xbmc::getRegion("datelong"), "%a, %#d %B %Y");
+#else
+  EXPECT_EQ(XBMCAddon::xbmc::getRegion("dateshort"), "%-d/%-m/%y");
+  EXPECT_EQ(XBMCAddon::xbmc::getRegion("datelong"), "%a, %-d %B %Y");
+#endif
+
+  //Test short day name, short month name and 2 digit year.
+  EXPECT_EQ(dateTime4.GetAsLocalizedDate(std::string("ddd, DD-mmm-YY"),
+                                         CDateTime::ReturnFormat::CHOICE_YES),
+            "%a, %d-%b-%y");
+  //Test as above but with 4 digit year.
+  EXPECT_EQ(dateTime4.GetAsLocalizedDate(std::string("ddd, DD-mmm-YYYY"),
+                                         CDateTime::ReturnFormat::CHOICE_YES),
+            "%a, %d-%b-%Y");
+  //Test some 'normal' DMY.
+  EXPECT_EQ(
+      dateTime4.GetAsLocalizedDate(std::string("DD/MM/YYYY"), CDateTime::ReturnFormat::CHOICE_YES),
+      "%d/%m/%Y");
+  EXPECT_EQ(
+      dateTime4.GetAsLocalizedDate(std::string("DD/MM/YY"), CDateTime::ReturnFormat::CHOICE_YES),
+      "%d/%m/%y");
+
   // not possible to use these three
   // EXPECT_EQ(dateTime1.GetAsLocalizedTime(TIME_FORMAT(32)), "");
   // EXPECT_EQ(dateTime1.GetAsLocalizedTime(TIME_FORMAT(64)), "");
@@ -553,13 +643,24 @@ TEST_F(TestDateTime, GetAsTime)
 
 TEST_F(TestDateTime, GetAsTm)
 {
-  CDateTime dateTime;
-  dateTime.SetDateTime(1991, 05, 14, 12, 34, 56);
+  {
+    CDateTime dateTime;
+    dateTime.SetDateTime(1991, 05, 14, 12, 34, 56);
 
-  tm time;
-  dateTime.GetAsTm(time);
+    tm time;
+    dateTime.GetAsTm(time);
+    EXPECT_TRUE(dateTime == time);
+  }
 
-  EXPECT_TRUE(dateTime == time);
+  // same test but opposite daylight saving
+  {
+    CDateTime dateTime;
+    dateTime.SetDateTime(1991, 01, 14, 12, 34, 56);
+
+    tm time;
+    dateTime.GetAsTm(time);
+    EXPECT_TRUE(dateTime == time);
+  }
 }
 
 // Disabled pending std::chrono and std::date changes.

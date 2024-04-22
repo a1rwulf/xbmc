@@ -19,7 +19,9 @@
 #include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
-#include "input/Key.h"
+#include "input/actions/Action.h"
+#include "input/actions/ActionIDs.h"
+#include "input/mouse/MouseEvent.h"
 #include "settings/DisplaySettings.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
@@ -35,18 +37,18 @@
 #include "platform/posix/PosixResourceCounter.h"
 #endif
 
-using namespace KODI::GUILIB;
-using namespace KODI::MESSAGING;
+using namespace KODI;
+using namespace GUILIB;
+using namespace MESSAGING;
 
 #if defined(TARGET_DARWIN)
 static CPosixResourceCounter m_resourceCounter;
 #endif
 
 CGUIWindowFullScreen::CGUIWindowFullScreen()
-    : CGUIWindow(WINDOW_FULLSCREEN_VIDEO, "VideoFullScreen.xml")
+  : CGUIWindow(WINDOW_FULLSCREEN_VIDEO, "VideoFullScreen.xml"), m_dwShowViewModeTimeout{}
 {
   m_viewModeChanged = true;
-  m_dwShowViewModeTimeout = {};
   m_bShowCurrentTime = false;
   m_loadType = KEEP_IN_MEMORY;
   // audio
@@ -243,7 +245,8 @@ bool CGUIWindowFullScreen::OnMessage(CGUIMessage& message)
   return CGUIWindow::OnMessage(message);
 }
 
-EVENT_RESULT CGUIWindowFullScreen::OnMouseEvent(const CPoint &point, const CMouseEvent &event)
+EVENT_RESULT CGUIWindowFullScreen::OnMouseEvent(const CPoint& point,
+                                                const MOUSE::CMouseEvent& event)
 {
   if (event.m_id == ACTION_MOUSE_RIGHT_CLICK)
   { // no control found to absorb this click - go back to GUI

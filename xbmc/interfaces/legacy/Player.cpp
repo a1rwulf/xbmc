@@ -127,7 +127,7 @@ namespace XBMCAddon
       if (CServiceBroker::GetPlaylistPlayer().GetCurrentPlaylist() != iPlayList)
         CServiceBroker::GetPlaylistPlayer().SetCurrentPlaylist(iPlayList);
       CServiceBroker::GetAppMessenger()->SendMsg(
-          TMSG_PLAYLISTPLAYER_PLAY, CServiceBroker::GetPlaylistPlayer().GetCurrentSong());
+          TMSG_PLAYLISTPLAYER_PLAY, CServiceBroker::GetPlaylistPlayer().GetCurrentItemIdx());
     }
 
     void Player::playPlaylist(const PlayList* playlist, bool windowed, int startpos)
@@ -143,7 +143,7 @@ namespace XBMCAddon
         iPlayList = playlist->getPlayListId();
         CServiceBroker::GetPlaylistPlayer().SetCurrentPlaylist(iPlayList);
         if (startpos > -1)
-          CServiceBroker::GetPlaylistPlayer().SetCurrentSong(startpos);
+          CServiceBroker::GetPlaylistPlayer().SetCurrentItemIdx(startpos);
         CServiceBroker::GetAppMessenger()->SendMsg(TMSG_PLAYLISTPLAYER_PLAY, startpos);
       }
       else
@@ -187,11 +187,11 @@ namespace XBMCAddon
       {
         CServiceBroker::GetPlaylistPlayer().SetCurrentPlaylist(iPlayList);
       }
-      CServiceBroker::GetPlaylistPlayer().SetCurrentSong(selected);
+      CServiceBroker::GetPlaylistPlayer().SetCurrentItemIdx(selected);
 
       CServiceBroker::GetAppMessenger()->SendMsg(TMSG_PLAYLISTPLAYER_PLAY, selected);
       //CServiceBroker::GetPlaylistPlayer().Play(selected);
-      //CLog::Log(LOGINFO, "Current Song After Play: {}", CServiceBroker::GetPlaylistPlayer().GetCurrentSong());
+      //CLog::Log(LOGINFO, "Current Song After Play: {}", CServiceBroker::GetPlaylistPlayer().GetCurrentItemIdx());
     }
 
     void Player::OnPlayBackStarted(const CFileItem &file)
@@ -356,6 +356,12 @@ namespace XBMCAddon
       return getAppPlayer()->IsPlayingRDS();
     }
 
+    bool Player::isPlayingGame()
+    {
+      XBMC_TRACE;
+      return getAppPlayer()->IsPlayingGame();
+    }
+
     bool Player::isExternalPlayer()
     {
       XBMC_TRACE;
@@ -415,6 +421,20 @@ namespace XBMCAddon
 
       CGUIMessage msg(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE_ITEM, 0, item->item);
       CServiceBroker::GetGUI()->GetWindowManager().SendMessage(msg);
+    }
+
+    InfoTagGame* Player::getGameInfoTag()
+    {
+      XBMC_TRACE;
+      if (!getAppPlayer()->IsPlayingGame())
+        throw PlayerException("Kodi is not playing any game file");
+
+      const KODI::GAME::CGameInfoTag* game =
+          CServiceBroker::GetGUI()->GetInfoManager().GetCurrentGameTag();
+      if (game)
+        return new InfoTagGame(game);
+
+      return new InfoTagGame();
     }
 
     InfoTagRadioRDS* Player::getRadioRDSInfoTag()

@@ -1,19 +1,12 @@
-include ../../Makefile.include
-DEPS = ../../Makefile.include Makefile 001-android-getauxvalrevert.patch 16-kodi.conf ../../download-files.include
-
-# lib name, version
-LIBNAME=openssl
-VERSION=1.1.1n
-SOURCE=$(LIBNAME)-$(VERSION)
-ARCHIVE=$(SOURCE).tar.gz
-SHA512=1937796736613dcf4105a54e42ecb61f95a1cea74677156f9459aea0f2c95159359e766089632bf364ee6b0d28d661eb9957bce8fecc9d2436378d8d79e8d0a4
-include ../../download-files.include
+include ../../Makefile.include OPENSSL-VERSION ../../download-files.include
+DEPS = ../../Makefile.include Makefile OPENSSL-VERSION ../../download-files.include \
+                        001-android-getauxvalrevert.patch 16-kodi.conf
 
 # configuration settings
 ifeq ($(OS), linux)
   # Need to export our vars to override "default" conf data of openssl
   TARGETOPT=--with-zlib-include=$(PREFIX)/include --with-zlib-lib=$(PREFIX)/lib
-  CONFIGURE=MACHINE=$(PLATFORM) ./config no-shared zlib no-tests no-asm $(TARGETOPT) --prefix=$(PREFIX)
+  CONFIGURE=MACHINE=$(PLATFORM) ./config no-shared zlib no-tests no-asm $(TARGETOPT) --prefix=$(PREFIX) --libdir=lib
 else
   ifeq ($(OS), android)
     TARGETOPT=--with-zlib-include=$(PREFIX)/include --with-zlib-lib=$(PREFIX)/lib -D__ANDROID_API__=$(NDK_LEVEL) -Wno-macro-redefined
@@ -28,6 +21,8 @@ else
     endif
   endif
   ifeq ($(OS), darwin_embedded)
+    # LLVM 15 has raised this to error by default. drop back to warning
+    CFLAGS+= -Wno-error=implicit-int
     export SDKROOT CFLAGS
     OPENSSLPLATFORM=kodi-$(TARGET_PLATFORM)-$(CPU)
     ifeq ($(TARGET_PLATFORM),appletvos)
@@ -51,7 +46,7 @@ LIBDYLIB=$(PLATFORM)/libssl.a
 all: .installed-$(PLATFORM)
 
 
-$(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE) $(DEPS)
+$(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 ifeq ($(OS),android)

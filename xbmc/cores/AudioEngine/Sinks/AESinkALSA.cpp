@@ -71,6 +71,21 @@ static unsigned int ALSASampleRateList[] =
   0
 };
 
+namespace
+{
+struct SndConfigDeleter
+{
+  void operator()(snd_config_t* p) { snd_config_delete(p); }
+};
+
+inline std::unique_ptr<snd_config_t, SndConfigDeleter> SndConfigCopy(snd_config_t* original)
+{
+  snd_config_t* config;
+  snd_config_copy(&config, original);
+  return std::unique_ptr<snd_config_t, SndConfigDeleter>(config, SndConfigDeleter());
+}
+} // namespace
+
 CAESinkALSA::CAESinkALSA() :
   m_pcm(NULL)
 {
@@ -94,14 +109,13 @@ void CAESinkALSA::Register()
   AE::CAESinkFactory::RegisterSink(entry);
 }
 
-IAESink* CAESinkALSA::Create(std::string &device, AEAudioFormat& desiredFormat)
+std::unique_ptr<IAESink> CAESinkALSA::Create(std::string& device, AEAudioFormat& desiredFormat)
 {
-  IAESink* sink = new CAESinkALSA();
+  auto sink = std::make_unique<CAESinkALSA>();
   if (sink->Initialize(desiredFormat, device))
     return sink;
 
-  delete sink;
-  return nullptr;
+  return {};
 }
 
 inline CAEChannelInfo CAESinkALSA::GetChannelLayoutRaw(const AEAudioFormat& format)
@@ -523,13 +537,11 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
   CLog::Log(LOGINFO, "CAESinkALSA::Initialize - Attempting to open device \"{}\"", device);
 
   /* get the sound config */
-  snd_config_t *config;
-  snd_config_copy(&config, snd_config);
+  std::unique_ptr<snd_config_t, SndConfigDeleter> config = SndConfigCopy(snd_config);
 
-  if (!OpenPCMDevice(device, AESParams, inconfig.channels, &m_pcm, config))
+  if (!OpenPCMDevice(device, AESParams, inconfig.channels, &m_pcm, config.get()))
   {
     CLog::Log(LOGERROR, "CAESinkALSA::Initialize - failed to initialize device \"{}\"", device);
-    snd_config_delete(config);
     return false;
   }
 
@@ -538,9 +550,6 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
   m_device = device;
 
   CLog::Log(LOGINFO, "CAESinkALSA::Initialize - Opened device \"{}\"", device);
-
-  /* free the sound config */
-  snd_config_delete(config);
 
   snd_pcm_chmap_t* selectedChmap = NULL;
   if (!m_passthrough)
@@ -1112,8 +1121,7 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
     snd_config_update();
   }
 
-  snd_config_t *config;
-  snd_config_copy(&config, snd_config);
+  std::unique_ptr<snd_config_t, SndConfigDeleter> config = SndConfigCopy(snd_config);
 
 #if !defined(HAVE_X11)
   const auto controlMonitor = CServiceBroker::GetPlatform().GetService<CALSAHControlMonitor>();
@@ -1125,7 +1133,7 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
    * will automatically add "@" instead to enable surroundXX mangling.
    * We don't want to do that if "default" can handle multichannel
    * itself (e.g. in case of a pulseaudio server). */
-  EnumerateDevice(list, "default", "", config);
+  EnumerateDevice(list, "default", "", config.get());
 
   void **hints;
 
@@ -1160,7 +1168,7 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
         /* do not enumerate basic "front", it is already handled
          * by the default "@" entry added in the very beginning */
         if (strcmp(name, "front") != 0)
-          EnumerateDevice(list, std::string("@") + (name+5), desc ? desc : name, config);
+          EnumerateDevice(list, std::string("@") + (name + 5), desc ? desc : name, config.get());
       }
 
       /* Do not enumerate "default", it is already enumerated above. */
@@ -1191,7 +1199,7 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
             && baseName != "plughw"
             && baseName != "dsnoop")
       {
-        EnumerateDevice(list, name, desc ? desc : name, config);
+        EnumerateDevice(list, name, desc ? desc : name, config.get());
       }
     }
     free(io);
@@ -1253,6 +1261,8 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
 
   for (AEDeviceInfoList::iterator it1 = list.begin(); it1 != list.end(); ++it1)
   {
+    bool replaceName = false;
+
     for (AEDeviceInfoList::iterator it2 = it1+1; it2 != list.end(); ++it2)
     {
       if (it1->m_displayName == it2->m_displayName
@@ -1282,10 +1292,13 @@ void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
         }
 
         /* if we got here, the configuration is really weird, just append the whole device string */
-        it1->m_displayName += " (" + it1->m_deviceName + ")";
+        replaceName = true;
         it2->m_displayName += " (" + it2->m_deviceName + ")";
       }
     }
+
+    if (replaceName)
+      it1->m_displayName = it1->m_displayName + " (" + it1->m_deviceName + ")";
   }
 
   for (std::set<std::string>::iterator it = cardsToAppend.begin();

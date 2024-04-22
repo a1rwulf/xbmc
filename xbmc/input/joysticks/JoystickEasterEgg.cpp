@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2016-2018 Team Kodi
+ *  Copyright (C) 2016-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -52,7 +52,7 @@ const std::map<std::string, std::vector<FeatureName>> CJoystickEasterEgg::m_sequ
 };
 
 CJoystickEasterEgg::CJoystickEasterEgg(const std::string& controllerId)
-  : m_controllerId(controllerId), m_state(0)
+  : m_controllerId(controllerId)
 {
 }
 

@@ -46,6 +46,7 @@ public:
 
   bool HasCursor() override { return false; }
 
+  bool Minimize() override;
   bool Hide() override;
   bool Show(bool raise = true) override;
   void Register(IDispResource *resource) override;
@@ -58,6 +59,7 @@ public:
   bool IsHDRDisplay() override;
 
   CHDRCapabilities GetDisplayHDRCapabilities() const override;
+  float GetGuiSdrPeakLuminance() const override;
 
   void SetRefreshRate(double refreshRate) override;
 protected:

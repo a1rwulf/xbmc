@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017-2018 Team Kodi
+ *  Copyright (C) 2017-2024 Team Kodi
  *  This file is part of Kodi - https://kodi.tv
  *
  *  SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,6 +17,9 @@
 
 namespace PERIPHERALS
 {
+/*!
+ * \ingroup peripherals
+ */
 class CPeripheralKeyboard : public CPeripheral, public KODI::KEYBOARD::IKeyboardDriverHandler
 {
 public:
@@ -31,7 +34,7 @@ public:
   void RegisterKeyboardDriverHandler(KODI::KEYBOARD::IKeyboardDriverHandler* handler,
                                      bool bPromiscuous) override;
   void UnregisterKeyboardDriverHandler(KODI::KEYBOARD::IKeyboardDriverHandler* handler) override;
-  CDateTime LastActive() override { return m_lastActive; }
+  CDateTime LastActive() const override { return m_lastActive; }
   KODI::GAME::ControllerPtr ControllerProfile() const override;
 
   // implementation of IKeyboardDriverHandler

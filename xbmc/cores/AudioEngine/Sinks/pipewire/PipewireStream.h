@@ -9,29 +9,33 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <pipewire/core.h>
 #include <pipewire/stream.h>
-#include <spa/param/audio/raw.h>
 
-namespace AE
-{
-namespace SINK
+namespace KODI
 {
 namespace PIPEWIRE
 {
 
+class CPipewireCore;
+
 class CPipewireStream
 {
 public:
-  explicit CPipewireStream(pw_core* core);
+  explicit CPipewireStream(CPipewireCore& core);
   CPipewireStream() = delete;
   ~CPipewireStream();
 
   pw_stream* Get() const { return m_stream.get(); }
 
-  void AddListener(void* userdata);
-  bool Connect(uint32_t id, spa_audio_info_raw& info);
+  CPipewireCore& GetCore() const { return m_core; }
+
+  bool Connect(uint32_t id,
+               const pw_direction& direction,
+               std::vector<const spa_pod*>& params,
+               const pw_stream_flags& flags);
 
   pw_stream_state GetState();
   void SetActive(bool active);
@@ -39,11 +43,15 @@ public:
   pw_buffer* DequeueBuffer();
   void QueueBuffer(pw_buffer* buffer);
 
+  bool TriggerProcess() const;
+
   void Flush(bool drain);
 
   uint32_t GetNodeId();
 
   void UpdateProperties(spa_dict* dict);
+
+  pw_time GetTime() const;
 
 private:
   static void StateChanged(void* userdata,
@@ -54,6 +62,8 @@ private:
   static void Drained(void* userdata);
 
   static pw_stream_events CreateStreamEvents();
+
+  CPipewireCore& m_core;
 
   const pw_stream_events m_streamEvents;
 
@@ -68,5 +78,4 @@ private:
 };
 
 } // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE
+} // namespace KODI

@@ -22,6 +22,9 @@
 #include "guilib/GUIControl.h" // for EVENT_RESULT
 #include "guilib/GUIWindowManager.h"
 #include "input/InputManager.h"
+#include "input/actions/Action.h"
+#include "input/keyboard/Key.h"
+#include "input/keyboard/KeyIDs.h"
 #include "input/mouse/MouseStat.h"
 #include "input/touch/generic/GenericTouchActionHandler.h"
 #include "input/touch/generic/GenericTouchSwipeDetector.h"
@@ -71,8 +74,6 @@ int g_sizeMoveWidth = 0;
 int g_sizeMoveHight = 0;
 int g_sizeMoveX = -10000;
 int g_sizeMoveY = -10000;
-
-int XBMC_TranslateUNICODE = 1;
 
 int CWinEventsWin32::m_originalZoomDistance = 0;
 Pointer CWinEventsWin32::m_touchPointer;
@@ -167,9 +168,13 @@ static XBMC_keysym *TranslateKey(WPARAM vkey, UINT scancode, XBMC_keysym *keysym
   }
 
   // Attempt to convert the keypress to a UNICODE character
-  GetKeyboardState(keystate);
+  if (GetKeyboardState(keystate) == FALSE)
+  {
+    CLog::LogF(LOGERROR, "GetKeyboardState error {}", GetLastError());
+    return keysym;
+  }
 
-  if (pressed && XBMC_TranslateUNICODE)
+  if (pressed)
   {
     std::array<uint16_t, 2> wchars;
 
@@ -180,7 +185,8 @@ static XBMC_keysym *TranslateKey(WPARAM vkey, UINT scancode, XBMC_keysym *keysym
       keysym->unicode = static_cast<uint16_t>(vkey - VK_NUMPAD0 + '0');
     }
     else if (ToUnicode(static_cast<UINT>(vkey), scancode, keystate,
-                       reinterpret_cast<LPWSTR>(wchars.data()), wchars.size(), 0) > 0)
+                       reinterpret_cast<LPWSTR>(wchars.data()), static_cast<int>(wchars.size()),
+                       0) > 0)
     {
       keysym->unicode = wchars[0];
     }
@@ -233,18 +239,6 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
 
   XBMC_Event newEvent = {};
   static HDEVNOTIFY hDeviceNotify;
-
-#if 0
-  if (uMsg == WM_NCCREATE)
-  {
-    // if available, enable DPI scaling of non-client portion of window (title bar, etc.)
-    if (g_Windowing.PtrEnableNonClientDpiScaling != NULL)
-    {
-      g_Windowing.PtrEnableNonClientDpiScaling(hWnd);
-    }
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
-  }
-#endif
 
   if (uMsg == WM_CREATE)
   {
@@ -375,7 +369,7 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           return 0;
         default:;
       }
-      //deliberate fallthrough
+      [[fallthrough]];
     case WM_KEYDOWN:
     {
       switch (wParam)
@@ -820,6 +814,7 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
               else
                 CWin32StorageProvider::SetEvent();
             }
+            break;
           default:;
         }
         break;
@@ -867,7 +862,20 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
       }
       break;
     }
-    default:;
+    case WM_INITMENU:
+    {
+      HMENU hm = GetSystemMenu(hWnd, FALSE);
+      if (hm)
+      {
+        if (DX::Windowing()->IsFullScreen())
+          EnableMenuItem(hm, SC_MOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+        else
+          EnableMenuItem(hm, SC_MOVE, MF_BYCOMMAND | MF_ENABLED);
+      }
+      break;
+    }
+    default:
+      break;
   }
   return(DefWindowProc(hWnd, uMsg, wParam, lParam));
 }
@@ -943,18 +951,14 @@ void CWinEventsWin32::OnGestureNotify(HWND hWnd, LPARAM lParam)
     gc[1].dwBlock = gc[1].dwWant ^ 0x01;
     gc[2].dwBlock = gc[2].dwWant ^ 0x1F;
   }
-  if (DX::Windowing()->PtrSetGestureConfig)
-    DX::Windowing()->PtrSetGestureConfig(hWnd, 0, 5, gc, sizeof(GESTURECONFIG));
+  SetGestureConfig(hWnd, 0, 5, gc, sizeof(GESTURECONFIG));
 }
 
 void CWinEventsWin32::OnGesture(HWND hWnd, LPARAM lParam)
 {
-  if (!DX::Windowing()->PtrGetGestureInfo)
-    return;
-
   GESTUREINFO gi = {};
   gi.cbSize = sizeof(gi);
-  DX::Windowing()->PtrGetGestureInfo(reinterpret_cast<HGESTUREINFO>(lParam), &gi);
+  GetGestureInfo(reinterpret_cast<HGESTUREINFO>(lParam), &gi);
 
   // convert to window coordinates
   POINT point = { gi.ptsLocation.x, gi.ptsLocation.y };
@@ -1057,6 +1061,5 @@ void CWinEventsWin32::OnGesture(HWND hWnd, LPARAM lParam)
     // You have encountered an unknown gesture
     break;
   }
-  if(DX::Windowing()->PtrCloseGestureInfoHandle)
-    DX::Windowing()->PtrCloseGestureInfoHandle(reinterpret_cast<HGESTUREINFO>(lParam));
+  CloseGestureInfoHandle(reinterpret_cast<HGESTUREINFO>(lParam));
 }

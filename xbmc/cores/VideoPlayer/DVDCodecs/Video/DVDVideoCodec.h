@@ -50,11 +50,12 @@ public:
   double iRepeatPicture;
   double iDuration;
   unsigned int iFrameType         : 4;  //< see defines above // 1->I, 2->P, 3->B, 0->Undef
-  unsigned int color_space;
+  AVColorSpace color_space;
   unsigned int color_range        : 1;  //< 1 indicate if we have a full range of color
-  unsigned int chroma_position;
-  unsigned int color_primaries;
-  unsigned int color_transfer;
+  AVChromaLocation chroma_position;
+  AVColorPrimaries color_primaries; // heuristics applied when original is AVCOL_PRI_UNSPECIFIED
+  AVColorPrimaries m_originalColorPrimaries;
+  AVColorTransferCharacteristic color_transfer;
   unsigned int colorBits = 8;
   std::string stereoMode;
 
@@ -62,6 +63,8 @@ public:
   int qstride;
   int qscale_type;
   int pict_type;
+
+  StreamHdrType hdrType;
 
   bool hasDisplayMetadata = false;
   AVMasteringDisplayMetadata displayMetadata;

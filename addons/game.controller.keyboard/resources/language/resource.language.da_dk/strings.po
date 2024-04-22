@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: KODI Addons\n"
-"Report-Msgid-Bugs-To: translations@kodi.tv\n"
+"Report-Msgid-Bugs-To: alanwww1@xbmc.org\n"
 "POT-Creation-Date: 2014-05-30 17:00+8\n"
 "PO-Revision-Date: 2021-08-18 16:16+0000\n"
 "Last-Translator: Christian Gade <gade@kodi.tv>\n"
@@ -459,12 +459,12 @@ msgid "Right Meta"
 msgstr "Højre Meta"
 
 msgctxt "#30108"
-msgid "Left Super"
-msgstr "Venstre Super"
+msgid "Left Windows"
+msgstr ""
 
 msgctxt "#30109"
-msgid "Right Super"
-msgstr "Højre Super"
+msgid "Right Windows"
+msgstr ""
 
 msgctxt "#30110"
 msgid "!"
@@ -547,8 +547,8 @@ msgid "~"
 msgstr "~"
 
 msgctxt "#30130"
-msgid "Mode"
-msgstr "Tilstand"
+msgid "Mode/Option"
+msgstr ""
 
 msgctxt "#30131"
 msgid "Compose"
@@ -583,9 +583,29 @@ msgid "Undo"
 msgstr "Fortryd"
 
 msgctxt "#30139"
-msgid "Num Pad Equals"
-msgstr "Num Pad ="
+msgid "Num Pad ="
+msgstr ""
 
 msgctxt "#30140"
 msgid "Clear"
 msgstr "Ryd"
+
+msgctxt "#30141"
+msgid "OEM 102nd Key"
+msgstr ""
+
+#~ msgctxt "#30139"
+#~ msgid "Num Pad Equals"
+#~ msgstr "Num Pad ="
+
+#~ msgctxt "#30108"
+#~ msgid "Left Super"
+#~ msgstr "Venstre Super"
+
+#~ msgctxt "#30109"
+#~ msgid "Right Super"
+#~ msgstr "Højre Super"
+
+#~ msgctxt "#30130"
+#~ msgid "Mode"
+#~ msgstr "Tilstand"

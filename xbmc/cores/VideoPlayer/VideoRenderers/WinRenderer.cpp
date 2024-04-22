@@ -218,7 +218,7 @@ void CWinRenderer::RenderUpdate(int index, int index2, bool clear, unsigned int 
   DX::Windowing()->SetAlphaBlendEnable(true);
 }
 
-bool CWinRenderer::RenderCapture(CRenderCapture* capture)
+bool CWinRenderer::RenderCapture(int index, CRenderCapture* capture)
 {
   if (!m_bConfigured)
     return false;
@@ -272,23 +272,10 @@ bool CWinRenderer::Flush(bool saveBuffers)
 
 bool CWinRenderer::Supports(ERENDERFEATURE feature) const
 {
-  if(feature == RENDERFEATURE_BRIGHTNESS)
-    return true;
+  if (!m_bConfigured)
+    return false;
 
-  if(feature == RENDERFEATURE_CONTRAST)
-    return true;
-
-  if (feature == RENDERFEATURE_STRETCH         ||
-      feature == RENDERFEATURE_NONLINSTRETCH   ||
-      feature == RENDERFEATURE_ZOOM            ||
-      feature == RENDERFEATURE_VERTICAL_SHIFT  ||
-      feature == RENDERFEATURE_PIXEL_RATIO     ||
-      feature == RENDERFEATURE_ROTATION        ||
-      feature == RENDERFEATURE_POSTPROCESS     ||
-      feature == RENDERFEATURE_TONEMAP)
-    return true;
-
-  return false;
+  return m_renderer->Supports(feature);
 }
 
 bool CWinRenderer::Supports(ESCALINGMETHOD method) const

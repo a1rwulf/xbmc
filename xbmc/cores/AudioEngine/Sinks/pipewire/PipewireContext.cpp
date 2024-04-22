@@ -8,27 +8,20 @@
 
 #include "PipewireContext.h"
 
+#include "PipewireThreadLoop.h"
 #include "utils/log.h"
 
 #include <stdexcept>
 
-namespace AE
-{
-namespace SINK
-{
-namespace PIPEWIRE
-{
+using namespace KODI;
+using namespace PIPEWIRE;
 
-CPipewireContext::CPipewireContext(pw_loop* loop)
+CPipewireContext::CPipewireContext(CPipewireThreadLoop& loop) : m_threadLoop(loop)
 {
-  m_context.reset(pw_context_new(loop, nullptr, 0));
+  m_context.reset(pw_context_new(loop.Get(), nullptr, 0));
   if (!m_context)
   {
     CLog::Log(LOGERROR, "CPipewireContext: failed to create context: {}", strerror(errno));
     throw std::runtime_error("CPipewireContext: failed to create context");
   }
 }
-
-} // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE

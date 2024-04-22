@@ -27,6 +27,7 @@
 #endif
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #ifndef min
@@ -104,19 +105,21 @@ static void ErrNonfatal(const char* const msg, int a1, int a2);
 namespace
 {
 constexpr auto FMT_BYTE = 1;
-constexpr auto FMT_USHORT = 2;
-constexpr auto FMT_ULONG = 3;
-constexpr auto FMT_URATIONAL = 4;
-constexpr auto FMT_SBYTE = 5;
-constexpr auto FMT_SSHORT = 6;
-constexpr auto FMT_SLONG = 7;
-constexpr auto FMT_SRATIONAL = 8;
-constexpr auto FMT_SINGLE = 9;
-constexpr auto FMT_DOUBLE = 10;
+[[maybe_unused]] constexpr auto FMT_STRING = 2;
+constexpr auto FMT_USHORT = 3;
+constexpr auto FMT_ULONG = 4;
+constexpr auto FMT_URATIONAL = 5;
+constexpr auto FMT_SBYTE = 6;
+[[maybe_unused]] constexpr auto FMT_UNDEFINED = 7;
+constexpr auto FMT_SSHORT = 8;
+constexpr auto FMT_SLONG = 9;
+constexpr auto FMT_SRATIONAL = 10;
+constexpr auto FMT_SINGLE = 11;
+constexpr auto FMT_DOUBLE = 12;
 // NOTE: Remember to change NUM_FORMATS if you define a new format
-constexpr auto NUM_FORMATS = 10;
+constexpr auto NUM_FORMATS = 12;
 
-const unsigned int BytesPerFormat[NUM_FORMATS] = {1, 2, 4, 8, 1, 2, 4, 8, 4, 8};
+const unsigned int BytesPerFormat[NUM_FORMATS] = {1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8};
 } // namespace
 
 //--------------------------------------------------------------------------
@@ -376,7 +379,7 @@ void CExifParse::ProcessDir(const unsigned char* const DirStart,
       unsigned OffsetVal;
       OffsetVal = (unsigned)Get32(DirEntry+8, m_MotorolaOrder);
       // If its bigger than 4 bytes, the dir entry contains an offset.
-      if (OffsetVal+ByteCount > ExifLength)
+      if (OffsetVal > UINT32_MAX - ByteCount || OffsetVal + ByteCount > ExifLength)
       {
         // Bogus pointer offset and / or bytecount value
         ErrNonfatal("Illegal value pointer for tag %04x", Tag,0);
@@ -787,10 +790,10 @@ bool CExifParse::Process (const unsigned char* const ExifSection, const unsigned
   pos += sizeof(short);
 
   unsigned long FirstOffset = (unsigned)Get32((const void*)pos, m_MotorolaOrder);
-  if (FirstOffset < 8 || FirstOffset > 16)
+  if (FirstOffset < 8 || FirstOffset + 8 >= length)
   {
-    // Usually set to 8, but other values valid too.
-//  CLog::Log(LOGERROR, "ExifParse: suspicious offset of first IFD value");
+    ErrNonfatal("Invalid offset of first IFD value: %u", FirstOffset, 0);
+    return false;
   }
 
 
@@ -857,7 +860,7 @@ void CExifParse::GetLatLong(
     else
     {
       char latLong[30];
-      sprintf(latLong, "%3.0fd %2.0f' %5.2f\"", Values[0], Values[1], Values[2]);
+      snprintf(latLong, sizeof(latLong), "%3.0fd %2.0f' %5.2f\"", Values[0], Values[1], Values[2]);
       strcat(latLongString, latLong);
     }
   }
@@ -878,6 +881,13 @@ void CExifParse::ProcessGpsInfo(
   {
     const unsigned char* DirEntry = DIR_ENTRY_ADDR(DirStart, de);
 
+    // Fix from aosp 34a2564d3268a5ca1472c5076675782fbaf724d6
+    if (DirEntry + 12 > OffsetBase + ExifLength)
+    {
+      ErrNonfatal("GPS info directory goes past end of exif", 0, 0);
+      return;
+    }
+
     unsigned Tag        = Get16(DirEntry, m_MotorolaOrder);
     unsigned Format     = Get16(DirEntry+2, m_MotorolaOrder);
     unsigned Components = (unsigned)Get32(DirEntry+4, m_MotorolaOrder);
@@ -896,7 +906,7 @@ void CExifParse::ProcessGpsInfo(
     {
       unsigned OffsetVal = (unsigned)Get32(DirEntry+8, m_MotorolaOrder);
       // If its bigger than 4 bytes, the dir entry contains an offset.
-      if (OffsetVal+ByteCount > ExifLength)
+      if (OffsetVal > UINT32_MAX - ByteCount || OffsetVal + ByteCount > ExifLength)
       {
         // Bogus pointer offset and / or bytecount value
         ErrNonfatal("Illegal value pointer for tag %04x", Tag,0);
@@ -938,7 +948,8 @@ void CExifParse::ProcessGpsInfo(
       case TAG_GPS_ALT:
         {
           char temp[18];
-          sprintf(temp, "%.2fm", static_cast<double>(ConvertAnyFormat(ValuePtr, Format)));
+          snprintf(temp, sizeof(temp), "%.2fm",
+                   static_cast<double>(ConvertAnyFormat(ValuePtr, Format)));
           strcat(m_ExifInfo->GpsAlt, temp);
         }
       break;

@@ -19,9 +19,12 @@
 #include "utils/XBMCTinyXML.h"
 #include "utils/XMLUtils.h"
 #include "utils/log.h"
+#include "video/VideoFileItemClassify.h"
 #include "video/VideoInfoTag.h"
 
 #include <algorithm>
+
+using namespace KODI;
 
 CPlayerSelectionRule::CPlayerSelectionRule(TiXmlElement* pRule)
 {
@@ -63,9 +66,11 @@ void CPlayerSelectionRule::Initialize(TiXmlElement* pRule)
   m_videoCodec = XMLUtils::GetAttribute(pRule, "videocodec");
   m_videoResolution = XMLUtils::GetAttribute(pRule, "videoresolution");
   m_videoAspect = XMLUtils::GetAttribute(pRule, "videoaspect");
+  m_hdrType = XMLUtils::GetAttribute(pRule, "hdrtype");
 
   m_bStreamDetails = m_audioCodec.length() > 0 || m_audioChannels.length() > 0 ||
-    m_videoCodec.length() > 0 || m_videoResolution.length() > 0 || m_videoAspect.length() > 0;
+                     m_videoCodec.length() > 0 || m_videoResolution.length() > 0 ||
+                     m_videoAspect.length() > 0 || m_hdrType.length() > 0;
 
   if (m_bStreamDetails && !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_MYVIDEOS_EXTRACTFLAGS))
   {
@@ -114,7 +119,7 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
     return;
   if (m_tAudio >= 0 && (m_tAudio > 0) != item.IsAudio())
     return;
-  if (m_tVideo >= 0 && (m_tVideo > 0) != item.IsVideo())
+  if (m_tVideo >= 0 && (m_tVideo > 0) != VIDEO::IsVideo(item))
     return;
   if (m_tGame >= 0 && (m_tGame > 0) != item.IsGame())
     return;
@@ -123,11 +128,11 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
   if (m_tRemote >= 0 && (m_tRemote > 0) != item.IsRemote())
     return;
 
-  if (m_tBD >= 0 && (m_tBD > 0) != (item.IsBDFile() && item.IsOnDVD()))
+  if (m_tBD >= 0 && (m_tBD > 0) != (VIDEO::IsBDFile(item) && item.IsOnDVD()))
     return;
   if (m_tDVD >= 0 && (m_tDVD > 0) != item.IsDVD())
     return;
-  if (m_tDVDFile >= 0 && (m_tDVDFile > 0) != item.IsDVDFile())
+  if (m_tDVDFile >= 0 && (m_tDVDFile > 0) != VIDEO::IsDVDFile(item))
     return;
   if (m_tDiscImage >= 0 && (m_tDiscImage > 0) != item.IsDiscImage())
     return;
@@ -165,6 +170,13 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
 
     if (CompileRegExp(m_videoAspect, regExp) &&
         !MatchesRegExp(CStreamDetails::VideoAspectToAspectDescription(streamDetails.GetVideoAspect()),  regExp))
+      return;
+
+    std::string hdrType{streamDetails.GetVideoHdrType()};
+    if (hdrType.length() == 0)
+      hdrType = "none";
+
+    if (CompileRegExp(m_hdrType, regExp) && !MatchesRegExp(hdrType, regExp))
       return;
   }
 

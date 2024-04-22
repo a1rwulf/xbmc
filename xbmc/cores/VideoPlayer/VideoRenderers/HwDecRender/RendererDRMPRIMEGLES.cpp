@@ -22,6 +22,8 @@
 #include "windowing/WinSystem.h"
 #include "windowing/linux/WinSystemEGL.h"
 
+#include <memory>
+
 using namespace KODI::UTILS::EGL;
 
 CRendererDRMPRIMEGLES::~CRendererDRMPRIMEGLES()
@@ -110,7 +112,7 @@ bool CRendererDRMPRIMEGLES::Configure(const VideoPicture& picture,
     if (!buf.fence)
     {
       buf.texture.Init(eglDisplay);
-      buf.fence.reset(new CEGLFence(eglDisplay));
+      buf.fence = std::make_unique<CEGLFence>(eglDisplay);
     }
   }
 
@@ -278,7 +280,7 @@ void CRendererDRMPRIMEGLES::RenderUpdate(
   glEnable(GL_BLEND);
 }
 
-bool CRendererDRMPRIMEGLES::RenderCapture(CRenderCapture* capture)
+bool CRendererDRMPRIMEGLES::RenderCapture(int index, CRenderCapture* capture)
 {
   capture->BeginRender();
   capture->EndRender();
@@ -386,6 +388,7 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
 
   glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
 
+  buf.fence->DestroyFence();
   buf.fence->CreateFence();
 }
 

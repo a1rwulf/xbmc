@@ -15,7 +15,6 @@ class CDVDOverlay;
 class CDVDOverlayImage;
 class CDVDOverlaySpu;
 class CDVDOverlaySSA;
-typedef struct ass_image ASS_Image;
 
 namespace OVERLAY {
 
@@ -41,11 +40,11 @@ namespace OVERLAY {
      *  \param o The overlay image
      *  \param rSource The video source rect size
      */
-    explicit COverlayImageDX(CDVDOverlayImage* o, CRect& rSource);
-    explicit COverlayImageDX(CDVDOverlaySpu*   o);
+    explicit COverlayImageDX(const CDVDOverlayImage& o, CRect& rSource);
+    explicit COverlayImageDX(const CDVDOverlaySpu& o);
     virtual ~COverlayImageDX();
 
-    void Load(uint32_t* rgba, int width, int height, int stride);
+    void Load(const uint32_t* rgba, int width, int height, int stride);
     void Render(SRenderState& state);
 
     CD3DTexture            m_texture;

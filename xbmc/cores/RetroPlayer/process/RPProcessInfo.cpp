@@ -42,7 +42,8 @@ CRPProcessInfo::CRPProcessInfo(std::string platformName)
                                        CServiceBroker::GetWinSystem()->GetGfxContext(),
                                        CDisplaySettings::GetInstance(),
                                        CMediaSettings::GetInstance(),
-                                       CServiceBroker::GetGameServices()))
+                                       CServiceBroker::GetGameServices(),
+                                       CServiceBroker::GetGUI()))
 {
   for (auto& rendererFactory : m_rendererFactories)
   {
@@ -64,9 +65,9 @@ CRPProcessInfo::CRPProcessInfo(std::string platformName)
 
 CRPProcessInfo::~CRPProcessInfo() = default;
 
-CRPProcessInfo* CRPProcessInfo::CreateInstance()
+std::unique_ptr<CRPProcessInfo> CRPProcessInfo::CreateInstance()
 {
-  CRPProcessInfo* processInfo = nullptr;
+  std::unique_ptr<CRPProcessInfo> processInfo;
 
   std::unique_lock<CCriticalSection> lock(m_createSection);
 
@@ -74,7 +75,7 @@ CRPProcessInfo* CRPProcessInfo::CreateInstance()
   {
     processInfo = m_processControl();
 
-    if (processInfo != nullptr)
+    if (processInfo)
       CLog::Log(LOGINFO, "RetroPlayer[PROCESS]: Created process info for {}",
                 processInfo->GetPlatformName());
     else
@@ -88,23 +89,9 @@ CRPProcessInfo* CRPProcessInfo::CreateInstance()
   return processInfo;
 }
 
-void CRPProcessInfo::RegisterProcessControl(CreateRPProcessControl createFunc)
+void CRPProcessInfo::RegisterProcessControl(const CreateRPProcessControl& createFunc)
 {
-  std::unique_ptr<CRPProcessInfo> processInfo(createFunc());
-
-  std::unique_lock<CCriticalSection> lock(m_createSection);
-
-  if (processInfo)
-  {
-    CLog::Log(LOGINFO, "RetroPlayer[PROCESS]: Registering process control for {}",
-              processInfo->GetPlatformName());
-    m_processControl = createFunc;
-  }
-  else
-  {
-    CLog::Log(LOGERROR, "RetroPlayer[PROCESS]: Failed to register process control");
-    m_processControl = nullptr;
-  }
+  m_processControl = createFunc;
 }
 
 void CRPProcessInfo::RegisterRendererFactory(IRendererFactory* factory)
@@ -153,22 +140,7 @@ void CRPProcessInfo::ResetInfo()
 {
   if (m_dataCache != nullptr)
   {
-    m_dataCache->SetVideoDecoderName("", false);
-    m_dataCache->SetVideoDeintMethod("");
-    m_dataCache->SetVideoPixelFormat("");
-    m_dataCache->SetVideoDimensions(0, 0);
-    m_dataCache->SetVideoFps(0.0f);
-    m_dataCache->SetVideoDAR(1.0f);
-    m_dataCache->SetAudioDecoderName("");
-    m_dataCache->SetAudioChannels("");
-    m_dataCache->SetAudioSampleRate(0);
-    m_dataCache->SetAudioBitsPerSample(0);
-    m_dataCache->SetRenderClockSync(false);
-    m_dataCache->SetStateSeeking(false);
-    m_dataCache->SetSpeed(1.0f, 1.0f);
-    m_dataCache->SetGuiRender(true); //! @todo
-    m_dataCache->SetVideoRender(false); //! @todo
-    m_dataCache->SetPlayTimes(0, 0, 0, 0);
+    m_dataCache->Reset();
   }
 }
 

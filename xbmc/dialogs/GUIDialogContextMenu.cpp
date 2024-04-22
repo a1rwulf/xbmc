@@ -25,7 +25,8 @@
 #include "guilib/GUIControlGroupList.h"
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
-#include "input/Key.h"
+#include "input/actions/Action.h"
+#include "input/actions/ActionIDs.h"
 #include "media/MediaLockState.h"
 #include "profiles/ProfileManager.h"
 #include "profiles/dialogs/GUIDialogLockSettings.h"
@@ -126,17 +127,17 @@ void CGUIDialogContextMenu::SetupButtons()
   CGUIControlGroupList* pGroupList = dynamic_cast<CGUIControlGroupList *>(GetControl(GROUP_LIST));
 
   // add our buttons
-  for (unsigned int i = 0; i < m_buttons.size(); i++)
+  if (pGroupList)
   {
-    CGUIButtonControl *pButton = new CGUIButtonControl(*pButtonTemplate);
-    if (pButton)
-    { // set the button's ID and position
-      int id = BUTTON_START + i;
-      pButton->SetID(id);
-      pButton->SetVisible(true);
-      pButton->SetLabel(m_buttons[i].second);
-      if (pGroupList)
-      {
+    for (unsigned int i = 0; i < m_buttons.size(); i++)
+    {
+      CGUIButtonControl* pButton = new CGUIButtonControl(*pButtonTemplate);
+      if (pButton)
+      { // set the button's ID and position
+        int id = BUTTON_START + i;
+        pButton->SetID(id);
+        pButton->SetVisible(true);
+        pButton->SetLabel(m_buttons[i].second);
         pButton->SetPosition(pButtonTemplate->GetXPosition(), pButtonTemplate->GetYPosition());
         // try inserting context buttons at position specified by template
         // button, if template button is not in grouplist fallback to adding
@@ -591,7 +592,10 @@ void CGUIDialogContextMenu::OnDeinitWindow(int nextWindowID)
   {
     const CGUIControl *control = GetControl(BUTTON_START + i);
     if (control)
+    {
       RemoveControl(control);
+      delete control;
+    }
   }
 
   m_buttons.clear();

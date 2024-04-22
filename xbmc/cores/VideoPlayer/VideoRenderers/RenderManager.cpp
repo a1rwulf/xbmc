@@ -8,6 +8,9 @@
 
 #include "RenderManager.h"
 
+/* to use the same as player */
+#include "../VideoPlayer/DVDClock.h"
+#include "../VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
 #include "RenderCapture.h"
 #include "RenderFactory.h"
 #include "RenderFlags.h"
@@ -25,11 +28,8 @@
 #include "windowing/GraphicContext.h"
 #include "windowing/WinSystem.h"
 
+#include <memory>
 #include <mutex>
-
-/* to use the same as player */
-#include "../VideoPlayer/DVDClock.h"
-#include "../VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
 
 using namespace std::chrono_literals;
 
@@ -68,6 +68,15 @@ float CRenderManager::GetAspectRatio() const
     return m_pRenderer->GetAspectRatio();
   else
     return 1.0f;
+}
+
+unsigned int CRenderManager::GetOrientation() const
+{
+  std::unique_lock<CCriticalSection> lock(m_statelock);
+  if (m_pRenderer)
+    return m_pRenderer->GetOrientation();
+  else
+    return 0;
 }
 
 void CRenderManager::SetVideoSettings(const CVideoSettings& settings)
@@ -141,7 +150,7 @@ bool CRenderManager::Configure(const VideoPicture& picture, float fps, unsigned 
     m_stateEvent.Reset();
     m_clockSync.Reset();
     m_dvdClock.SetVsyncAdjust(0);
-    m_pConfigPicture.reset(new VideoPicture());
+    m_pConfigPicture = std::make_unique<VideoPicture>();
     m_pConfigPicture->CopyRef(picture);
 
     std::unique_lock<CCriticalSection> lock2(m_presentlock);
@@ -295,7 +304,7 @@ void CRenderManager::FrameMove()
       lock.unlock();
       if (!Configure())
         return;
-
+      UpdateLatencyTweak();
       firstFrame = true;
       FrameWait(50ms);
     }
@@ -651,7 +660,7 @@ void CRenderManager::ManageCaptures()
 
 void CRenderManager::RenderCapture(CRenderCapture* capture)
 {
-  if (!m_pRenderer || !m_pRenderer->RenderCapture(capture))
+  if (!m_pRenderer || !m_pRenderer->RenderCapture(m_presentsource, capture))
     capture->SetState(CAPTURESTATE_FAILED);
 }
 
@@ -881,11 +890,14 @@ void CRenderManager::PresentBlend(bool clear, DWORD flags, DWORD alpha)
 void CRenderManager::UpdateLatencyTweak()
 {
   float fps = CServiceBroker::GetWinSystem()->GetGfxContext().GetFPS();
+  const bool isHDREnabled = CServiceBroker::GetWinSystem()->GetOSHDRStatus() == HDR_STATUS::HDR_ON;
+
   float refresh = fps;
   if (CServiceBroker::GetWinSystem()->GetGfxContext().GetVideoResolution() == RES_WINDOW)
     refresh = 0; // No idea about refresh rate when windowed, just get the default latency
   m_latencyTweak = static_cast<double>(
-      CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->GetLatencyTweak(refresh));
+      CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->GetLatencyTweak(refresh,
+                                                                                     isHDREnabled));
 }
 
 void CRenderManager::UpdateResolution()
@@ -1051,7 +1063,7 @@ bool CRenderManager::AddVideoPicture(const VideoPicture& picture, volatile std::
   return true;
 }
 
-void CRenderManager::AddOverlay(CDVDOverlay* o, double pts)
+void CRenderManager::AddOverlay(std::shared_ptr<CDVDOverlay> o, double pts)
 {
   int idx;
   {
@@ -1061,7 +1073,7 @@ void CRenderManager::AddOverlay(CDVDOverlay* o, double pts)
     idx = m_free.front();
   }
   std::unique_lock<CCriticalSection> lock(m_datalock);
-  m_overlays.AddOverlay(o, pts, idx);
+  m_overlays.AddOverlay(std::move(o), pts, idx);
 }
 
 bool CRenderManager::Supports(ERENDERFEATURE feature) const

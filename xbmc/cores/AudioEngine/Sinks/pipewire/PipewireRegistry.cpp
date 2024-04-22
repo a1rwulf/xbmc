@@ -8,8 +8,9 @@
 
 #include "PipewireRegistry.h"
 
-#include "cores/AudioEngine/Sinks/pipewire/Pipewire.h"
-#include "cores/AudioEngine/Sinks/pipewire/PipewireNode.h"
+#include "PipewireCore.h"
+#include "PipewireGlobal.h"
+#include "PipewireNode.h"
 #include "utils/log.h"
 
 #include <stdexcept>
@@ -18,27 +19,23 @@
 #include <pipewire/node.h>
 #include <pipewire/type.h>
 
-namespace AE
-{
-namespace SINK
-{
-namespace PIPEWIRE
-{
+using namespace KODI;
+using namespace PIPEWIRE;
 
-CPipewireRegistry::CPipewireRegistry(pw_core* core) : m_registryEvents(CreateRegistryEvents())
+CPipewireRegistry::CPipewireRegistry(CPipewireCore& core)
+  : m_core(core), m_registryEvents(CreateRegistryEvents())
 {
-  m_registry.reset(pw_core_get_registry(core, PW_VERSION_REGISTRY, 0));
+  m_registry.reset(pw_core_get_registry(core.Get(), PW_VERSION_REGISTRY, 0));
   if (!m_registry)
   {
     CLog::Log(LOGERROR, "CPipewireRegistry: failed to create registry: {}", strerror(errno));
     throw std::runtime_error("CPipewireRegistry: failed to create registry");
   }
+
+  pw_registry_add_listener(m_registry.get(), &m_registryListener, &m_registryEvents, this);
 }
 
-void CPipewireRegistry::AddListener(void* userdata)
-{
-  pw_registry_add_listener(m_registry.get(), &m_registryListener, &m_registryEvents, userdata);
-}
+CPipewireRegistry::~CPipewireRegistry() = default;
 
 void CPipewireRegistry::OnGlobalAdded(void* userdata,
                                       uint32_t id,
@@ -47,52 +44,58 @@ void CPipewireRegistry::OnGlobalAdded(void* userdata,
                                       uint32_t version,
                                       const struct spa_dict* props)
 {
-  auto pipewire = reinterpret_cast<CPipewire*>(userdata);
+  auto& registry = *reinterpret_cast<CPipewireRegistry*>(userdata);
 
-  if (strcmp(type, PW_TYPE_INTERFACE_Node) == 0)
-  {
-    const char* mediaClass = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
-    if (!mediaClass)
-      return;
+  if (strcmp(type, PW_TYPE_INTERFACE_Node) != 0)
+    return;
 
-    if (strcmp(mediaClass, "Audio/Sink") != 0)
-      return;
+  const char* mediaClass = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
+  if (!mediaClass)
+    return;
 
-    const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
-    if (!name)
-      return;
+  if (strcmp(mediaClass, "Audio/Sink") != 0)
+    return;
 
-    const char* desc = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
-    if (!desc)
-      return;
+  const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
+  if (!name)
+    return;
 
-    auto& globals = pipewire->GetGlobals();
+  const char* desc = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
+  if (!desc)
+    return;
 
-    globals[id] = std::make_unique<CPipewire::global>();
-    globals[id]->name = std::string(name);
-    globals[id]->description = std::string(desc);
-    globals[id]->id = id;
-    globals[id]->permissions = permissions;
-    globals[id]->type = std::string(type);
-    globals[id]->version = version;
-    globals[id]->properties.reset(pw_properties_new_dict(props));
-    globals[id]->proxy = std::make_unique<CPipewireNode>(pipewire->GetRegistry()->Get(), id, type);
-    globals[id]->proxy->AddListener(userdata);
-  }
+  auto properties =
+      std::unique_ptr<pw_properties, PipewirePropertiesDeleter>(pw_properties_new_dict(props));
+
+  auto node = std::make_unique<CPipewireNode>(registry, id, type);
+
+  auto& globals = registry.GetGlobals();
+
+  globals[id] = std::make_unique<CPipewireGlobal>();
+  globals[id]
+      ->SetName(name)
+      .SetDescription(desc)
+      .SetID(id)
+      .SetPermissions(permissions)
+      .SetType(type)
+      .SetVersion(version)
+      .SetProperties(std::move(properties))
+      .SetNode(std::move(node));
 }
 
 void CPipewireRegistry::OnGlobalRemoved(void* userdata, uint32_t id)
 {
-  auto pipewire = reinterpret_cast<CPipewire*>(userdata);
-  auto& globals = pipewire->GetGlobals();
+  auto& registry = *reinterpret_cast<CPipewireRegistry*>(userdata);
+  auto& globals = registry.GetGlobals();
 
-  auto global = globals.find(id);
-  if (global != globals.end())
+  auto it = globals.find(id);
+  if (it != globals.end())
   {
+    const auto& [globalId, global] = *it;
     CLog::Log(LOGDEBUG, "CPipewireRegistry::{} - id={} type={}", __FUNCTION__, id,
-              global->second->type);
+              global->GetType());
 
-    globals.erase(global);
+    globals.erase(it);
   }
 }
 
@@ -105,7 +108,3 @@ pw_registry_events CPipewireRegistry::CreateRegistryEvents()
 
   return registryEvents;
 }
-
-} // namespace PIPEWIRE
-} // namespace SINK
-} // namespace AE

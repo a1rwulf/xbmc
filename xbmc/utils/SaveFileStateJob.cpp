@@ -28,6 +28,9 @@
 #include "utils/Variant.h"
 #include "video/Bookmark.h"
 #include "video/VideoDatabase.h"
+#include "video/VideoFileItemClassify.h"
+
+using namespace KODI::VIDEO;
 
 void CSaveFileState::DoWork(CFileItem& item,
                             CBookmark& bookmark,
@@ -37,7 +40,7 @@ void CSaveFileState::DoWork(CFileItem& item,
 
   if (item.HasVideoInfoTag() && StringUtils::StartsWith(item.GetVideoInfoTag()->m_strFileNameAndPath, "removable://"))
     progressTrackingFile = item.GetVideoInfoTag()->m_strFileNameAndPath; // this variable contains removable:// suffixed by disc label+uniqueid or is empty if label not uniquely identified
-  else if (item.HasVideoInfoTag() && item.IsVideoDb())
+  else if (item.HasVideoInfoTag() && IsVideoDb(item))
     progressTrackingFile = item.GetVideoInfoTag()->m_strFileNameAndPath; // we need the file url of the video db item to create the bookmark
   else if (item.HasProperty("original_listitem_url"))
   {
@@ -57,7 +60,7 @@ void CSaveFileState::DoWork(CFileItem& item,
       return;
     }
 #endif
-    if (item.IsVideo())
+    if (IsVideo(item))
     {
       std::string redactPath = CURL::GetRedacted(progressTrackingFile);
       CLog::Log(LOGDEBUG, "{} - Saving file state for video item {}", __FUNCTION__, redactPath);
@@ -100,7 +103,7 @@ void CSaveFileState::DoWork(CFileItem& item,
               // consider this item as played
               const CDateTime newLastPlayed = videodatabase.IncrementPlayCount(item);
 
-              item.SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, true);
+              item.SetOverlayImage(CGUIListItem::ICON_OVERLAY_WATCHED);
               updateListing = true;
 
               if (item.HasVideoInfoTag())

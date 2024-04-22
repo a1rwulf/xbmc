@@ -18,14 +18,18 @@
 
 #include <memory>
 
-CDVDOverlayCodecText::CDVDOverlayCodecText() : CDVDOverlayCodec("Text Subtitle Decoder")
+namespace
 {
-  m_pOverlay = nullptr;
-}
+// Subtitle packets reaching the decoder may not have the stop PTS value,
+// the stop value can be taken from the start PTS of the next subtitle.
+// Otherwise we fallback to a default of 20 secs duration. This is only
+// applied if the subtitle packets have 0 duration (stop > start).
+constexpr double DEFAULT_DURATION = 20.0 * static_cast<double>(DVD_TIME_BASE);
+} // namespace
 
-CDVDOverlayCodecText::~CDVDOverlayCodecText()
+CDVDOverlayCodecText::CDVDOverlayCodecText()
+  : CDVDOverlayCodec("Text Subtitle Decoder"), m_pOverlay(nullptr)
 {
-  Dispose();
 }
 
 bool CDVDOverlayCodecText::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options)
@@ -36,18 +40,9 @@ bool CDVDOverlayCodecText::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options
 
   m_codecId = hints.codec;
 
-  Dispose();
+  m_pOverlay.reset();
 
   return Initialize();
-}
-
-void CDVDOverlayCodecText::Dispose()
-{
-  if (m_pOverlay)
-  {
-    m_pOverlay->Release();
-    m_pOverlay = nullptr;
-  }
 }
 
 OverlayMessage CDVDOverlayCodecText::Decode(DemuxPacket* pPacket)
@@ -83,7 +78,23 @@ OverlayMessage CDVDOverlayCodecText::Decode(DemuxPacket* pPacket)
   {
     TagConv.ConvertLine(text);
     TagConv.CloseTag(text);
-    AddSubtitle(text, PTSStartTime, PTSStopTime);
+
+    // similar to CC text, if the subtitle duration is invalid (stop > start)
+    // we might want to assume the stop time will be set by the next received
+    // packet
+    if (PTSStopTime < PTSStartTime)
+    {
+      if (m_changePrevStopTime)
+      {
+        ChangeSubtitleStopTime(m_prevSubId, PTSStartTime);
+        m_changePrevStopTime = false;
+      }
+
+      PTSStopTime = PTSStartTime + DEFAULT_DURATION;
+      m_changePrevStopTime = true;
+    }
+
+    m_prevSubId = AddSubtitle(text, PTSStartTime, PTSStopTime);
   }
   else
     CLog::Log(LOGERROR, "{} - Failed to initialize tag converter", __FUNCTION__);
@@ -101,25 +112,19 @@ void CDVDOverlayCodecText::PostProcess(std::string& text)
 
 void CDVDOverlayCodecText::Reset()
 {
-  Dispose();
   Flush();
 }
 
 void CDVDOverlayCodecText::Flush()
 {
-  if (m_pOverlay)
-  {
-    m_pOverlay->Release();
-    m_pOverlay = nullptr;
-  }
-
+  m_pOverlay.reset();
   FlushSubtitles();
 }
 
-CDVDOverlay* CDVDOverlayCodecText::GetOverlay()
+std::shared_ptr<CDVDOverlay> CDVDOverlayCodecText::GetOverlay()
 {
   if (m_pOverlay)
     return nullptr;
   m_pOverlay = CreateOverlay();
-  return m_pOverlay->Acquire();
+  return m_pOverlay;
 }

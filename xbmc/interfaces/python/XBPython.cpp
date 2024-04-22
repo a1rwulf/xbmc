@@ -16,7 +16,6 @@
 
 #include "ServiceBroker.h"
 #include "Util.h"
-#include "cores/DllLoader/DllLoaderContainer.h"
 #include "filesystem/SpecialProtocol.h"
 #include "interfaces/AnnouncementManager.h"
 #include "interfaces/legacy/AddonUtils.h"
@@ -25,13 +24,17 @@
 #include "interfaces/python/PythonInvoker.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/CharsetConverter.h"
 #include "utils/JSONVariantWriter.h"
 #include "utils/Variant.h"
 #include "utils/log.h"
-#include "utils/CharsetConverter.h"
 
 #ifdef TARGET_WINDOWS
 #include "platform/Environment.h"
+#endif
+
+#ifdef HAS_WEB_INTERFACE
+#include "network/httprequesthandler/python/HTTPPythonWsgiInvoker.h"
 #endif
 
 #include <algorithm>
@@ -50,6 +53,14 @@ XBPython::~XBPython()
 {
   XBMC_TRACE;
   CServiceBroker::GetAnnouncementManager()->RemoveAnnouncer(this);
+
+#if PY_VERSION_HEX >= 0x03070000
+  if (Py_IsInitialized())
+  {
+    PyThreadState_Swap(PyInterpreterState_ThreadHead(PyInterpreterState_Main()));
+    Py_Finalize();
+  }
+#endif
 }
 
 #define LOCK_AND_COPY(type, dest, src) \
@@ -516,6 +527,14 @@ bool XBPython::OnScriptInitialized(ILanguageInvoker* invoker)
     Py_SetPath(pythonPathW.c_str());
 
     Py_OptimizeFlag = 1;
+#endif
+
+    // *::GlobalInitializeModules() functions call PyImport_ExtendInittab(). PyImport_ExtendInittab() should
+    // be called before Py_Initialize() as required by the Python documentation.
+    CAddonPythonInvoker::GlobalInitializeModules();
+
+#ifdef HAS_WEB_INTERFACE
+    CHTTPPythonWsgiInvoker::GlobalInitializeModules();
 #endif
 
     Py_Initialize();

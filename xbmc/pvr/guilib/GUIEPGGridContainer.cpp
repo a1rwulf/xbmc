@@ -14,9 +14,9 @@
 #include "guilib/GUIAction.h"
 #include "guilib/GUIMessage.h"
 #include "guilib/guiinfo/GUIInfoLabels.h"
-#include "input/Key.h"
 #include "input/actions/Action.h"
 #include "input/actions/ActionIDs.h"
+#include "input/mouse/MouseEvent.h"
 #include "messaging/ApplicationMessenger.h"
 #include "pvr/PVRManager.h"
 #include "pvr/channels/PVRChannel.h"
@@ -35,6 +35,7 @@
 
 #include <tinyxml.h>
 
+using namespace KODI;
 using namespace PVR;
 
 #define BLOCKJUMP    4 // how many blocks are jumped with each analogue scroll action
@@ -54,50 +55,14 @@ CGUIEPGGridContainer::CGUIEPGGridContainer(int parentID,
                                            const CTextureInfo& progressIndicatorTexture)
   : IGUIContainer(parentID, controlID, posX, posY, width, height),
     m_orientation(orientation),
-    m_channelLayout(nullptr),
-    m_focusedChannelLayout(nullptr),
-    m_programmeLayout(nullptr),
-    m_focusedProgrammeLayout(nullptr),
-    m_rulerLayout(nullptr),
-    m_rulerDateLayout(nullptr),
-    m_pageControl(0),
     m_rulerUnit(rulerUnit),
-    m_channelsPerPage(0),
-    m_programmesPerPage(0),
-    m_channelCursor(0),
-    m_channelOffset(0),
     m_blocksPerPage(timeBlocks),
-    m_blockCursor(0),
-    m_blockOffset(0),
-    m_blockTravelAxis(0),
     m_cacheChannelItems(preloadItems),
     m_cacheProgrammeItems(preloadItems),
     m_cacheRulerItems(preloadItems),
-    m_rulerDateHeight(0),
-    m_rulerDateWidth(0),
-    m_rulerPosX(0),
-    m_rulerPosY(0),
-    m_rulerHeight(0),
-    m_rulerWidth(0),
-    m_channelPosX(0),
-    m_channelPosY(0),
-    m_channelHeight(0),
-    m_channelWidth(0),
-    m_gridPosX(0),
-    m_gridPosY(0),
-    m_gridWidth(0),
-    m_gridHeight(0),
-    m_blockSize(0),
-    m_analogScrollCount(0),
     m_guiProgressIndicatorTexture(
         CGUITexture::CreateTexture(posX, posY, width, height, progressIndicatorTexture)),
     m_scrollTime(scrollTime ? scrollTime : 1),
-    m_programmeScrollLastTime(0),
-    m_programmeScrollSpeed(0),
-    m_programmeScrollOffset(0),
-    m_channelScrollLastTime(0),
-    m_channelScrollSpeed(0),
-    m_channelScrollOffset(0),
     m_gridModel(new CGUIEPGGridContainerModel)
 {
   ControlType = GUICONTAINER_EPGGRID;
@@ -726,7 +691,7 @@ void CGUIEPGGridContainer::UpdateItems()
       const std::shared_ptr<CFileItem> prevItem = GetPrevItem().first;
       if (prevItem)
       {
-        const std::shared_ptr<CPVREpgInfoTag> tag = prevItem->GetEPGInfoTag();
+        const std::shared_ptr<const CPVREpgInfoTag> tag = prevItem->GetEPGInfoTag();
         if (tag && !tag->IsGapTag())
         {
           if (oldGridStart >= tag->StartAsUTC())
@@ -1192,7 +1157,7 @@ void CGUIEPGGridContainer::UpdateBlock(bool bUpdateBlockTravelAxis /* = true */)
 
 CGUIListItemLayout* CGUIEPGGridContainer::GetFocusedLayout() const
 {
-  CGUIListItemPtr item = GetListItem(0);
+  std::shared_ptr<CGUIListItem> item = GetListItem(0);
 
   if (item)
     return item->GetFocusedLayout();
@@ -1251,7 +1216,8 @@ bool CGUIEPGGridContainer::SelectItemFromPoint(const CPoint& point, bool justGri
   return true;
 }
 
-EVENT_RESULT CGUIEPGGridContainer::OnMouseEvent(const CPoint& point, const CMouseEvent& event)
+EVENT_RESULT CGUIEPGGridContainer::OnMouseEvent(const CPoint& point,
+                                                const MOUSE::CMouseEvent& event)
 {
   switch (event.m_id)
   {
@@ -1397,11 +1363,10 @@ CFileItemPtr CGUIEPGGridContainer::GetSelectedGridItem(int offset /*= 0*/) const
   return item;
 }
 
-
-CGUIListItemPtr CGUIEPGGridContainer::GetListItem(int offset, unsigned int flag) const
+std::shared_ptr<CGUIListItem> CGUIEPGGridContainer::GetListItem(int offset, unsigned int flag) const
 {
   if (!m_gridModel->HasChannelItems())
-    return CGUIListItemPtr();
+    return std::shared_ptr<CGUIListItem>();
 
   int item = m_channelCursor + m_channelOffset + offset;
   if (flag & INFOFLAG_LISTITEM_POSITION)
@@ -1420,7 +1385,7 @@ CGUIListItemPtr CGUIEPGGridContainer::GetListItem(int offset, unsigned int flag)
     if (item >= 0 && item < m_gridModel->ChannelItemsSize())
       return m_gridModel->GetChannelItem(item);
   }
-  return CGUIListItemPtr();
+  return std::shared_ptr<CGUIListItem>();
 }
 
 std::string CGUIEPGGridContainer::GetLabel(int info) const
@@ -2175,7 +2140,7 @@ void CGUIEPGGridContainer::HandleChannels(bool bRender, unsigned int currentTime
   end += cacheAfterChannel * m_channelLayout->Size(m_orientation);
 
   float focusedPos = 0;
-  CGUIListItemPtr focusedItem;
+  std::shared_ptr<CGUIListItem> focusedItem;
 
   CFileItemPtr item;
   int current = chanOffset - cacheBeforeChannel;

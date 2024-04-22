@@ -114,8 +114,7 @@ bool CLinuxRendererGLES::Configure(const VideoPicture &picture, float fps, unsig
   m_sourceHeight = picture.iHeight;
   m_renderOrientation = orientation;
 
-  m_srcPrimaries = GetSrcPrimaries(static_cast<AVColorPrimaries>(picture.color_primaries),
-                                   picture.iWidth, picture.iHeight);
+  m_srcPrimaries = picture.color_primaries;
   m_toneMap = false;
 
   // Calculate the input frame aspect ratio.
@@ -169,8 +168,8 @@ void CLinuxRendererGLES::AddVideoPicture(const VideoPicture &picture, int index)
   buf.videoBuffer = picture.videoBuffer;
   buf.videoBuffer->Acquire();
   buf.loaded = false;
-  buf.m_srcPrimaries = static_cast<AVColorPrimaries>(picture.color_primaries);
-  buf.m_srcColSpace = static_cast<AVColorSpace>(picture.color_space);
+  buf.m_srcPrimaries = picture.color_primaries;
+  buf.m_srcColSpace = picture.color_space;
   buf.m_srcFullRange = picture.color_range == 1;
   buf.m_srcBits = picture.colorBits;
 
@@ -719,6 +718,7 @@ void CLinuxRendererGLES::UnInit()
   m_bConfigured = false;
 
   CServiceBroker::GetWinSystem()->SetHDR(nullptr);
+  m_passthroughHDR = false;
 }
 
 bool CLinuxRendererGLES::CreateTexture(int index)
@@ -841,10 +841,9 @@ void CLinuxRendererGLES::RenderSinglePass(int index, int field)
   CPictureBuffer &buf = m_buffers[index];
   CYuvPlane (&planes)[YuvImage::MAX_PLANES] = m_buffers[index].fields[field];
 
-  AVColorPrimaries srcPrim = GetSrcPrimaries(buf.m_srcPrimaries, buf.image.width, buf.image.height);
-  if (srcPrim != m_srcPrimaries)
+  if (buf.m_srcPrimaries != m_srcPrimaries)
   {
-    m_srcPrimaries = srcPrim;
+    m_srcPrimaries = buf.m_srcPrimaries;
     m_reloadShaders = true;
   }
 
@@ -976,10 +975,9 @@ void CLinuxRendererGLES::RenderToFBO(int index, int field)
   CPictureBuffer &buf = m_buffers[index];
   CYuvPlane (&planes)[YuvImage::MAX_PLANES] = m_buffers[index].fields[field];
 
-  AVColorPrimaries srcPrim = GetSrcPrimaries(buf.m_srcPrimaries, buf.image.width, buf.image.height);
-  if (srcPrim != m_srcPrimaries)
+  if (buf.m_srcPrimaries != m_srcPrimaries)
   {
-    m_srcPrimaries = srcPrim;
+    m_srcPrimaries = buf.m_srcPrimaries;
     m_reloadShaders = true;
   }
 
@@ -1246,7 +1244,7 @@ void CLinuxRendererGLES::RenderFromFBO()
   VerifyGLState();
 }
 
-bool CLinuxRendererGLES::RenderCapture(CRenderCapture* capture)
+bool CLinuxRendererGLES::RenderCapture(int index, CRenderCapture* capture)
 {
   if (!m_bValidated)
   {
@@ -1272,7 +1270,7 @@ bool CLinuxRendererGLES::RenderCapture(CRenderCapture* capture)
 
   capture->BeginRender();
 
-  Render(RENDER_FLAG_NOOSD, m_iYV12RenderBuffer);
+  Render(RENDER_FLAG_NOOSD, index);
   // read pixels
   glReadPixels(0, CServiceBroker::GetWinSystem()->GetGfxContext().GetHeight() - capture->GetHeight(), capture->GetWidth(), capture->GetHeight(),
                GL_RGBA, GL_UNSIGNED_BYTE, capture->GetRenderBuffer());
@@ -1756,24 +1754,6 @@ CRenderInfo CLinuxRendererGLES::GetRenderInfo()
 bool CLinuxRendererGLES::IsGuiLayer()
 {
   return true;
-}
-
-AVColorPrimaries CLinuxRendererGLES::GetSrcPrimaries(AVColorPrimaries srcPrimaries, unsigned int width, unsigned int height)
-{
-  AVColorPrimaries ret = srcPrimaries;
-  if (ret == AVCOL_PRI_UNSPECIFIED)
-  {
-    if (width > 1024 || height >= 600)
-    {
-      ret = AVCOL_PRI_BT709;
-    }
-    else
-    {
-      ret = AVCOL_PRI_BT470BG;
-    }
-  }
-
-  return ret;
 }
 
 CRenderCapture* CLinuxRendererGLES::GetRenderCapture()

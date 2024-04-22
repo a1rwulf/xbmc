@@ -21,8 +21,10 @@
 #include "settings/SettingsComponent.h"
 #include "utils/FileExtensionProvider.h"
 #include "utils/SortUtils.h"
+#include "video/VideoFileItemClassify.h"
 #include "view/ViewStateSettings.h"
 
+using namespace KODI::VIDEO;
 using namespace XFILE;
 using namespace VIDEODATABASEDIRECTORY;
 
@@ -69,7 +71,7 @@ CGUIViewStateWindowVideoNav::CGUIViewStateWindowVideoNav(const CFileItemList& it
 
     SetSortOrder(SortOrderNone);
   }
-  else if (items.IsVideoDb())
+  else if (IsVideoDb(items))
   {
     NODE_TYPE NodeType=CVideoDatabaseDirectory::GetDirectoryChildType(items.GetPath());
     CQueryParams params;
@@ -181,14 +183,16 @@ CGUIViewStateWindowVideoNav::CGUIViewStateWindowVideoNav(const CFileItemList& it
       }
       break;
     case NODE_TYPE_TAGS:
-      {
-        AddSortMethod(SortByLabel, sortAttributes, 551, LABEL_MASKS("%T","", "%T",""));  // Title, empty | Title, empty
-        SetSortMethod(SortByLabel);
+    case NODE_TYPE_VIDEOVERSIONS:
+    {
+      AddSortMethod(SortByLabel, sortAttributes, 551,
+                    LABEL_MASKS("%T", "", "%T", "")); // Title, empty | Title, empty
+      SetSortMethod(SortByLabel);
 
-        const CViewState *viewState = CViewStateSettings::GetInstance().Get("videonavgenres");
-        SetViewAsControl(viewState->m_viewMode);
-        SetSortOrder(viewState->m_sortDescription.sortOrder);
-      }
+      const CViewState* viewState = CViewStateSettings::GetInstance().Get("videonavgenres");
+      SetViewAsControl(viewState->m_viewMode);
+      SetSortOrder(viewState->m_sortDescription.sortOrder);
+    }
       break;
     case NODE_TYPE_EPISODES:
       {
@@ -335,7 +339,7 @@ CGUIViewStateWindowVideoNav::CGUIViewStateWindowVideoNav(const CFileItemList& it
 
 void CGUIViewStateWindowVideoNav::SaveViewState()
 {
-  if (m_items.IsVideoDb())
+  if (IsVideoDb(m_items))
   {
     NODE_TYPE NodeType = CVideoDatabaseDirectory::GetDirectoryChildType(m_items.GetPath());
     CQueryParams params;
@@ -614,14 +618,16 @@ CGUIViewStateVideoPlaylist::CGUIViewStateVideoPlaylist(const CFileItemList& item
           CSettings::SETTING_FILELISTS_IGNORETHEWHENSORTING))
     sortAttributes = SortAttributeIgnoreArticle;
 
+  AddSortMethod(SortByPlaylistOrder, 559, LABEL_MASKS("%L", "")); // Label, empty
   AddSortMethod(SortByLabel, sortAttributes, 551,
                 LABEL_MASKS("%L", "%I", "%L", "")); // Label, Size | Label, empty
   AddSortMethod(SortBySize, 553, LABEL_MASKS("%L", "%I", "%L", "%I")); // Label, Size | Label, Size
   AddSortMethod(SortByDate, 552, LABEL_MASKS("%L", "%J", "%L", "%J")); // Label, Date | Label, Date
   AddSortMethod(SortByFile, 561, LABEL_MASKS("%L", "%I", "%L", "")); // Label, Size | Label, empty
 
+  SetSortMethod(SortByPlaylistOrder);
+
   const CViewState* viewState = CViewStateSettings::GetInstance().Get("videofiles");
-  SetSortMethod(viewState->m_sortDescription);
   SetViewAsControl(viewState->m_viewMode);
   SetSortOrder(viewState->m_sortDescription.sortOrder);
 

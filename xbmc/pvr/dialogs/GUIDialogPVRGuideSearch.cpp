@@ -87,12 +87,12 @@ void CGUIDialogPVRGuideSearch::UpdateChannelSpin()
   int iSelectedChannel = EPG_SEARCH_UNSET;
   for (const auto& groupMember : groupMembers)
   {
-    labels.emplace_back(std::make_pair(groupMember->Channel()->ChannelName(), iIndex));
+    labels.emplace_back(groupMember->Channel()->ChannelName(), iIndex);
     m_channelsMap.insert(std::make_pair(iIndex, groupMember));
 
     if (iSelectedChannel == EPG_SEARCH_UNSET &&
         groupMember->ChannelUID() == m_searchFilter->GetChannelUID() &&
-        groupMember->ClientID() == m_searchFilter->GetClientID())
+        groupMember->ChannelClientID() == m_searchFilter->GetClientID())
       iSelectedChannel = iIndex;
 
     ++iIndex;
@@ -297,7 +297,7 @@ void CGUIDialogPVRGuideSearch::UpdateSearchFilter()
   m_searchFilter->SetMaximumDuration(GetSpinValue(CONTROL_SPIN_MAX_DURATION));
 
   auto it = m_channelsMap.find(GetSpinValue(CONTROL_SPIN_CHANNELS));
-  m_searchFilter->SetClientID(it == m_channelsMap.end() ? -1 : (*it).second->ClientID());
+  m_searchFilter->SetClientID(it == m_channelsMap.end() ? -1 : (*it).second->ChannelClientID());
   m_searchFilter->SetChannelUID(it == m_channelsMap.end() ? -1 : (*it).second->ChannelUID());
   m_searchFilter->SetChannelGroupID(GetSpinValue(CONTROL_SPIN_GROUPS));
 

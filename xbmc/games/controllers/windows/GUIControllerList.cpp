@@ -36,18 +36,16 @@
 #include <iterator>
 
 using namespace KODI;
-using namespace ADDON;
 using namespace GAME;
 
 CGUIControllerList::CGUIControllerList(CGUIWindow* window,
                                        IFeatureList* featureList,
-                                       GameClientPtr gameClient)
+                                       GameClientPtr gameClient,
+                                       std::string controllerId)
   : m_guiWindow(window),
     m_featureList(featureList),
-    m_controllerList(nullptr),
-    m_controllerButton(nullptr),
-    m_focusedController(-1), // Initially unfocused
-    m_gameClient(std::move(gameClient))
+    m_gameClient(std::move(gameClient)),
+    m_controllerId(std::move(controllerId))
 {
   assert(m_featureList != nullptr);
 }
@@ -169,7 +167,6 @@ void CGUIControllerList::OnEvent(const ADDON::AddonEvent& event)
       typeid(event) == typeid(ADDON::AddonEvents::ReInstalled) ||
       typeid(event) == typeid(ADDON::AddonEvents::UnInstalled))
   {
-    using namespace MESSAGING;
     CGUIMessage msg(GUI_MSG_REFRESH_LIST, m_guiWindow->GetID(), CONTROL_CONTROLLER_LIST);
 
     // Focus installed add-on
@@ -187,20 +184,30 @@ bool CGUIControllerList::RefreshControllers(void)
   CGameServices& gameServices = CServiceBroker::GetGameServices();
   ControllerVector newControllers = gameServices.GetControllers();
 
+  // Filter by specified controller ID
+  if (!m_controllerId.empty())
+  {
+    newControllers.erase(std::remove_if(newControllers.begin(), newControllers.end(),
+                                        [this](const ControllerPtr& controller)
+                                        { return controller->ID() != m_controllerId; }),
+                         newControllers.end());
+  }
   // Filter by current game add-on
-  if (m_gameClient)
+  else if (m_gameClient)
   {
     const CControllerTree& controllers = m_gameClient->Input().GetDefaultControllerTree();
 
-    auto ControllerNotAccepted = [&controllers](const ControllerPtr& controller) {
-      return !controllers.IsControllerAccepted(controller->ID());
-    };
+    auto ControllerNotAccepted = [&controllers](const ControllerPtr& controller)
+    { return !controllers.IsControllerAccepted(controller->ID()); };
 
     if (!std::all_of(newControllers.begin(), newControllers.end(), ControllerNotAccepted))
       newControllers.erase(
           std::remove_if(newControllers.begin(), newControllers.end(), ControllerNotAccepted),
           newControllers.end());
   }
+
+  if (newControllers.empty())
+    newControllers.emplace_back(gameServices.GetDefaultController());
 
   // Check for changes
   std::set<std::string> oldControllerIds;
@@ -220,7 +227,8 @@ bool CGUIControllerList::RefreshControllers(void)
 
     // Sort add-ons, with default controller first
     std::sort(m_controllers.begin(), m_controllers.end(),
-              [](const ControllerPtr& i, const ControllerPtr& j) {
+              [](const ControllerPtr& i, const ControllerPtr& j)
+              {
                 if (i->ID() == DEFAULT_CONTROLLER_ID && j->ID() != DEFAULT_CONTROLLER_ID)
                   return true;
                 if (i->ID() != DEFAULT_CONTROLLER_ID && j->ID() == DEFAULT_CONTROLLER_ID)

@@ -113,7 +113,8 @@ namespace PVR
      * @param epgTag The epg tag.
      * @return The channel.
      */
-    std::shared_ptr<CPVRChannel> GetChannelForEpgTag(const std::shared_ptr<CPVREpgInfoTag>& epgTag) const;
+    std::shared_ptr<CPVRChannel> GetChannelForEpgTag(
+        const std::shared_ptr<const CPVREpgInfoTag>& epgTag) const;
 
     /*!
      * @brief Get a channel given it's path.
@@ -143,12 +144,6 @@ namespace PVR
      * @return The requested channel group member or nullptr.
      */
     std::shared_ptr<CPVRChannelGroupMember> GetLastPlayedChannelGroupMember() const;
-
-    /*!
-     * @brief Create EPG tags for channels in all internal channel groups.
-     * @return True if EPG tags were created successfully.
-     */
-    bool CreateChannelEpgs();
 
     /*!
      * @brief Erase stale texture db entries and image files.

@@ -14,10 +14,10 @@
 class CVideoSyncAndroid : public CVideoSync, IDispResource
 {
 public:
-  CVideoSyncAndroid(void *clock) : CVideoSync(clock), m_LastVBlankTime(0) {}
+  CVideoSyncAndroid(CVideoReferenceClock* clock) : CVideoSync(clock) {}
 
   // CVideoSync interface
-  bool Setup(PUPDATECLOCK func) override;
+  bool Setup() override;
   void Run(CEvent& stop) override;
   void Cleanup() override;
   float GetFps() override;
@@ -29,6 +29,7 @@ public:
   void FrameCallback(int64_t frameTimeNanos);
 
 private:
-  int64_t m_LastVBlankTime;  //timestamp of the last vblank, used for calculating how many vblanks happened
+  int64_t m_LastVBlankTime =
+      0; //timestamp of the last vblank, used for calculating how many vblanks happened
   CEvent m_abortEvent;
 };
